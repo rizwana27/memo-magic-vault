@@ -98,7 +98,7 @@ const Dashboard = () => {
         <p className="text-gray-300 text-lg">Welcome to your professional services overview</p>
       </div>
 
-      {/* Quick Action Panel - Transparent */}
+      {/* Quick Action Panel - Transparent White */}
       <Card className="bg-white/10 backdrop-blur-md border-white/20 rounded-2xl shadow-2xl">
         <CardHeader>
           <CardTitle className="text-white text-xl flex items-center space-x-2">
@@ -125,7 +125,7 @@ const Dashboard = () => {
         </CardContent>
       </Card>
 
-      {/* Enhanced Stats Cards - Transparent */}
+      {/* Enhanced Stats Cards - Transparent White */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {stats.map((stat, index) => (
           <Card key={index} className="bg-white/10 backdrop-blur-md border-white/20 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105">
@@ -152,7 +152,7 @@ const Dashboard = () => {
         ))}
       </div>
 
-      {/* Enhanced Charts Grid - Transparent */}
+      {/* Enhanced Charts Grid - Transparent White */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Project Status Chart */}
         <Card className="bg-white/10 backdrop-blur-md border-white/20 rounded-2xl shadow-2xl">
@@ -181,10 +181,11 @@ const Dashboard = () => {
                 </Pie>
                 <Tooltip 
                   contentStyle={{ 
-                    backgroundColor: 'rgba(0, 0, 0, 0.8)', 
+                    backgroundColor: 'rgba(255, 255, 255, 0.1)', 
                     border: '1px solid rgba(255, 255, 255, 0.2)',
                     borderRadius: '12px',
-                    color: '#ffffff'
+                    color: '#ffffff',
+                    backdropFilter: 'blur(8px)'
                   }} 
                 />
               </PieChart>
@@ -209,10 +210,11 @@ const Dashboard = () => {
                 <YAxis stroke="#d1d5db" />
                 <Tooltip 
                   contentStyle={{ 
-                    backgroundColor: 'rgba(0, 0, 0, 0.8)', 
+                    backgroundColor: 'rgba(255, 255, 255, 0.1)', 
                     border: '1px solid rgba(255, 255, 255, 0.2)',
                     borderRadius: '12px',
-                    color: '#ffffff'
+                    color: '#ffffff',
+                    backdropFilter: 'blur(8px)'
                   }} 
                 />
                 <Bar dataKey="revenue" fill="#14b8a6" name="Revenue" radius={[4, 4, 0, 0]} />
@@ -223,7 +225,7 @@ const Dashboard = () => {
         </Card>
       </div>
 
-      {/* Enhanced Resource Utilization - Transparent */}
+      {/* Enhanced Resource Utilization - Transparent White */}
       <Card className="bg-white/10 backdrop-blur-md border-white/20 rounded-2xl shadow-2xl">
         <CardHeader>
           <div className="flex items-center space-x-2">
@@ -240,10 +242,11 @@ const Dashboard = () => {
               <YAxis dataKey="name" type="category" stroke="#d1d5db" width={120} />
               <Tooltip 
                 contentStyle={{ 
-                  backgroundColor: 'rgba(0, 0, 0, 0.8)', 
+                  backgroundColor: 'rgba(255, 255, 255, 0.1)', 
                   border: '1px solid rgba(255, 255, 255, 0.2)',
                   borderRadius: '12px',
-                  color: '#ffffff'
+                  color: '#ffffff',
+                  backdropFilter: 'blur(8px)'
                 }} 
               />
               <Bar dataKey="utilization" fill="#10b981" radius={[0, 6, 6, 0]} />
@@ -252,7 +255,7 @@ const Dashboard = () => {
         </CardContent>
       </Card>
 
-      {/* Enhanced Recent Activity - Transparent */}
+      {/* Enhanced Recent Activity - Transparent White */}
       <Card className="bg-white/10 backdrop-blur-md border-white/20 rounded-2xl shadow-2xl">
         <CardHeader>
           <div className="flex items-center space-x-2">
