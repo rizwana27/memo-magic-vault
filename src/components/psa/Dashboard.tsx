@@ -52,9 +52,11 @@ const Dashboard = () => {
       change: '+2 this month', 
       changeType: 'positive',
       icon: FolderOpen, 
-      color: 'text-teal-400',
-      bgColor: 'from-teal-500/10 to-teal-600/5',
-      borderColor: 'border-teal-500/20'
+      color: 'text-teal-600',
+      bgColor: 'from-teal-50 via-teal-100/50 to-teal-200/30',
+      borderColor: 'border-teal-200/60',
+      iconBg: 'bg-teal-600/10',
+      textColor: 'text-gray-800'
     },
     { 
       title: 'Total Clients', 
@@ -62,9 +64,11 @@ const Dashboard = () => {
       change: '+5 this month', 
       changeType: 'positive',
       icon: Users, 
-      color: 'text-emerald-400',
-      bgColor: 'from-emerald-500/10 to-emerald-600/5',
-      borderColor: 'border-emerald-500/20'
+      color: 'text-emerald-600',
+      bgColor: 'from-emerald-50 via-emerald-100/50 to-emerald-200/30',
+      borderColor: 'border-emerald-200/60',
+      iconBg: 'bg-emerald-600/10',
+      textColor: 'text-gray-800'
     },
     { 
       title: 'Billable Hours', 
@@ -72,9 +76,11 @@ const Dashboard = () => {
       change: '+12% this month', 
       changeType: 'positive',
       icon: Clock, 
-      color: 'text-purple-400',
-      bgColor: 'from-purple-500/10 to-purple-600/5',
-      borderColor: 'border-purple-500/20'
+      color: 'text-purple-600',
+      bgColor: 'from-purple-50 via-purple-100/50 to-purple-200/30',
+      borderColor: 'border-purple-200/60',
+      iconBg: 'bg-purple-600/10',
+      textColor: 'text-gray-800'
     },
     { 
       title: 'Revenue', 
@@ -82,9 +88,11 @@ const Dashboard = () => {
       change: '+8% this month', 
       changeType: 'positive',
       icon: DollarSign, 
-      color: 'text-amber-400',
-      bgColor: 'from-amber-500/10 to-amber-600/5',
-      borderColor: 'border-amber-500/20'
+      color: 'text-amber-600',
+      bgColor: 'from-amber-50 via-amber-100/50 to-amber-200/30',
+      borderColor: 'border-amber-200/60',
+      iconBg: 'bg-amber-600/10',
+      textColor: 'text-gray-800'
     }
   ];
 
@@ -125,25 +133,25 @@ const Dashboard = () => {
         </CardContent>
       </Card>
 
-      {/* Enhanced Stats Cards */}
+      {/* Enhanced Stats Cards with Better Contrast */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {stats.map((stat, index) => (
-          <Card key={index} className={`bg-gradient-to-br ${stat.bgColor} border ${stat.borderColor} rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 backdrop-blur-sm`}>
+          <Card key={index} className={`bg-gradient-to-br ${stat.bgColor} border-2 ${stat.borderColor} rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 backdrop-blur-sm`}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-gray-300">{stat.title}</CardTitle>
-              <div className={`p-2 rounded-xl bg-gray-800/50 ${stat.color}`}>
+              <CardTitle className={`text-sm font-bold ${stat.textColor} drop-shadow-sm`}>{stat.title}</CardTitle>
+              <div className={`p-3 rounded-xl ${stat.iconBg} ${stat.color} shadow-lg`}>
                 <stat.icon className="h-5 w-5" />
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-white mb-1">{stat.value}</div>
+              <div className={`text-3xl font-bold ${stat.textColor} mb-1 drop-shadow-sm`}>{stat.value}</div>
               <div className="flex items-center space-x-1">
                 {stat.changeType === 'positive' ? (
-                  <ArrowUpRight className="h-4 w-4 text-emerald-400" />
+                  <ArrowUpRight className="h-4 w-4 text-emerald-600 drop-shadow-sm" />
                 ) : (
-                  <ArrowDownRight className="h-4 w-4 text-red-400" />
+                  <ArrowDownRight className="h-4 w-4 text-red-600 drop-shadow-sm" />
                 )}
-                <p className={`text-sm font-medium ${stat.changeType === 'positive' ? 'text-emerald-400' : 'text-red-400'}`}>
+                <p className={`text-sm font-semibold ${stat.changeType === 'positive' ? 'text-emerald-600' : 'text-red-600'} drop-shadow-sm`}>
                   {stat.change}
                 </p>
               </div>
