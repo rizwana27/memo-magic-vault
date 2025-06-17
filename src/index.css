@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -37,19 +38,12 @@
     --radius: 0.5rem;
 
     --sidebar-background: 0 0% 98%;
-
     --sidebar-foreground: 240 5.3% 26.1%;
-
     --sidebar-primary: 240 5.9% 10%;
-
     --sidebar-primary-foreground: 0 0% 98%;
-
     --sidebar-accent: 240 4.8% 95.9%;
-
     --sidebar-accent-foreground: 240 5.9% 10%;
-
     --sidebar-border: 220 13% 91%;
-
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
@@ -100,4 +94,95 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Custom animations and transitions */
+@layer utilities {
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-out;
+  }
+
+  .animate-slide-in {
+    animation: slideIn 0.3s ease-out;
+  }
+
+  .hover-lift {
+    transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+  }
+
+  .hover-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Enhanced card styling */
+.card-enhanced {
+  @apply bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 rounded-xl shadow-xl;
+  transition: all 0.2s ease-out;
+}
+
+.card-enhanced:hover {
+  @apply bg-gray-800/70 border-gray-600/50 shadow-2xl;
+  transform: translateY(-1px);
+}
+
+/* Professional table styling */
+.table-professional {
+  @apply bg-gray-800/30 backdrop-blur-sm border border-gray-700/50 rounded-lg overflow-hidden;
+}
+
+.table-professional th {
+  @apply bg-gray-700/50 text-gray-300 font-semibold px-6 py-4 text-left;
+}
+
+.table-professional td {
+  @apply px-6 py-4 text-gray-200 border-t border-gray-700/30;
+}
+
+.table-professional tr:hover {
+  @apply bg-gray-700/20;
+}
+
+/* Status badges */
+.status-badge {
+  @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+}
+
+.status-success {
+  @apply bg-green-500/20 text-green-400 border border-green-500/30;
+}
+
+.status-warning {
+  @apply bg-yellow-500/20 text-yellow-400 border border-yellow-500/30;
+}
+
+.status-error {
+  @apply bg-red-500/20 text-red-400 border border-red-500/30;
+}
+
+.status-info {
+  @apply bg-blue-500/20 text-blue-400 border border-blue-500/30;
 }
