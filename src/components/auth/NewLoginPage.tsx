@@ -64,17 +64,17 @@ const NewLoginPage = () => {
           </div>
 
           <div className="space-y-6">
-            {/* Email Input - Optional */}
+            {/* Email Input */}
             <div className="space-y-2">
               <Label htmlFor="email" className="text-gray-300">
-                Email Address (Optional)
+                Email Address
               </Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                 <Input
                   id="email"
                   type="email"
-                  placeholder="Enter your email (optional)"
+                  placeholder="Enter your email address"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="pl-10 bg-gray-700/50 border-gray-600 text-white placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500"
@@ -82,7 +82,7 @@ const NewLoginPage = () => {
                 />
               </div>
               <p className="text-xs text-gray-500">
-                Leave empty to choose from available accounts during sign-in
+                This helps us direct you to the correct Microsoft account
               </p>
             </div>
 
