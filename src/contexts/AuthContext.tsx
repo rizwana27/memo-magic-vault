@@ -58,6 +58,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       setLoading(true);
       console.log('Starting Microsoft sign in...');
+      
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'azure',
         options: {
@@ -69,6 +70,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           scopes: 'openid email profile'
         }
       });
+      
       if (error) {
         console.error('Microsoft sign in error:', error);
         throw error;
@@ -76,6 +78,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (error) {
       console.error('Error signing in with Microsoft:', error);
       setLoading(false);
+      throw error;
     }
   };
 
