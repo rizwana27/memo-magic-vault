@@ -20,10 +20,10 @@ const NewLoginPage = () => {
       
       toast({
         title: "Redirecting to Microsoft",
-        description: "You will be redirected to Microsoft to select your account and authenticate.",
+        description: "You will be redirected to Microsoft to authenticate with your account.",
       });
       
-      // Pass email as login hint if provided, but don't require it
+      // Pass email to help with account selection
       await signInWithMicrosoft(email || undefined);
     } catch (error) {
       console.error('Authentication failed:', error);
@@ -59,7 +59,7 @@ const NewLoginPage = () => {
             <h2 className="text-2xl font-semibold text-white mb-2">Welcome to PSA Portal</h2>
             <p className="text-gray-400 mb-4">Sign in with your Microsoft account</p>
             <p className="text-sm text-gray-500">
-              Supports all Microsoft accounts including Gmail, Outlook, and organizational accounts
+              Supports personal Microsoft accounts (@gmail.com, @outlook.com) and work/school accounts
             </p>
           </div>
 
@@ -82,7 +82,7 @@ const NewLoginPage = () => {
                 />
               </div>
               <p className="text-xs text-gray-500">
-                This helps us direct you to the correct Microsoft account
+                We'll help you sign in with the Microsoft account associated with this email
               </p>
             </div>
 

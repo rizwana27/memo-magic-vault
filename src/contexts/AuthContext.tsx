@@ -62,17 +62,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'azure',
         options: {
-          redirectTo: `${window.location.origin}/`,
+          redirectTo: `${window.location.origin}/auth/callback`,
           queryParams: {
-            // Force account selection for multi-tenant support
-            prompt: 'select_account',
-            // Support for multi-tenant authentication
+            // Enable multi-tenant support for personal and work accounts
             tenant: 'common',
-            // If email is provided, use it as login hint
+            // Force account selection to ensure user picks their own account
+            prompt: 'select_account',
+            // Support both personal and work/school accounts
+            domain_hint: email ? (email.includes('@gmail.com') || email.includes('@outlook.com') || email.includes('@hotmail.com') ? 'consumers' : 'organizations') : undefined,
+            // Use login hint if email provided
             ...(email && { login_hint: email })
           },
-          // Request broader scopes for multi-tenant support
-          scopes: 'openid email profile'
+          // Request comprehensive scopes for user info
+          scopes: 'openid email profile User.Read'
         }
       });
       
