@@ -11,7 +11,7 @@ export const usePSAData = () => {
       queryKey: ['clients'],
       queryFn: async () => {
         const { data, error } = await supabase
-          .from('clients' as any)
+          .from('clients')
           .select('*')
           .order('created_at', { ascending: false });
         
@@ -27,7 +27,7 @@ export const usePSAData = () => {
       queryKey: ['projects'],
       queryFn: async () => {
         const { data, error } = await supabase
-          .from('projects' as any)
+          .from('projects')
           .select(`
             *,
             client:clients(*)
@@ -46,7 +46,7 @@ export const usePSAData = () => {
       queryKey: ['tasks'],
       queryFn: async () => {
         const { data, error } = await supabase
-          .from('tasks' as any)
+          .from('tasks')
           .select(`
             *,
             project:projects(*, client:clients(*))
@@ -65,7 +65,7 @@ export const usePSAData = () => {
       queryKey: ['timesheets'],
       queryFn: async () => {
         const { data, error } = await supabase
-          .from('timesheets' as any)
+          .from('timesheets')
           .select(`
             *,
             project:projects(*),
@@ -85,7 +85,7 @@ export const usePSAData = () => {
       queryKey: ['invoices'],
       queryFn: async () => {
         const { data, error } = await supabase
-          .from('invoices' as any)
+          .from('invoices')
           .select(`
             *,
             client:clients(*),
@@ -105,7 +105,7 @@ export const usePSAData = () => {
       queryKey: ['expenses'],
       queryFn: async () => {
         const { data, error } = await supabase
-          .from('expenses' as any)
+          .from('expenses')
           .select(`
             *,
             project:projects(*)
@@ -124,7 +124,7 @@ export const usePSAData = () => {
       queryKey: ['vendors'],
       queryFn: async () => {
         const { data, error } = await supabase
-          .from('vendors' as any)
+          .from('vendors')
           .select('*')
           .order('created_at', { ascending: false });
         
@@ -140,7 +140,7 @@ export const usePSAData = () => {
       queryKey: ['opportunities'],
       queryFn: async () => {
         const { data, error } = await supabase
-          .from('opportunities' as any)
+          .from('opportunities')
           .select(`
             *,
             client:clients(*)
@@ -159,7 +159,7 @@ export const usePSAData = () => {
       queryKey: ['purchase_orders'],
       queryFn: async () => {
         const { data, error } = await supabase
-          .from('purchase_orders' as any)
+          .from('purchase_orders')
           .select(`
             *,
             vendor:vendors(*),
@@ -177,7 +177,7 @@ export const usePSAData = () => {
   const createClient = useMutation({
     mutationFn: async (client: any) => {
       const { data, error } = await supabase
-        .from('clients' as any)
+        .from('clients')
         .insert([client])
         .select()
         .single();
@@ -194,7 +194,7 @@ export const usePSAData = () => {
     mutationFn: async (project: any) => {
       const user = await supabase.auth.getUser();
       const { data, error } = await supabase
-        .from('projects' as any)
+        .from('projects')
         .insert([{ ...project, project_manager_id: user.data.user?.id }])
         .select()
         .single();
@@ -211,7 +211,7 @@ export const usePSAData = () => {
     mutationFn: async (timesheet: any) => {
       const user = await supabase.auth.getUser();
       const { data, error } = await supabase
-        .from('timesheets' as any)
+        .from('timesheets')
         .insert([{ ...timesheet, user_id: user.data.user?.id }])
         .select()
         .single();
@@ -228,7 +228,7 @@ export const usePSAData = () => {
     mutationFn: async (invoice: any) => {
       const user = await supabase.auth.getUser();
       const { data, error } = await supabase
-        .from('invoices' as any)
+        .from('invoices')
         .insert([{ ...invoice, created_by: user.data.user?.id }])
         .select()
         .single();
@@ -245,7 +245,7 @@ export const usePSAData = () => {
     mutationFn: async (expense: any) => {
       const user = await supabase.auth.getUser();
       const { data, error } = await supabase
-        .from('expenses' as any)
+        .from('expenses')
         .insert([{ ...expense, user_id: user.data.user?.id }])
         .select()
         .single();

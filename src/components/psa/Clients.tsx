@@ -12,18 +12,24 @@ const Clients = () => {
   const { data: clients, isLoading } = useClients();
   const [searchTerm, setSearchTerm] = useState('');
 
-  const getHealthColor = (status: string) => {
-    switch (status) {
-      case 'healthy': return 'bg-green-500';
-      case 'at_risk': return 'bg-yellow-500';
-      case 'critical': return 'bg-red-500';
-      default: return 'bg-gray-500';
-    }
+  // Mock function to get health color since we don't have health_status in the current data
+  const getHealthColor = (healthScore?: number) => {
+    if (!healthScore) return 'bg-gray-500';
+    if (healthScore >= 8) return 'bg-green-500';
+    if (healthScore >= 5) return 'bg-yellow-500';
+    return 'bg-red-500';
+  };
+
+  const getHealthStatus = (healthScore?: number) => {
+    if (!healthScore) return 'unknown';
+    if (healthScore >= 8) return 'healthy';
+    if (healthScore >= 5) return 'at risk';
+    return 'critical';
   };
 
   const filteredClients = clients?.filter(client =>
-    client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.email?.toLowerCase().includes(searchTerm.toLowerCase())
+    client?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    client?.email?.toLowerCase().includes(searchTerm.toLowerCase())
   ) || [];
 
   return (
@@ -76,7 +82,7 @@ const Clients = () => {
               <div>
                 <p className="text-gray-400 text-sm">Healthy Clients</p>
                 <p className="text-2xl font-bold text-green-500">
-                  {clients?.filter(c => c.health_status === 'healthy').length || 0}
+                  {clients?.filter(c => (c?.health_score || 0) >= 8).length || 0}
                 </p>
               </div>
               <div className="w-3 h-3 bg-green-500 rounded-full"></div>
@@ -89,7 +95,7 @@ const Clients = () => {
               <div>
                 <p className="text-gray-400 text-sm">At Risk</p>
                 <p className="text-2xl font-bold text-yellow-500">
-                  {clients?.filter(c => c.health_status === 'at_risk').length || 0}
+                  {clients?.filter(c => (c?.health_score || 0) >= 5 && (c?.health_score || 0) < 8).length || 0}
                 </p>
               </div>
               <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
@@ -123,8 +129,8 @@ const Clients = () => {
               <CardHeader>
                 <div className="flex justify-between items-start">
                   <CardTitle className="text-white text-lg">{client.name}</CardTitle>
-                  <Badge className={`${getHealthColor(client.health_status)} text-white`}>
-                    {client.health_status.replace('_', ' ')}
+                  <Badge className={`${getHealthColor(client.health_score)} text-white`}>
+                    {getHealthStatus(client.health_score)}
                   </Badge>
                 </div>
               </CardHeader>

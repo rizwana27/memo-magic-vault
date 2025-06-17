@@ -13,7 +13,7 @@ const Projects = () => {
   const { data: projects, isLoading } = useProjects();
   const [searchTerm, setSearchTerm] = useState('');
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status?: string) => {
     switch (status) {
       case 'active': return 'bg-green-500';
       case 'planning': return 'bg-yellow-500';
@@ -25,8 +25,8 @@ const Projects = () => {
   };
 
   const filteredProjects = projects?.filter(project =>
-    project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    project.client?.name?.toLowerCase().includes(searchTerm.toLowerCase())
+    project?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    project?.client?.name?.toLowerCase().includes(searchTerm.toLowerCase())
   ) || [];
 
   return (
@@ -95,7 +95,7 @@ const Projects = () => {
                     <div className="flex justify-between items-start">
                       <CardTitle className="text-white text-lg">{project.name}</CardTitle>
                       <Badge className={`${getStatusColor(project.status)} text-white`}>
-                        {project.status.replace('_', ' ')}
+                        {project.status?.replace('_', ' ') || 'Unknown'}
                       </Badge>
                     </div>
                     <CardDescription className="text-gray-400">
@@ -123,6 +123,22 @@ const Projects = () => {
                 </Card>
               ))}
             </div>
+          )}
+
+          {filteredProjects.length === 0 && !isLoading && (
+            <Card className="bg-gray-800/50 border-gray-700">
+              <CardContent className="p-12 text-center">
+                <Calendar className="w-16 h-16 mx-auto mb-4 text-gray-400 opacity-50" />
+                <h3 className="text-xl font-medium text-white mb-2">No projects found</h3>
+                <p className="text-gray-400 mb-4">
+                  {searchTerm ? 'Try adjusting your search terms' : 'Get started by creating your first project'}
+                </p>
+                <Button className="bg-blue-600 hover:bg-blue-700">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Create Project
+                </Button>
+              </CardContent>
+            </Card>
           )}
         </TabsContent>
 
