@@ -1,7 +1,6 @@
 
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
@@ -22,112 +21,110 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <AuthProvider>
-        <BrowserRouter>
-          <Routes>
-            <Route path="/auth/callback" element={<AuthCallback />} />
-            <Route 
-              path="/" 
-              element={
-                <ProtectedRoute>
-                  <TopNavLayout>
-                    <Dashboard />
-                  </TopNavLayout>
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/projects" 
-              element={
-                <ProtectedRoute>
-                  <TopNavLayout>
-                    <Projects />
-                  </TopNavLayout>
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/clients" 
-              element={
-                <ProtectedRoute>
-                  <TopNavLayout>
-                    <Clients />
-                  </TopNavLayout>
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/team" 
-              element={
-                <ProtectedRoute>
-                  <TopNavLayout>
-                    <Resources />
-                  </TopNavLayout>
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/time-tracking" 
-              element={
-                <ProtectedRoute>
-                  <TopNavLayout>
-                    <Timesheets />
-                  </TopNavLayout>
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/invoices" 
-              element={
-                <ProtectedRoute>
-                  <TopNavLayout>
-                    <Financial />
-                  </TopNavLayout>
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/reports" 
-              element={
-                <ProtectedRoute>
-                  <TopNavLayout>
-                    <Reports />
-                  </TopNavLayout>
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/company" 
-              element={
-                <ProtectedRoute>
-                  <TopNavLayout>
-                    <div className="p-8">
-                      <h1 className="text-2xl font-bold">Company</h1>
-                      <p>Company management page coming soon...</p>
-                    </div>
-                  </TopNavLayout>
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/settings" 
-              element={
-                <ProtectedRoute>
-                  <TopNavLayout>
-                    <Settings />
-                  </TopNavLayout>
-                </ProtectedRoute>
-              } 
-            />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </AuthProvider>
-    </TooltipProvider>
+    <Toaster />
+    <Sonner />
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/auth/callback" element={<AuthCallback />} />
+          <Route 
+            path="/" 
+            element={
+              <ProtectedRoute>
+                <TopNavLayout>
+                  <Dashboard />
+                </TopNavLayout>
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/projects" 
+            element={
+              <ProtectedRoute>
+                <TopNavLayout>
+                  <Projects />
+                </TopNavLayout>
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/clients" 
+            element={
+              <ProtectedRoute>
+                <TopNavLayout>
+                  <Clients />
+                </TopNavLayout>
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/team" 
+            element={
+              <ProtectedRoute>
+                <TopNavLayout>
+                  <Resources />
+                </TopNavLayout>
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/time-tracking" 
+            element={
+              <ProtectedRoute>
+                <TopNavLayout>
+                  <Timesheets />
+                </TopNavLayout>
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/invoices" 
+            element={
+              <ProtectedRoute>
+                <TopNavLayout>
+                  <Financial />
+                </TopNavLayout>
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/reports" 
+            element={
+              <ProtectedRoute>
+                <TopNavLayout>
+                  <Reports />
+                </TopNavLayout>
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/company" 
+            element={
+              <ProtectedRoute>
+                <TopNavLayout>
+                  <div className="p-8">
+                    <h1 className="text-2xl font-bold">Company</h1>
+                    <p>Company management page coming soon...</p>
+                  </div>
+                </TopNavLayout>
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/settings" 
+            element={
+              <ProtectedRoute>
+                <TopNavLayout>
+                  <Settings />
+                </TopNavLayout>
+              </ProtectedRoute>
+            } 
+          />
+          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
   </QueryClientProvider>
 );
 
