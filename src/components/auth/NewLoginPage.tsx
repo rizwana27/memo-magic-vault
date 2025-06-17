@@ -14,36 +14,17 @@ const NewLoginPage = () => {
   const [isAuthenticating, setIsAuthenticating] = useState(false);
 
   const handleMicrosoftAuth = async () => {
-    if (!email.trim()) {
-      toast({
-        title: "Email Required",
-        description: "Please enter your email address to continue.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Basic email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      toast({
-        title: "Invalid Email",
-        description: "Please enter a valid email address.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     try {
       setIsAuthenticating(true);
-      console.log('Initiating Microsoft authentication for:', email);
+      console.log('Initiating Microsoft authentication for:', email || 'any account');
       
       toast({
         title: "Redirecting to Microsoft",
-        description: "You will be redirected to Microsoft to complete authentication.",
+        description: "You will be redirected to Microsoft to select your account and authenticate.",
       });
       
-      await signInWithMicrosoft(email);
+      // Pass email as login hint if provided, but don't require it
+      await signInWithMicrosoft(email || undefined);
     } catch (error) {
       console.error('Authentication failed:', error);
       toast({
@@ -75,48 +56,51 @@ const NewLoginPage = () => {
             <div className="w-16 h-16 bg-blue-600/20 rounded-full flex items-center justify-center mx-auto mb-4">
               <Shield className="h-8 w-8 text-blue-400" />
             </div>
-            <h2 className="text-2xl font-semibold text-white mb-2">Welcome Back</h2>
-            <p className="text-gray-400 mb-4">Enter your email to sign in with Microsoft</p>
+            <h2 className="text-2xl font-semibold text-white mb-2">Welcome to PSA Portal</h2>
+            <p className="text-gray-400 mb-4">Sign in with your Microsoft account</p>
             <p className="text-sm text-gray-500">
-              You'll receive a verification request on your Microsoft Authenticator
+              Supports all Microsoft accounts including Gmail, Outlook, and organizational accounts
             </p>
           </div>
 
           <div className="space-y-6">
-            {/* Email Input */}
+            {/* Email Input - Optional */}
             <div className="space-y-2">
               <Label htmlFor="email" className="text-gray-300">
-                Email Address
+                Email Address (Optional)
               </Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                 <Input
                   id="email"
                   type="email"
-                  placeholder="Enter your email address"
+                  placeholder="Enter your email (optional)"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="pl-10 bg-gray-700/50 border-gray-600 text-white placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500"
                   disabled={loading || isAuthenticating}
                 />
               </div>
+              <p className="text-xs text-gray-500">
+                Leave empty to choose from available accounts during sign-in
+              </p>
             </div>
 
             {/* Sign In Button */}
             <Button
               onClick={handleMicrosoftAuth}
-              disabled={loading || isAuthenticating || !email.trim()}
+              disabled={loading || isAuthenticating}
               className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium py-3 px-4 rounded-lg transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
             >
               {loading || isAuthenticating ? (
                 <>
                   <Loader2 className="w-5 h-5 mr-3 animate-spin" />
-                  Authenticating...
+                  Redirecting to Microsoft...
                 </>
               ) : (
                 <>
                   <Shield className="w-5 h-5 mr-3" />
-                  Complete Authentication
+                  Sign in with Microsoft
                 </>
               )}
             </Button>
