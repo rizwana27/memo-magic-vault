@@ -34,11 +34,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
+        
+        // Log user details for debugging
+        if (session?.user) {
+          console.log('User authenticated:', session.user.email);
+          console.log('User metadata:', session.user.user_metadata);
+        }
       }
     );
 
     // Check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('Initial session check:', session);
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
@@ -49,20 +56,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signInWithMicrosoft = async () => {
     try {
+      setLoading(true);
+      console.log('Starting Microsoft sign in...');
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'azure',
         options: {
           redirectTo: `${window.location.origin}/`
         }
       });
-      if (error) throw error;
+      if (error) {
+        console.error('Microsoft sign in error:', error);
+        throw error;
+      }
     } catch (error) {
       console.error('Error signing in with Microsoft:', error);
+      setLoading(false);
     }
   };
 
   const signOut = async () => {
     try {
+      console.log('Signing out...');
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
     } catch (error) {
