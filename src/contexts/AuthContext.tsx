@@ -61,7 +61,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'azure',
         options: {
-          redirectTo: `${window.location.origin}/`
+          redirectTo: `${window.location.origin}/`,
+          queryParams: {
+            prompt: 'select_account', // Force account selection
+            access_type: 'offline'
+          },
+          scopes: 'openid email profile'
         }
       });
       if (error) {
