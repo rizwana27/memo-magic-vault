@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
@@ -19,8 +18,7 @@ import {
   ChevronDown,
   Bell,
   User,
-  Palette,
-  Notification
+  Palette
 } from 'lucide-react';
 
 interface TopNavLayoutProps {

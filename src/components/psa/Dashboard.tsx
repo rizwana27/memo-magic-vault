@@ -52,9 +52,9 @@ const Dashboard = () => {
       change: '+2 this month', 
       changeType: 'positive',
       icon: FolderOpen, 
-      color: 'text-teal-400',
-      bgColor: 'from-teal-500/10 to-teal-600/5',
-      borderColor: 'border-teal-500/20'
+      color: 'text-teal-600',
+      bgColor: 'from-teal-500/20 to-teal-600/10',
+      borderColor: 'border-teal-500/30'
     },
     { 
       title: 'Total Clients', 
@@ -62,9 +62,9 @@ const Dashboard = () => {
       change: '+5 this month', 
       changeType: 'positive',
       icon: Users, 
-      color: 'text-emerald-400',
-      bgColor: 'from-emerald-500/10 to-emerald-600/5',
-      borderColor: 'border-emerald-500/20'
+      color: 'text-emerald-600',
+      bgColor: 'from-emerald-500/20 to-emerald-600/10',
+      borderColor: 'border-emerald-500/30'
     },
     { 
       title: 'Billable Hours', 
@@ -72,9 +72,9 @@ const Dashboard = () => {
       change: '+12% this month', 
       changeType: 'positive',
       icon: Clock, 
-      color: 'text-purple-400',
-      bgColor: 'from-purple-500/10 to-purple-600/5',
-      borderColor: 'border-purple-500/20'
+      color: 'text-purple-600',
+      bgColor: 'from-purple-500/20 to-purple-600/10',
+      borderColor: 'border-purple-500/30'
     },
     { 
       title: 'Revenue', 
@@ -82,9 +82,9 @@ const Dashboard = () => {
       change: '+8% this month', 
       changeType: 'positive',
       icon: DollarSign, 
-      color: 'text-amber-400',
-      bgColor: 'from-amber-500/10 to-amber-600/5',
-      borderColor: 'border-amber-500/20'
+      color: 'text-amber-600',
+      bgColor: 'from-amber-500/20 to-amber-600/10',
+      borderColor: 'border-amber-500/30'
     }
   ];
 
@@ -125,25 +125,25 @@ const Dashboard = () => {
         </CardContent>
       </Card>
 
-      {/* Enhanced Stats Cards */}
+      {/* Enhanced Stats Cards - Fixed contrast */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {stats.map((stat, index) => (
-          <Card key={index} className={`bg-gradient-to-br ${stat.bgColor} border ${stat.borderColor} rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 backdrop-blur-sm`}>
+          <Card key={index} className={`bg-gradient-to-br ${stat.bgColor} border ${stat.borderColor} rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 backdrop-blur-sm bg-white/95`}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-gray-300">{stat.title}</CardTitle>
-              <div className={`p-2 rounded-xl bg-gray-800/50 ${stat.color}`}>
+              <CardTitle className="text-sm font-medium text-gray-700">{stat.title}</CardTitle>
+              <div className={`p-2 rounded-xl bg-white/80 ${stat.color}`}>
                 <stat.icon className="h-5 w-5" />
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-white mb-1">{stat.value}</div>
+              <div className="text-3xl font-bold text-gray-900 mb-1">{stat.value}</div>
               <div className="flex items-center space-x-1">
                 {stat.changeType === 'positive' ? (
-                  <ArrowUpRight className="h-4 w-4 text-emerald-400" />
+                  <ArrowUpRight className="h-4 w-4 text-emerald-600" />
                 ) : (
-                  <ArrowDownRight className="h-4 w-4 text-red-400" />
+                  <ArrowDownRight className="h-4 w-4 text-red-600" />
                 )}
-                <p className={`text-sm font-medium ${stat.changeType === 'positive' ? 'text-emerald-400' : 'text-red-400'}`}>
+                <p className={`text-sm font-medium ${stat.changeType === 'positive' ? 'text-emerald-600' : 'text-red-600'}`}>
                   {stat.change}
                 </p>
               </div>
