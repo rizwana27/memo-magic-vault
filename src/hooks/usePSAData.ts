@@ -1,7 +1,6 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Client, Project, Task, Timesheet, Invoice, Expense, Vendor } from '@/types/psa';
 
 export const usePSAData = () => {
   const queryClient = useQueryClient();
@@ -12,12 +11,12 @@ export const usePSAData = () => {
       queryKey: ['clients'],
       queryFn: async () => {
         const { data, error } = await supabase
-          .from('clients')
+          .from('clients' as any)
           .select('*')
           .order('created_at', { ascending: false });
         
         if (error) throw error;
-        return data as Client[];
+        return data || [];
       },
     });
   };
@@ -28,7 +27,7 @@ export const usePSAData = () => {
       queryKey: ['projects'],
       queryFn: async () => {
         const { data, error } = await supabase
-          .from('projects')
+          .from('projects' as any)
           .select(`
             *,
             client:clients(*)
@@ -36,7 +35,7 @@ export const usePSAData = () => {
           .order('created_at', { ascending: false });
         
         if (error) throw error;
-        return data as Project[];
+        return data || [];
       },
     });
   };
@@ -47,7 +46,7 @@ export const usePSAData = () => {
       queryKey: ['tasks'],
       queryFn: async () => {
         const { data, error } = await supabase
-          .from('tasks')
+          .from('tasks' as any)
           .select(`
             *,
             project:projects(*, client:clients(*))
@@ -55,7 +54,7 @@ export const usePSAData = () => {
           .order('created_at', { ascending: false });
         
         if (error) throw error;
-        return data as Task[];
+        return data || [];
       },
     });
   };
@@ -66,7 +65,7 @@ export const usePSAData = () => {
       queryKey: ['timesheets'],
       queryFn: async () => {
         const { data, error } = await supabase
-          .from('timesheets')
+          .from('timesheets' as any)
           .select(`
             *,
             project:projects(*),
@@ -75,7 +74,7 @@ export const usePSAData = () => {
           .order('date', { ascending: false });
         
         if (error) throw error;
-        return data as Timesheet[];
+        return data || [];
       },
     });
   };
@@ -86,7 +85,7 @@ export const usePSAData = () => {
       queryKey: ['invoices'],
       queryFn: async () => {
         const { data, error } = await supabase
-          .from('invoices')
+          .from('invoices' as any)
           .select(`
             *,
             client:clients(*),
@@ -95,7 +94,7 @@ export const usePSAData = () => {
           .order('created_at', { ascending: false });
         
         if (error) throw error;
-        return data as Invoice[];
+        return data || [];
       },
     });
   };
@@ -106,15 +105,15 @@ export const usePSAData = () => {
       queryKey: ['expenses'],
       queryFn: async () => {
         const { data, error } = await supabase
-          .from('expenses')
+          .from('expenses' as any)
           .select(`
             *,
             project:projects(*)
           `)
-          .order('date', { ascending: false });
+          .order('expense_date', { ascending: false });
         
         if (error) throw error;
-        return data as Expense[];
+        return data || [];
       },
     });
   };
@@ -125,21 +124,60 @@ export const usePSAData = () => {
       queryKey: ['vendors'],
       queryFn: async () => {
         const { data, error } = await supabase
-          .from('vendors')
+          .from('vendors' as any)
           .select('*')
           .order('created_at', { ascending: false });
         
         if (error) throw error;
-        return data as Vendor[];
+        return data || [];
+      },
+    });
+  };
+
+  // Opportunities
+  const useOpportunities = () => {
+    return useQuery({
+      queryKey: ['opportunities'],
+      queryFn: async () => {
+        const { data, error } = await supabase
+          .from('opportunities' as any)
+          .select(`
+            *,
+            client:clients(*)
+          `)
+          .order('created_at', { ascending: false });
+        
+        if (error) throw error;
+        return data || [];
+      },
+    });
+  };
+
+  // Purchase Orders
+  const usePurchaseOrders = () => {
+    return useQuery({
+      queryKey: ['purchase_orders'],
+      queryFn: async () => {
+        const { data, error } = await supabase
+          .from('purchase_orders' as any)
+          .select(`
+            *,
+            vendor:vendors(*),
+            project:projects(*)
+          `)
+          .order('created_at', { ascending: false });
+        
+        if (error) throw error;
+        return data || [];
       },
     });
   };
 
   // Mutations
   const createClient = useMutation({
-    mutationFn: async (client: Partial<Client>) => {
+    mutationFn: async (client: any) => {
       const { data, error } = await supabase
-        .from('clients')
+        .from('clients' as any)
         .insert([client])
         .select()
         .single();
@@ -153,10 +191,11 @@ export const usePSAData = () => {
   });
 
   const createProject = useMutation({
-    mutationFn: async (project: Partial<Project>) => {
+    mutationFn: async (project: any) => {
+      const user = await supabase.auth.getUser();
       const { data, error } = await supabase
-        .from('projects')
-        .insert([{ ...project, created_by: (await supabase.auth.getUser()).data.user?.id }])
+        .from('projects' as any)
+        .insert([{ ...project, project_manager_id: user.data.user?.id }])
         .select()
         .single();
       
@@ -169,10 +208,11 @@ export const usePSAData = () => {
   });
 
   const createTimesheet = useMutation({
-    mutationFn: async (timesheet: Partial<Timesheet>) => {
+    mutationFn: async (timesheet: any) => {
+      const user = await supabase.auth.getUser();
       const { data, error } = await supabase
-        .from('timesheets')
-        .insert([{ ...timesheet, user_id: (await supabase.auth.getUser()).data.user?.id }])
+        .from('timesheets' as any)
+        .insert([{ ...timesheet, user_id: user.data.user?.id }])
         .select()
         .single();
       
@@ -184,6 +224,40 @@ export const usePSAData = () => {
     },
   });
 
+  const createInvoice = useMutation({
+    mutationFn: async (invoice: any) => {
+      const user = await supabase.auth.getUser();
+      const { data, error } = await supabase
+        .from('invoices' as any)
+        .insert([{ ...invoice, created_by: user.data.user?.id }])
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
+    },
+  });
+
+  const createExpense = useMutation({
+    mutationFn: async (expense: any) => {
+      const user = await supabase.auth.getUser();
+      const { data, error } = await supabase
+        .from('expenses' as any)
+        .insert([{ ...expense, user_id: user.data.user?.id }])
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['expenses'] });
+    },
+  });
+
   return {
     useClients,
     useProjects,
@@ -192,8 +266,12 @@ export const usePSAData = () => {
     useInvoices,
     useExpenses,
     useVendors,
+    useOpportunities,
+    usePurchaseOrders,
     createClient,
     createProject,
     createTimesheet,
+    createInvoice,
+    createExpense,
   };
 };
