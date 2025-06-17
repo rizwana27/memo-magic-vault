@@ -7,7 +7,7 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
-  signInWithMicrosoft: () => Promise<void>;
+  signInWithMicrosoft: (email?: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -54,20 +54,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => subscription.unsubscribe();
   }, []);
 
-  const signInWithMicrosoft = async () => {
+  const signInWithMicrosoft = async (email?: string) => {
     try {
       setLoading(true);
-      console.log('Starting Microsoft sign in...');
+      console.log('Starting Microsoft sign in for email:', email);
       
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'azure',
         options: {
           redirectTo: `${window.location.origin}/`,
           queryParams: {
-            prompt: 'select_account', // Force account selection
-            access_type: 'offline'
+            // Force account selection and prompt for authentication
+            prompt: 'select_account login',
+            access_type: 'offline',
+            // If email is provided, use it as login hint
+            ...(email && { login_hint: email })
           },
-          scopes: 'openid email profile'
+          scopes: 'openid email profile User.Read'
         }
       });
       
