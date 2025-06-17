@@ -2,7 +2,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
-import { Building2, Microsoft } from 'lucide-react';
+import { Building2, LogIn } from 'lucide-react';
 
 const LoginPage = () => {
   const { signInWithMicrosoft, loading } = useAuth();
@@ -34,7 +34,7 @@ const LoginPage = () => {
             disabled={loading}
             className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium py-3 px-4 rounded-lg transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
           >
-            <Microsoft className="w-5 h-5 mr-3" />
+            <LogIn className="w-5 h-5 mr-3" />
             {loading ? 'Connecting...' : 'Continue with Microsoft'}
           </Button>
 
