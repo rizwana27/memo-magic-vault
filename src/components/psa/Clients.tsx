@@ -1,16 +1,18 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Dialog } from '@/components/ui/dialog';
 import { Plus, Search, Filter, Globe, Mail, Phone, Building } from 'lucide-react';
 import { usePSAData } from '@/hooks/usePSAData';
+import NewClientForm from './forms/NewClientForm';
 
 const Clients = () => {
   const { useClients } = usePSAData();
   const { data: clients, isLoading } = useClients();
   const [searchTerm, setSearchTerm] = useState('');
+  const [showNewClientModal, setShowNewClientModal] = useState(false);
 
   const getHealthColor = (healthScore?: number) => {
     if (!healthScore) return 'bg-gray-500';
@@ -31,6 +33,12 @@ const Clients = () => {
     client?.email?.toLowerCase().includes(searchTerm.toLowerCase())
   ) || [];
 
+  const handleNewClient = (data: any) => {
+    console.log('Creating new client:', data);
+    setShowNewClientModal(false);
+    // Here you would typically call an API to create the client
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -39,7 +47,10 @@ const Clients = () => {
           <h1 className="text-3xl font-bold text-white">Clients</h1>
           <p className="text-gray-400">Manage your client relationships</p>
         </div>
-        <Button className="bg-blue-600 hover:bg-blue-700">
+        <Button 
+          className="bg-blue-600 hover:bg-blue-700"
+          onClick={() => setShowNewClientModal(true)}
+        >
           <Plus className="w-4 h-4 mr-2" />
           New Client
         </Button>
@@ -185,6 +196,14 @@ const Clients = () => {
           </CardContent>
         </Card>
       )}
+
+      {/* New Client Modal */}
+      <Dialog open={showNewClientModal} onOpenChange={setShowNewClientModal}>
+        <NewClientForm
+          onSubmit={handleNewClient}
+          onCancel={() => setShowNewClientModal(false)}
+        />
+      </Dialog>
     </div>
   );
 };

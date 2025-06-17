@@ -1,17 +1,19 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog } from '@/components/ui/dialog';
 import { Plus, Search, Filter, Calendar, Users, DollarSign } from 'lucide-react';
 import { usePSAData } from '@/hooks/usePSAData';
+import NewProjectForm from './forms/NewProjectForm';
 
 const Projects = () => {
   const { useProjects } = usePSAData();
   const { data: projects, isLoading } = useProjects();
   const [searchTerm, setSearchTerm] = useState('');
+  const [showNewProjectModal, setShowNewProjectModal] = useState(false);
 
   const getStatusColor = (status?: string) => {
     switch (status) {
@@ -29,6 +31,12 @@ const Projects = () => {
     project?.client?.name?.toLowerCase().includes(searchTerm.toLowerCase())
   ) || [];
 
+  const handleNewProject = (data: any) => {
+    console.log('Creating new project:', data);
+    setShowNewProjectModal(false);
+    // Here you would typically call an API to create the project
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -37,7 +45,10 @@ const Projects = () => {
           <h1 className="text-3xl font-bold text-white">Projects</h1>
           <p className="text-gray-400">Manage your project portfolio</p>
         </div>
-        <Button className="bg-blue-600 hover:bg-blue-700">
+        <Button 
+          className="bg-blue-600 hover:bg-blue-700"
+          onClick={() => setShowNewProjectModal(true)}
+        >
           <Plus className="w-4 h-4 mr-2" />
           New Project
         </Button>
@@ -206,6 +217,14 @@ const Projects = () => {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* New Project Modal */}
+      <Dialog open={showNewProjectModal} onOpenChange={setShowNewProjectModal}>
+        <NewProjectForm
+          onSubmit={handleNewProject}
+          onCancel={() => setShowNewProjectModal(false)}
+        />
+      </Dialog>
     </div>
   );
 };
