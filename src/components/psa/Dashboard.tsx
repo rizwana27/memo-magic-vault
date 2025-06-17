@@ -97,8 +97,8 @@ const Dashboard = () => {
         <p className="text-gray-300 text-lg">Welcome to your professional services overview</p>
       </div>
 
-      {/* Quick Action Panel */}
-      <Card className="bg-gray-800 border-gray-700 rounded-2xl shadow-2xl">
+      {/* Quick Action Panel - Updated with transparent background */}
+      <Card className="bg-gray-800/40 backdrop-blur-md border-gray-700/50 rounded-2xl shadow-2xl">
         <CardHeader>
           <CardTitle className="text-white text-xl flex items-center space-x-2">
             <Plus className="h-5 w-5 text-teal-400" />
@@ -124,7 +124,7 @@ const Dashboard = () => {
         </CardContent>
       </Card>
 
-      {/* Enhanced Stats Cards - Fixed for better contrast */}
+      {/* Enhanced Stats Cards - Keep white background */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {stats.map((stat, index) => (
           <Card key={index} className="bg-white border-gray-200 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105">
@@ -151,10 +151,10 @@ const Dashboard = () => {
         ))}
       </div>
 
-      {/* Enhanced Charts Grid */}
+      {/* Enhanced Charts Grid - Updated with transparent background */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Project Status Chart */}
-        <Card className="bg-gray-800 border-gray-700 rounded-2xl shadow-2xl">
+        <Card className="bg-gray-800/40 backdrop-blur-md border-gray-700/50 rounded-2xl shadow-2xl">
           <CardHeader>
             <div className="flex items-center space-x-2">
               <PieChartIcon className="h-5 w-5 text-purple-400" />
@@ -192,7 +192,7 @@ const Dashboard = () => {
         </Card>
 
         {/* Revenue vs Expenses */}
-        <Card className="bg-gray-800 border-gray-700 rounded-2xl shadow-2xl">
+        <Card className="bg-gray-800/40 backdrop-blur-md border-gray-700/50 rounded-2xl shadow-2xl">
           <CardHeader>
             <div className="flex items-center space-x-2">
               <BarChart3 className="h-5 w-5 text-teal-400" />
@@ -222,8 +222,8 @@ const Dashboard = () => {
         </Card>
       </div>
 
-      {/* Enhanced Resource Utilization */}
-      <Card className="bg-gray-800 border-gray-700 rounded-2xl shadow-2xl">
+      {/* Enhanced Resource Utilization - Updated with transparent background */}
+      <Card className="bg-gray-800/40 backdrop-blur-md border-gray-700/50 rounded-2xl shadow-2xl">
         <CardHeader>
           <div className="flex items-center space-x-2">
             <Activity className="h-5 w-5 text-emerald-400" />
@@ -251,8 +251,8 @@ const Dashboard = () => {
         </CardContent>
       </Card>
 
-      {/* Enhanced Recent Activity */}
-      <Card className="bg-gray-800 border-gray-700 rounded-2xl shadow-2xl">
+      {/* Enhanced Recent Activity - Updated with transparent background */}
+      <Card className="bg-gray-800/40 backdrop-blur-md border-gray-700/50 rounded-2xl shadow-2xl">
         <CardHeader>
           <div className="flex items-center space-x-2">
             <Clock className="h-5 w-5 text-amber-400" />
@@ -270,7 +270,7 @@ const Dashboard = () => {
               { activity: 'Timesheet approval pending for 5 team members', time: '1 day ago', type: 'warning' },
               { activity: 'Vendor contract renewal due in 30 days', time: '1 day ago', type: 'error' }
             ].map((item, index) => (
-              <div key={index} className="flex items-start space-x-4 p-4 bg-gray-700 rounded-xl hover:bg-gray-600 transition-all duration-200">
+              <div key={index} className="flex items-start space-x-4 p-4 bg-gray-700/40 backdrop-blur-sm rounded-xl hover:bg-gray-600/40 transition-all duration-200">
                 <div className={`w-3 h-3 rounded-full mt-2 flex-shrink-0 ${
                   item.type === 'success' ? 'bg-emerald-500' :
                   item.type === 'warning' ? 'bg-amber-500' :
