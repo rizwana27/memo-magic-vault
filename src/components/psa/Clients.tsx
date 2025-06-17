@@ -12,7 +12,6 @@ const Clients = () => {
   const { data: clients, isLoading } = useClients();
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Mock function to get health color since we don't have health_status in the current data
   const getHealthColor = (healthScore?: number) => {
     if (!healthScore) return 'bg-gray-500';
     if (healthScore >= 8) return 'bg-green-500';
