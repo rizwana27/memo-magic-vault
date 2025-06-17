@@ -99,38 +99,6 @@
   html {
     @apply dark;
   }
-
-  /* Override button styles for better contrast in dark theme */
-  button {
-    @apply text-white;
-  }
-
-  /* Specific button variant overrides */
-  .btn-primary, 
-  button[data-variant="default"],
-  button:not([data-variant]) {
-    @apply bg-blue-600 text-white hover:bg-blue-700 border-blue-600;
-  }
-
-  .btn-secondary,
-  button[data-variant="secondary"] {
-    @apply bg-gray-700 text-white hover:bg-gray-600 border-gray-600;
-  }
-
-  .btn-outline,
-  button[data-variant="outline"] {
-    @apply bg-transparent border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white;
-  }
-
-  .btn-destructive,
-  button[data-variant="destructive"] {
-    @apply bg-red-600 text-white hover:bg-red-700 border-red-600;
-  }
-
-  .btn-ghost,
-  button[data-variant="ghost"] {
-    @apply bg-transparent text-gray-300 hover:bg-gray-700 hover:text-white border-transparent;
-  }
 }
 
 /* Custom animations and transitions */
@@ -265,30 +233,5 @@
 
 /* Form elements styling */
 input, textarea, select {
-  @apply bg-gray-800/50 border-gray-600 text-white placeholder-gray-400;
-}
-
-input:focus, textarea:focus, select:focus {
-  @apply border-blue-500 ring-blue-500/20;
-}
-
-/* Specific component overrides */
-.shadcn-button {
-  @apply bg-blue-600 text-white hover:bg-blue-700 border-blue-600;
-}
-
-.shadcn-button[data-variant="outline"] {
-  @apply bg-transparent border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white;
-}
-
-.shadcn-button[data-variant="secondary"] {
-  @apply bg-gray-700 text-white hover:bg-gray-600 border-gray-600;
-}
-
-.shadcn-button[data-variant="destructive"] {
-  @apply bg-red-600 text-white hover:bg-red-700 border-red-600;
-}
-
-.shadcn-button[data-variant="ghost"] {
-  @apply bg-transparent text-gray-300 hover:bg-gray-700 hover:text-white border-transparent;
+  @apply bg-gray-800/50 border-gray-600 text-white placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500/20;
 }
