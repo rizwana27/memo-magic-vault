@@ -46,53 +46,55 @@ const TopNavLayout: React.FC<TopNavLayoutProps> = ({ children, activeTab, onTabC
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-gray-900 to-black flex flex-col">
       {/* Top Navigation Bar - Fixed height */}
       <nav className="bg-gray-800/95 backdrop-blur-sm border-b border-gray-700/50 shadow-xl sticky top-0 z-50 flex-shrink-0">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
+        <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16 gap-4">
             
             {/* Logo */}
-            <div className="flex items-center space-x-3 flex-shrink-0">
+            <div className="flex items-center space-x-3 flex-shrink-0 min-w-0">
               <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
                 <LayoutDashboard className="h-4 w-4 text-white" />
               </div>
               <div className="hidden sm:block">
-                <h1 className="text-xl font-bold text-white">PSA Platform</h1>
+                <h1 className="text-xl font-bold text-white whitespace-nowrap">PSA Platform</h1>
               </div>
             </div>
 
-            {/* Desktop Navigation */}
-            <div className="hidden lg:flex items-center space-x-1 flex-1 justify-center max-w-4xl">
-              {menuItems.map((item) => (
-                <button
-                  key={item.key}
-                  className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-all duration-200 font-medium text-sm ${
-                    activeTab === item.key
-                      ? 'bg-gradient-to-r from-blue-600/20 to-purple-600/20 text-blue-400 border border-blue-500/30 shadow-lg'
-                      : 'text-gray-300 hover:bg-gray-700/50 hover:text-white hover:shadow-md'
-                  }`}
-                  onClick={() => onTabChange(item.key)}
-                >
-                  <item.icon className="h-4 w-4" />
-                  <span>{item.label}</span>
-                </button>
-              ))}
+            {/* Desktop Navigation - with better spacing and overflow handling */}
+            <div className="hidden lg:flex items-center space-x-1 flex-1 justify-center min-w-0 px-4">
+              <div className="flex items-center space-x-1 overflow-x-auto scrollbar-hide max-w-full">
+                {menuItems.map((item) => (
+                  <button
+                    key={item.key}
+                    className={`flex items-center space-x-1.5 px-2.5 py-2 rounded-lg transition-all duration-200 font-medium text-sm whitespace-nowrap flex-shrink-0 ${
+                      activeTab === item.key
+                        ? 'bg-gradient-to-r from-blue-600/20 to-purple-600/20 text-blue-400 border border-blue-500/30 shadow-lg'
+                        : 'text-gray-300 hover:bg-gray-700/50 hover:text-white hover:shadow-md'
+                    }`}
+                    onClick={() => onTabChange(item.key)}
+                  >
+                    <item.icon className="h-4 w-4 flex-shrink-0" />
+                    <span className="hidden xl:block">{item.label}</span>
+                  </button>
+                ))}
+              </div>
             </div>
 
-            {/* User Profile & Mobile Menu */}
-            <div className="flex items-center space-x-4 flex-shrink-0">
+            {/* User Profile & Mobile Menu - with proper spacing */}
+            <div className="flex items-center space-x-3 flex-shrink-0 min-w-0">
               
               {/* User Profile Dropdown */}
               <div className="relative">
                 <button
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
-                  className="flex items-center space-x-2 px-3 py-2 rounded-lg bg-gray-700/50 hover:bg-gray-700 transition-all duration-200 border border-gray-600/50"
+                  className="flex items-center space-x-2 px-3 py-2 rounded-lg bg-gray-700/50 hover:bg-gray-700 transition-all duration-200 border border-gray-600/50 min-w-0"
                 >
                   <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
                     <span className="text-white text-sm font-medium">
                       {user?.email?.charAt(0).toUpperCase()}
                     </span>
                   </div>
-                  <div className="hidden sm:block text-left min-w-0">
-                    <p className="text-sm font-medium text-white truncate max-w-32">
+                  <div className="hidden sm:block text-left min-w-0 max-w-32">
+                    <p className="text-sm font-medium text-white truncate">
                       {user?.user_metadata?.full_name || user?.email}
                     </p>
                   </div>
@@ -128,7 +130,7 @@ const TopNavLayout: React.FC<TopNavLayoutProps> = ({ children, activeTab, onTabC
                   onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                   variant="outline"
                   size="icon"
-                  className="bg-gray-700/50 border-gray-600 text-white hover:bg-gray-700 backdrop-blur-sm"
+                  className="bg-gray-700/50 border-gray-600 text-white hover:bg-gray-700 backdrop-blur-sm flex-shrink-0"
                 >
                   {mobileMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
                 </Button>
