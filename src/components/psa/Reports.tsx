@@ -22,10 +22,13 @@ import {
   ChevronUp
 } from 'lucide-react';
 import { LineChart, Line, BarChart, Bar, PieChart as RechartsPieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import ExportModal from './ExportModal';
+import { generatePDFReport, generateExcelReport } from '@/utils/reportExports';
 
 const Reports = () => {
   const [filterPanelOpen, setFilterPanelOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('executive');
+  const [showExportModal, setShowExportModal] = useState(false);
 
   // Mock data for charts
   const revenueData = [
@@ -86,8 +89,48 @@ const Reports = () => {
     }
   ];
 
+  const getReportData = () => {
+    switch (activeTab) {
+      case 'executive':
+        return {
+          title: 'Executive Dashboard Report',
+          data: { kpiCards, revenueData, projectData }
+        };
+      case 'financial':
+        return {
+          title: 'Financial Analytics Report',
+          data: revenueData
+        };
+      case 'projects':
+        return {
+          title: 'Project Analytics Report',
+          data: projectData
+        };
+      case 'resources':
+        return {
+          title: 'Resource Utilization Report',
+          data: utilizationData
+        };
+      default:
+        return {
+          title: `${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} Report`,
+          data: []
+        };
+    }
+  };
+
+  const handleExport = async (format: 'pdf' | 'excel') => {
+    const reportData = getReportData();
+    
+    if (format === 'pdf') {
+      await generatePDFReport(reportData.title, reportData.data);
+    } else {
+      await generateExcelReport(reportData.title, reportData.data);
+    }
+  };
+
   const FilterPanel = () => (
-    <Card className={`bg-gray-800/50 border-gray-700 transition-all duration-300 ${filterPanelOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+    <Card className={`bg-white/10 backdrop-blur-md border-white/20 transition-all duration-300 ${filterPanelOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
       <CardHeader>
         <CardTitle className="text-white text-sm">Filters</CardTitle>
       </CardHeader>
@@ -152,7 +195,7 @@ const Reports = () => {
   const KPIGrid = () => (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
       {kpiCards.map((kpi, index) => (
-        <Card key={index} className="bg-gray-800/50 border-gray-700">
+        <Card key={index} className="bg-white/10 backdrop-blur-md border-white/20">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -194,7 +237,10 @@ const Reports = () => {
             <Calendar className="h-4 w-4 mr-2" />
             Schedule
           </Button>
-          <Button variant="outline">
+          <Button 
+            variant="outline"
+            onClick={() => setShowExportModal(true)}
+          >
             <Download className="h-4 w-4 mr-2" />
             Export
           </Button>
@@ -208,7 +254,7 @@ const Reports = () => {
       {filterPanelOpen && <FilterPanel />}
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-8 bg-gray-800/50 border border-gray-700">
+        <TabsList className="grid w-full grid-cols-8 bg-white/10 backdrop-blur-md border border-white/20">
           <TabsTrigger value="executive">Executive</TabsTrigger>
           <TabsTrigger value="financial">Financial</TabsTrigger>
           <TabsTrigger value="projects">Projects</TabsTrigger>
@@ -222,7 +268,7 @@ const Reports = () => {
         <TabsContent value="executive" className="space-y-6">
           <KPIGrid />
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card className="bg-gray-800/50 border-gray-700">
+            <Card className="bg-white/10 backdrop-blur-md border-white/20">
               <CardHeader>
                 <CardTitle className="text-white">Revenue vs Expenses</CardTitle>
                 <CardDescription className="text-gray-400">Monthly comparison</CardDescription>
@@ -248,7 +294,7 @@ const Reports = () => {
               </CardContent>
             </Card>
 
-            <Card className="bg-gray-800/50 border-gray-700">
+            <Card className="bg-white/10 backdrop-blur-md border-white/20">
               <CardHeader>
                 <CardTitle className="text-white">Project Status Distribution</CardTitle>
                 <CardDescription className="text-gray-400">Current project health</CardDescription>
@@ -296,7 +342,7 @@ const Reports = () => {
 
         <TabsContent value="financial" className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-            <Card className="bg-gray-800/50 border-gray-700">
+            <Card className="bg-white/10 backdrop-blur-md border-white/20">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
@@ -308,7 +354,7 @@ const Reports = () => {
                 </div>
               </CardContent>
             </Card>
-            <Card className="bg-gray-800/50 border-gray-700">
+            <Card className="bg-white/10 backdrop-blur-md border-white/20">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
@@ -320,7 +366,7 @@ const Reports = () => {
                 </div>
               </CardContent>
             </Card>
-            <Card className="bg-gray-800/50 border-gray-700">
+            <Card className="bg-white/10 backdrop-blur-md border-white/20">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
@@ -349,7 +395,7 @@ const Reports = () => {
         </TabsContent>
 
         <TabsContent value="resources" className="space-y-6">
-          <Card className="bg-gray-800/50 border-gray-700">
+          <Card className="bg-white/10 backdrop-blur-md border-white/20">
             <CardHeader>
               <CardTitle className="text-white">Resource Utilization</CardTitle>
               <CardDescription className="text-gray-400">Current resource capacity and utilization</CardDescription>
@@ -407,6 +453,13 @@ const Reports = () => {
           </div>
         </TabsContent>
       </Tabs>
+
+      <ExportModal
+        open={showExportModal}
+        onOpenChange={setShowExportModal}
+        reportTitle={getReportData().title}
+        onExport={handleExport}
+      />
     </div>
   );
 };
