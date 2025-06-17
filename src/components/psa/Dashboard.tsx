@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -97,14 +98,14 @@ const Dashboard = () => {
         <p className="text-gray-300 text-lg">Welcome to your professional services overview</p>
       </div>
 
-      {/* Quick Action Panel - Updated with much lighter transparent background */}
-      <Card className="bg-gray-800/10 backdrop-blur-md border-gray-700/30 rounded-2xl shadow-2xl">
+      {/* Quick Action Panel - Updated with creamy white background */}
+      <Card className="bg-stone-50/95 backdrop-blur-md border-stone-200/50 rounded-2xl shadow-2xl">
         <CardHeader>
-          <CardTitle className="text-white text-xl flex items-center space-x-2">
-            <Plus className="h-5 w-5 text-teal-400" />
+          <CardTitle className="text-gray-800 text-xl flex items-center space-x-2">
+            <Plus className="h-5 w-5 text-teal-600" />
             <span>Quick Actions</span>
           </CardTitle>
-          <CardDescription className="text-gray-300">Fast access to commonly used features</CardDescription>
+          <CardDescription className="text-gray-600">Fast access to commonly used features</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -151,16 +152,16 @@ const Dashboard = () => {
         ))}
       </div>
 
-      {/* Enhanced Charts Grid - Updated with much lighter transparent background */}
+      {/* Enhanced Charts Grid - Updated with creamy white background */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Project Status Chart */}
-        <Card className="bg-gray-800/10 backdrop-blur-md border-gray-700/30 rounded-2xl shadow-2xl">
+        <Card className="bg-stone-50/95 backdrop-blur-md border-stone-200/50 rounded-2xl shadow-2xl">
           <CardHeader>
             <div className="flex items-center space-x-2">
-              <PieChartIcon className="h-5 w-5 text-purple-400" />
-              <CardTitle className="text-white text-xl">Project Status Distribution</CardTitle>
+              <PieChartIcon className="h-5 w-5 text-purple-600" />
+              <CardTitle className="text-gray-800 text-xl">Project Status Distribution</CardTitle>
             </div>
-            <CardDescription className="text-gray-300">Current project status breakdown</CardDescription>
+            <CardDescription className="text-gray-600">Current project status breakdown</CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={280}>
@@ -180,10 +181,10 @@ const Dashboard = () => {
                 </Pie>
                 <Tooltip 
                   contentStyle={{ 
-                    backgroundColor: '#1f2937', 
-                    border: '1px solid #4b5563',
+                    backgroundColor: '#f9fafb', 
+                    border: '1px solid #e5e7eb',
                     borderRadius: '12px',
-                    color: '#fff'
+                    color: '#374151'
                   }} 
                 />
               </PieChart>
@@ -192,26 +193,26 @@ const Dashboard = () => {
         </Card>
 
         {/* Revenue vs Expenses */}
-        <Card className="bg-gray-800/10 backdrop-blur-md border-gray-700/30 rounded-2xl shadow-2xl">
+        <Card className="bg-stone-50/95 backdrop-blur-md border-stone-200/50 rounded-2xl shadow-2xl">
           <CardHeader>
             <div className="flex items-center space-x-2">
-              <BarChart3 className="h-5 w-5 text-teal-400" />
-              <CardTitle className="text-white text-xl">Revenue vs Expenses</CardTitle>
+              <BarChart3 className="h-5 w-5 text-teal-600" />
+              <CardTitle className="text-gray-800 text-xl">Revenue vs Expenses</CardTitle>
             </div>
-            <CardDescription className="text-gray-300">Monthly financial performance</CardDescription>
+            <CardDescription className="text-gray-600">Monthly financial performance</CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={280}>
               <BarChart data={revenueData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                <XAxis dataKey="month" stroke="#d1d5db" />
-                <YAxis stroke="#d1d5db" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis dataKey="month" stroke="#6b7280" />
+                <YAxis stroke="#6b7280" />
                 <Tooltip 
                   contentStyle={{ 
-                    backgroundColor: '#1f2937', 
-                    border: '1px solid #4b5563',
+                    backgroundColor: '#f9fafb', 
+                    border: '1px solid #e5e7eb',
                     borderRadius: '12px',
-                    color: '#fff'
+                    color: '#374151'
                   }} 
                 />
                 <Bar dataKey="revenue" fill="#14b8a6" name="Revenue" radius={[4, 4, 0, 0]} />
@@ -222,27 +223,27 @@ const Dashboard = () => {
         </Card>
       </div>
 
-      {/* Enhanced Resource Utilization - Updated with much lighter transparent background */}
-      <Card className="bg-gray-800/10 backdrop-blur-md border-gray-700/30 rounded-2xl shadow-2xl">
+      {/* Enhanced Resource Utilization - Updated with creamy white background */}
+      <Card className="bg-stone-50/95 backdrop-blur-md border-stone-200/50 rounded-2xl shadow-2xl">
         <CardHeader>
           <div className="flex items-center space-x-2">
-            <Activity className="h-5 w-5 text-emerald-400" />
-            <CardTitle className="text-white text-xl">Resource Utilization</CardTitle>
+            <Activity className="h-5 w-5 text-emerald-600" />
+            <CardTitle className="text-gray-800 text-xl">Resource Utilization</CardTitle>
           </div>
-          <CardDescription className="text-gray-300">Team member utilization rates</CardDescription>
+          <CardDescription className="text-gray-600">Team member utilization rates</CardDescription>
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={320}>
             <BarChart data={utilizationData} layout="horizontal">
-              <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-              <XAxis type="number" domain={[0, 100]} stroke="#d1d5db" />
-              <YAxis dataKey="name" type="category" stroke="#d1d5db" width={120} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+              <XAxis type="number" domain={[0, 100]} stroke="#6b7280" />
+              <YAxis dataKey="name" type="category" stroke="#6b7280" width={120} />
               <Tooltip 
                 contentStyle={{ 
-                  backgroundColor: '#1f2937', 
-                  border: '1px solid #4b5563',
+                  backgroundColor: '#f9fafb', 
+                  border: '1px solid #e5e7eb',
                   borderRadius: '12px',
-                  color: '#fff'
+                  color: '#374151'
                 }} 
               />
               <Bar dataKey="utilization" fill="#10b981" radius={[0, 6, 6, 0]} />
@@ -251,14 +252,14 @@ const Dashboard = () => {
         </CardContent>
       </Card>
 
-      {/* Enhanced Recent Activity - Updated with much lighter transparent background */}
-      <Card className="bg-gray-800/10 backdrop-blur-md border-gray-700/30 rounded-2xl shadow-2xl">
+      {/* Enhanced Recent Activity - Updated with creamy white background */}
+      <Card className="bg-stone-50/95 backdrop-blur-md border-stone-200/50 rounded-2xl shadow-2xl">
         <CardHeader>
           <div className="flex items-center space-x-2">
-            <Clock className="h-5 w-5 text-amber-400" />
-            <CardTitle className="text-white text-xl">Recent Activity</CardTitle>
+            <Clock className="h-5 w-5 text-amber-600" />
+            <CardTitle className="text-gray-800 text-xl">Recent Activity</CardTitle>
           </div>
-          <CardDescription className="text-gray-300">Latest updates across your projects</CardDescription>
+          <CardDescription className="text-gray-600">Latest updates across your projects</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -270,7 +271,7 @@ const Dashboard = () => {
               { activity: 'Timesheet approval pending for 5 team members', time: '1 day ago', type: 'warning' },
               { activity: 'Vendor contract renewal due in 30 days', time: '1 day ago', type: 'error' }
             ].map((item, index) => (
-              <div key={index} className="flex items-start space-x-4 p-4 bg-gray-700/10 backdrop-blur-sm rounded-xl hover:bg-gray-600/10 transition-all duration-200">
+              <div key={index} className="flex items-start space-x-4 p-4 bg-stone-100/50 backdrop-blur-sm rounded-xl hover:bg-stone-200/50 transition-all duration-200">
                 <div className={`w-3 h-3 rounded-full mt-2 flex-shrink-0 ${
                   item.type === 'success' ? 'bg-emerald-500' :
                   item.type === 'warning' ? 'bg-amber-500' :
@@ -278,8 +279,8 @@ const Dashboard = () => {
                   'bg-teal-500'
                 }`}></div>
                 <div className="flex-1">
-                  <span className="text-white text-sm leading-relaxed font-medium">{item.activity}</span>
-                  <p className="text-xs text-gray-300 mt-1">{item.time}</p>
+                  <span className="text-gray-800 text-sm leading-relaxed font-medium">{item.activity}</span>
+                  <p className="text-xs text-gray-600 mt-1">{item.time}</p>
                 </div>
               </div>
             ))}
