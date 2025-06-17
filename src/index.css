@@ -94,6 +94,43 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  /* Force dark theme for the entire app */
+  html {
+    @apply dark;
+  }
+
+  /* Override button styles for better contrast in dark theme */
+  button {
+    @apply text-white;
+  }
+
+  /* Specific button variant overrides */
+  .btn-primary, 
+  button[data-variant="default"],
+  button:not([data-variant]) {
+    @apply bg-blue-600 text-white hover:bg-blue-700 border-blue-600;
+  }
+
+  .btn-secondary,
+  button[data-variant="secondary"] {
+    @apply bg-gray-700 text-white hover:bg-gray-600 border-gray-600;
+  }
+
+  .btn-outline,
+  button[data-variant="outline"] {
+    @apply bg-transparent border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white;
+  }
+
+  .btn-destructive,
+  button[data-variant="destructive"] {
+    @apply bg-red-600 text-white hover:bg-red-700 border-red-600;
+  }
+
+  .btn-ghost,
+  button[data-variant="ghost"] {
+    @apply bg-transparent text-gray-300 hover:bg-gray-700 hover:text-white border-transparent;
+  }
 }
 
 /* Custom animations and transitions */
@@ -106,6 +143,10 @@
     animation: slideIn 0.3s ease-out;
   }
 
+  .animate-scale-in {
+    animation: scaleIn 0.3s ease-out;
+  }
+
   .hover-lift {
     transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
   }
@@ -113,6 +154,30 @@
   .hover-lift:hover {
     transform: translateY(-2px);
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  }
+
+  .glass-card {
+    @apply bg-gray-800/40 backdrop-blur-md border border-gray-700/50;
+  }
+
+  .gradient-border {
+    position: relative;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(147, 51, 234, 0.1));
+    border: 1px solid transparent;
+    background-clip: padding-box;
+  }
+
+  .gradient-border::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: -1;
+    margin: -1px;
+    border-radius: inherit;
+    background: linear-gradient(135deg, #3b82f6, #9333ea);
   }
 }
 
@@ -135,6 +200,17 @@
   to {
     opacity: 1;
     transform: translateX(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
   }
 }
 
@@ -185,4 +261,34 @@
 
 .status-info {
   @apply bg-blue-500/20 text-blue-400 border border-blue-500/30;
+}
+
+/* Form elements styling */
+input, textarea, select {
+  @apply bg-gray-800/50 border-gray-600 text-white placeholder-gray-400;
+}
+
+input:focus, textarea:focus, select:focus {
+  @apply border-blue-500 ring-blue-500/20;
+}
+
+/* Specific component overrides */
+.shadcn-button {
+  @apply bg-blue-600 text-white hover:bg-blue-700 border-blue-600;
+}
+
+.shadcn-button[data-variant="outline"] {
+  @apply bg-transparent border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white;
+}
+
+.shadcn-button[data-variant="secondary"] {
+  @apply bg-gray-700 text-white hover:bg-gray-600 border-gray-600;
+}
+
+.shadcn-button[data-variant="destructive"] {
+  @apply bg-red-600 text-white hover:bg-red-700 border-red-600;
+}
+
+.shadcn-button[data-variant="ghost"] {
+  @apply bg-transparent text-gray-300 hover:bg-gray-700 hover:text-white border-transparent;
 }
