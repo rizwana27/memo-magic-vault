@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import PSALayout from '@/components/psa/PSALayout';
+import TopNavLayout from '@/components/psa/TopNavLayout';
 import Dashboard from '@/components/psa/Dashboard';
 import Projects from '@/components/psa/Projects';
 import Clients from '@/components/psa/Clients';
@@ -67,9 +67,9 @@ const Index = () => {
   };
 
   return (
-    <PSALayout activeTab={activeTab} onTabChange={setActiveTab}>
+    <TopNavLayout activeTab={activeTab} onTabChange={setActiveTab}>
       {renderContent()}
-    </PSALayout>
+    </TopNavLayout>
   );
 };
 
