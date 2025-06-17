@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import NewLoginPage from './NewLoginPage';
+import SimplifiedLoginPage from './SimplifiedLoginPage';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -24,8 +24,8 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   }
 
   if (!user) {
-    console.log('No user found, showing login page');
-    return <NewLoginPage />;
+    console.log('No user found, showing simplified login page');
+    return <SimplifiedLoginPage />;
   }
 
   console.log('User authenticated, showing protected content');

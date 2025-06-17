@@ -7,6 +7,8 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  signInWithEmail: (email: string, password: string) => Promise<{ error?: any }>;
+  signUpWithEmail: (email: string, password: string) => Promise<{ error?: any }>;
   signInWithMicrosoft: (email?: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
@@ -54,6 +56,57 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => subscription.unsubscribe();
   }, []);
 
+  const signInWithEmail = async (email: string, password: string) => {
+    try {
+      setLoading(true);
+      console.log('Starting email sign in for:', email);
+      
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      
+      if (error) {
+        console.error('Email sign in error:', error);
+        return { error };
+      }
+      
+      return {};
+    } catch (error) {
+      console.error('Error signing in with email:', error);
+      return { error };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const signUpWithEmail = async (email: string, password: string) => {
+    try {
+      setLoading(true);
+      console.log('Starting email sign up for:', email);
+      
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`,
+        }
+      });
+      
+      if (error) {
+        console.error('Email sign up error:', error);
+        return { error };
+      }
+      
+      return {};
+    } catch (error) {
+      console.error('Error signing up with email:', error);
+      return { error };
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const signInWithMicrosoft = async (email?: string) => {
     try {
       setLoading(true);
@@ -64,16 +117,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         options: {
           redirectTo: `${window.location.origin}/auth/callback`,
           queryParams: {
-            // Enable multi-tenant support for personal and work accounts
             tenant: 'common',
-            // Force account selection to ensure user picks their own account
             prompt: 'select_account',
-            // Support both personal and work/school accounts
             domain_hint: email ? (email.includes('@gmail.com') || email.includes('@outlook.com') || email.includes('@hotmail.com') ? 'consumers' : 'organizations') : undefined,
-            // Use login hint if email provided
             ...(email && { login_hint: email })
           },
-          // Request comprehensive scopes for user info
           scopes: 'openid email profile User.Read'
         }
       });
@@ -103,6 +151,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     user,
     session,
     loading,
+    signInWithEmail,
+    signUpWithEmail,
     signInWithMicrosoft,
     signOut,
   };
