@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,14 +5,17 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Dialog } from '@/components/ui/dialog';
 import { Plus, Search, Filter, DollarSign, FileText, CreditCard, TrendingUp } from 'lucide-react';
 import { usePSAData } from '@/hooks/usePSAData';
+import NewInvoiceForm from './forms/NewInvoiceForm';
 
 const Financial = () => {
   const { useInvoices, useExpenses } = usePSAData();
   const { data: invoices, isLoading: invoicesLoading } = useInvoices();
   const { data: expenses, isLoading: expensesLoading } = useExpenses();
   const [searchTerm, setSearchTerm] = useState('');
+  const [showNewInvoiceModal, setShowNewInvoiceModal] = useState(false);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -25,6 +27,11 @@ const Financial = () => {
     }
   };
 
+  const handleNewInvoice = (data: any) => {
+    console.log('Creating new invoice:', data);
+    setShowNewInvoiceModal(false);
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -33,7 +40,10 @@ const Financial = () => {
           <h1 className="text-3xl font-bold text-white">Financial Management</h1>
           <p className="text-gray-400">Manage invoices, expenses, and financial reporting</p>
         </div>
-        <Button className="bg-blue-600 hover:bg-blue-700">
+        <Button 
+          className="bg-blue-600 hover:bg-blue-700"
+          onClick={() => setShowNewInvoiceModal(true)}
+        >
           <Plus className="w-4 h-4 mr-2" />
           New Invoice
         </Button>
@@ -41,44 +51,44 @@ const Financial = () => {
 
       {/* Financial Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-        <Card className="bg-gray-800/50 border-gray-700">
+        <Card className="bg-white/10 backdrop-blur-md border-white/20">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-400 text-sm">Total Revenue</p>
+                <p className="text-gray-300 text-sm">Total Revenue</p>
                 <p className="text-2xl font-bold text-white">$124,580</p>
               </div>
               <DollarSign className="w-8 h-8 text-green-500" />
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-gray-800/50 border-gray-700">
+        <Card className="bg-white/10 backdrop-blur-md border-white/20">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-400 text-sm">Outstanding</p>
+                <p className="text-gray-300 text-sm">Outstanding</p>
                 <p className="text-2xl font-bold text-yellow-500">$32,400</p>
               </div>
               <FileText className="w-8 h-8 text-yellow-500" />
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-gray-800/50 border-gray-700">
+        <Card className="bg-white/10 backdrop-blur-md border-white/20">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-400 text-sm">Expenses</p>
+                <p className="text-gray-300 text-sm">Expenses</p>
                 <p className="text-2xl font-bold text-red-500">$18,950</p>
               </div>
               <CreditCard className="w-8 h-8 text-red-500" />
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-gray-800/50 border-gray-700">
+        <Card className="bg-white/10 backdrop-blur-md border-white/20">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-400 text-sm">Net Profit</p>
+                <p className="text-gray-300 text-sm">Net Profit</p>
                 <p className="text-2xl font-bold text-blue-500">$105,630</p>
               </div>
               <TrendingUp className="w-8 h-8 text-blue-500" />
@@ -89,7 +99,7 @@ const Financial = () => {
 
       {/* Financial Tabs */}
       <Tabs defaultValue="invoices" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 bg-gray-800/50">
+        <TabsList className="grid w-full grid-cols-3 bg-white/10 backdrop-blur-md">
           <TabsTrigger value="invoices" className="text-gray-300 data-[state=active]:text-white">Invoices</TabsTrigger>
           <TabsTrigger value="expenses" className="text-gray-300 data-[state=active]:text-white">Expenses</TabsTrigger>
           <TabsTrigger value="reports" className="text-gray-300 data-[state=active]:text-white">Reports</TabsTrigger>
@@ -104,7 +114,7 @@ const Financial = () => {
                 placeholder="Search invoices..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 bg-gray-800/50 border-gray-700 text-white"
+                className="pl-10 bg-white/10 border-white/20 text-white"
               />
             </div>
             <Button variant="outline" className="border-gray-600 text-gray-300 hover:bg-gray-700">
@@ -113,10 +123,10 @@ const Financial = () => {
             </Button>
           </div>
 
-          <Card className="bg-gray-800/50 border-gray-700">
+          <Card className="bg-white/10 backdrop-blur-md border-white/20">
             <CardHeader>
               <CardTitle className="text-white">Invoices</CardTitle>
-              <CardDescription className="text-gray-400">Manage client invoices and payments</CardDescription>
+              <CardDescription className="text-gray-300">Manage client invoices and payments</CardDescription>
             </CardHeader>
             <CardContent>
               <Table>
@@ -139,7 +149,7 @@ const Financial = () => {
                       <TableRow key={invoice.id} className="border-gray-700">
                         <TableCell className="text-white">{invoice.invoice_number}</TableCell>
                         <TableCell className="text-gray-300">{invoice.client?.name || 'No Client'}</TableCell>
-                        <TableCell className="text-white">${invoice.total_amount?.toLocaleString() || '0'}</TableCell>
+                        <TableCell className="text-white">${invoice.amount?.toLocaleString() || '0'}</TableCell>
                         <TableCell className="text-gray-300">
                           {invoice.due_date ? new Date(invoice.due_date).toLocaleDateString() : 'No due date'}
                         </TableCell>
@@ -158,10 +168,10 @@ const Financial = () => {
         </TabsContent>
 
         <TabsContent value="expenses" className="space-y-4">
-          <Card className="bg-gray-800/50 border-gray-700">
+          <Card className="bg-white/10 backdrop-blur-md border-white/20">
             <CardHeader>
               <CardTitle className="text-white">Expenses</CardTitle>
-              <CardDescription className="text-gray-400">Track project and operational expenses</CardDescription>
+              <CardDescription className="text-gray-300">Track project and operational expenses</CardDescription>
             </CardHeader>
             <CardContent>
               <Table>
@@ -203,10 +213,10 @@ const Financial = () => {
         </TabsContent>
 
         <TabsContent value="reports">
-          <Card className="bg-gray-800/50 border-gray-700">
+          <Card className="bg-white/10 backdrop-blur-md border-white/20">
             <CardHeader>
               <CardTitle className="text-white">Financial Reports</CardTitle>
-              <CardDescription className="text-gray-400">Generate financial analytics and reports</CardDescription>
+              <CardDescription className="text-gray-300">Generate financial analytics and reports</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="h-96 flex items-center justify-center text-gray-400">
@@ -219,6 +229,14 @@ const Financial = () => {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* New Invoice Modal */}
+      <Dialog open={showNewInvoiceModal} onOpenChange={setShowNewInvoiceModal}>
+        <NewInvoiceForm
+          onSubmit={handleNewInvoice}
+          onCancel={() => setShowNewInvoiceModal(false)}
+        />
+      </Dialog>
     </div>
   );
 };

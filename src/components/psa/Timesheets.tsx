@@ -6,13 +6,16 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Dialog } from '@/components/ui/dialog';
 import { Plus, Search, Filter, Clock, Calendar, CheckCircle } from 'lucide-react';
 import { usePSAData } from '@/hooks/usePSAData';
+import TimesheetEntryForm from './forms/TimesheetEntryForm';
 
 const Timesheets = () => {
   const { useTimesheets } = usePSAData();
   const { data: timesheets, isLoading } = useTimesheets();
   const [searchTerm, setSearchTerm] = useState('');
+  const [showNewEntryModal, setShowNewEntryModal] = useState(false);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -29,6 +32,11 @@ const Timesheets = () => {
     timesheet.description?.toLowerCase().includes(searchTerm.toLowerCase())
   ) || [];
 
+  const handleNewTimeEntry = (data: any) => {
+    console.log('Creating new time entry:', data);
+    setShowNewEntryModal(false);
+  };
+
   // Mock weekly timesheet data
   const weeklyData = [
     { date: '2024-01-15', project: 'Project Alpha', task: 'Development', hours: 8, status: 'draft' },
@@ -38,6 +46,10 @@ const Timesheets = () => {
     { date: '2024-01-19', project: 'Project Beta', task: 'Bug Fixes', hours: 5, status: 'submitted' },
   ];
 
+  // Calculate daily and weekly totals
+  const dailyTotal = 8; // Mock data for today
+  const weeklyTotal = weeklyData.reduce((sum, entry) => sum + entry.hours, 0);
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -46,7 +58,10 @@ const Timesheets = () => {
           <h1 className="text-3xl font-bold text-white">Timesheets</h1>
           <p className="text-gray-400">Track and manage your time entries</p>
         </div>
-        <Button className="bg-blue-600 hover:bg-blue-700">
+        <Button 
+          className="bg-blue-600 hover:bg-blue-700"
+          onClick={() => setShowNewEntryModal(true)}
+        >
           <Plus className="w-4 h-4 mr-2" />
           New Entry
         </Button>
@@ -54,47 +69,47 @@ const Timesheets = () => {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-        <Card className="bg-gray-800/50 border-gray-700">
+        <Card className="bg-white/10 backdrop-blur-md border-white/20">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-400 text-sm">This Week</p>
-                <p className="text-2xl font-bold text-white">32h</p>
+                <p className="text-gray-300 text-sm">Today</p>
+                <p className="text-2xl font-bold text-white">{dailyTotal}h</p>
               </div>
               <Clock className="w-8 h-8 text-blue-500" />
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-gray-800/50 border-gray-700">
+        <Card className="bg-white/10 backdrop-blur-md border-white/20">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-400 text-sm">Pending</p>
+                <p className="text-gray-300 text-sm">This Week</p>
+                <p className="text-2xl font-bold text-white">{weeklyTotal}h</p>
+              </div>
+              <Calendar className="w-8 h-8 text-purple-500" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-white/10 backdrop-blur-md border-white/20">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-300 text-sm">Pending</p>
                 <p className="text-2xl font-bold text-yellow-500">5</p>
               </div>
               <Calendar className="w-8 h-8 text-yellow-500" />
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-gray-800/50 border-gray-700">
+        <Card className="bg-white/10 backdrop-blur-md border-white/20">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-400 text-sm">Approved</p>
+                <p className="text-gray-300 text-sm">Approved</p>
                 <p className="text-2xl font-bold text-green-500">12</p>
               </div>
               <CheckCircle className="w-8 h-8 text-green-500" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="bg-gray-800/50 border-gray-700">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-400 text-sm">Total Hours</p>
-                <p className="text-2xl font-bold text-white">128h</p>
-              </div>
-              <Clock className="w-8 h-8 text-purple-500" />
             </div>
           </CardContent>
         </Card>
@@ -102,7 +117,7 @@ const Timesheets = () => {
 
       {/* Timesheet Tabs */}
       <Tabs defaultValue="daily" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 bg-gray-800/50">
+        <TabsList className="grid w-full grid-cols-3 bg-white/10 backdrop-blur-md">
           <TabsTrigger value="daily" className="text-gray-300 data-[state=active]:text-white">Daily Entry</TabsTrigger>
           <TabsTrigger value="weekly" className="text-gray-300 data-[state=active]:text-white">Weekly View</TabsTrigger>
           <TabsTrigger value="approval" className="text-gray-300 data-[state=active]:text-white">Approval</TabsTrigger>
@@ -117,7 +132,7 @@ const Timesheets = () => {
                 placeholder="Search timesheets..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 bg-gray-800/50 border-gray-700 text-white"
+                className="pl-10 bg-white/10 border-white/20 text-white"
               />
             </div>
             <Button variant="outline" className="border-gray-600 text-gray-300 hover:bg-gray-700">
@@ -126,10 +141,10 @@ const Timesheets = () => {
             </Button>
           </div>
 
-          <Card className="bg-gray-800/50 border-gray-700">
+          <Card className="bg-white/10 backdrop-blur-md border-white/20">
             <CardHeader>
               <CardTitle className="text-white">Recent Time Entries</CardTitle>
-              <CardDescription className="text-gray-400">Your latest timesheet entries</CardDescription>
+              <CardDescription className="text-gray-300">Your latest timesheet entries</CardDescription>
             </CardHeader>
             <CardContent>
               <Table>
@@ -246,6 +261,14 @@ const Timesheets = () => {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* New Time Entry Modal */}
+      <Dialog open={showNewEntryModal} onOpenChange={setShowNewEntryModal}>
+        <TimesheetEntryForm
+          onSubmit={handleNewTimeEntry}
+          onCancel={() => setShowNewEntryModal(false)}
+        />
+      </Dialog>
     </div>
   );
 };

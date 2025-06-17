@@ -118,7 +118,7 @@ const Vendors = () => {
             placeholder="Search vendors..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 bg-gray-800/50 border-gray-700 text-white"
+            className="pl-10 bg-white/10 border-white/20 text-white"
           />
         </div>
         <Button variant="outline" className="border-gray-600 text-gray-300 hover:bg-gray-700">
@@ -129,7 +129,7 @@ const Vendors = () => {
 
       {/* Vendor Tabs */}
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="grid w-full grid-cols-5 bg-gray-800/50">
+        <TabsList className="grid w-full grid-cols-5 bg-white/10 backdrop-blur-md">
           <TabsTrigger value="overview" className="text-gray-300 data-[state=active]:text-white">Overview</TabsTrigger>
           <TabsTrigger value="contracts" className="text-gray-300 data-[state=active]:text-white">Contracts</TabsTrigger>
           <TabsTrigger value="purchase-orders" className="text-gray-300 data-[state=active]:text-white">Purchase Orders</TabsTrigger>
@@ -140,7 +140,7 @@ const Vendors = () => {
         <TabsContent value="overview" className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredVendors.map((vendor) => (
-              <Card key={vendor.id} className="bg-gray-800/50 border-gray-700 hover:bg-gray-800/70 transition-colors cursor-pointer">
+              <Card key={vendor.id} className="bg-white/10 backdrop-blur-md border-white/20 hover:bg-white/15 transition-colors cursor-pointer">
                 <CardHeader>
                   <div className="flex justify-between items-start">
                     <CardTitle className="text-white text-lg">{vendor.name}</CardTitle>
@@ -148,7 +148,7 @@ const Vendors = () => {
                       {getStatusText(vendor.status)}
                     </Badge>
                   </div>
-                  <CardDescription className="text-gray-400">
+                  <CardDescription className="text-gray-300">
                     Contact: {vendor.contactPerson}
                   </CardDescription>
                 </CardHeader>
@@ -164,7 +164,7 @@ const Vendors = () => {
                       {vendor.phone}
                     </div>
                     
-                    <div className="text-gray-400 text-sm">
+                    <div className="text-gray-300 text-sm">
                       <p className="line-clamp-2">{vendor.services}</p>
                     </div>
 
@@ -208,7 +208,7 @@ const Vendors = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {mockPurchaseOrders.map((po) => (
-              <Card key={po.id} className="bg-gray-800/50 border-gray-700 hover:bg-gray-800/70 transition-colors cursor-pointer">
+              <Card key={po.id} className="bg-white/10 backdrop-blur-md border-white/20 hover:bg-white/15 transition-colors cursor-pointer">
                 <CardHeader>
                   <div className="flex justify-between items-start">
                     <CardTitle className="text-white text-lg">{po.poNumber}</CardTitle>
@@ -216,7 +216,7 @@ const Vendors = () => {
                       {po.status}
                     </Badge>
                   </div>
-                  <CardDescription className="text-gray-400">
+                  <CardDescription className="text-gray-300">
                     {po.vendor}
                   </CardDescription>
                 </CardHeader>
@@ -273,6 +273,14 @@ const Vendors = () => {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* New Vendor Modal */}
+      <Dialog open={showNewVendorModal} onOpenChange={setShowNewVendorModal}>
+        <NewVendorForm
+          onSubmit={handleNewVendor}
+          onCancel={() => setShowNewVendorModal(false)}
+        />
+      </Dialog>
 
       {/* New Purchase Order Modal */}
       <Dialog open={showNewPOModal} onOpenChange={setShowNewPOModal}>
