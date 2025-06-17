@@ -7,6 +7,10 @@ import { Building2, LogIn } from 'lucide-react';
 const LoginPage = () => {
   const { signInWithMicrosoft, loading } = useAuth();
 
+  const handleSignIn = () => {
+    signInWithMicrosoft();
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-gray-900 to-black flex items-center justify-center p-4">
       <div className="w-full max-w-md">
@@ -30,7 +34,7 @@ const LoginPage = () => {
 
           {/* Microsoft Login Button */}
           <Button
-            onClick={signInWithMicrosoft}
+            onClick={handleSignIn}
             disabled={loading}
             className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium py-3 px-4 rounded-lg transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
           >

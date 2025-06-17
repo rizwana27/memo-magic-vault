@@ -64,13 +64,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         options: {
           redirectTo: `${window.location.origin}/`,
           queryParams: {
-            // Force account selection and prompt for authentication
-            prompt: 'select_account login',
+            // Use standard OAuth parameters that Microsoft supports
+            prompt: 'consent',
             access_type: 'offline',
             // If email is provided, use it as login hint
             ...(email && { login_hint: email })
           },
-          scopes: 'openid email profile User.Read'
+          scopes: 'openid email profile'
         }
       });
       
