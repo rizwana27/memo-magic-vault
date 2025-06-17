@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -275,16 +274,8 @@ const Vendors = () => {
         </TabsContent>
       </Tabs>
 
-      {/* New Vendor Modal */}
-      <Dialog open={showNewVendorModal} onOpenChange={setShowNewVendorModal}>
-        <NewVendorForm
-          onSubmit={handleNewVendor}
-          onCancel={() => setShowNewVendorModal(false)}
-        />
-      </Dialog>
-
       {/* New Purchase Order Modal */}
-      <Dialog open={showNewPurchaseOrderModal} onOpenChange={setShowNewPOModal}>
+      <Dialog open={showNewPOModal} onOpenChange={setShowNewPOModal}>
         <NewPurchaseOrderForm
           onSubmit={handleNewPurchaseOrder}
           onCancel={() => setShowNewPOModal(false)}

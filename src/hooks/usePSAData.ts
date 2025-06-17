@@ -29,6 +29,31 @@ export const usePSAData = () => {
     }
   ];
 
+  const mockResources = [
+    {
+      id: '1',
+      full_name: 'John Smith',
+      email: 'john@company.com',
+      phone: '+1-555-0123',
+      department: 'Engineering',
+      role: 'Senior Developer',
+      status: true,
+      join_date: '2024-01-15',
+      created_at: new Date().toISOString()
+    },
+    {
+      id: '2',
+      full_name: 'Sarah Johnson',
+      email: 'sarah@company.com',
+      phone: '+1-555-0456',
+      department: 'Design',
+      role: 'UI/UX Designer',
+      status: true,
+      join_date: '2024-02-01',
+      created_at: new Date().toISOString()
+    }
+  ];
+
   const mockProjects = [
     {
       id: '1',
@@ -107,6 +132,16 @@ export const usePSAData = () => {
       queryFn: async () => {
         // For now, return mock data since we don't have a clients table
         return mockClients;
+      },
+    });
+  };
+
+  // Resources
+  const useResources = () => {
+    return useQuery({
+      queryKey: ['resources'],
+      queryFn: async () => {
+        return mockResources;
       },
     });
   };
@@ -240,6 +275,7 @@ export const usePSAData = () => {
 
   return {
     useClients,
+    useResources,
     useProjects,
     useTasks,
     useTimesheets,
