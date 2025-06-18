@@ -7,7 +7,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { CalendarIcon, Plus, Trash2 } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { CalendarIcon, Plus, Trash2, AlertCircle, Upload } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useProjects, useClients } from '@/hooks/usePSAData';
@@ -32,7 +34,6 @@ interface NewInvoiceFormProps {
 }
 
 const NewInvoiceForm = ({ onSubmit, onCancel }: NewInvoiceFormProps) => {
-  const { useProjects, useClients } = usePSAData();
   const { data: projects, isLoading: projectsLoading } = useProjects();
   const { data: clients, isLoading: clientsLoading } = useClients();
   
