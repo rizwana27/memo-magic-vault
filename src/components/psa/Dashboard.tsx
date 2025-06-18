@@ -51,7 +51,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onTabChange }) => {
       onTabChange('projects');
       // Small delay to ensure the projects page loads before opening the modal
       setTimeout(() => {
-        // This will be handled by the Projects component receiving a signal
         window.dispatchEvent(new CustomEvent('openProjectModal'));
       }, 100);
     } else {
@@ -64,7 +63,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onTabChange }) => {
       onTabChange('resources');
       // Small delay to ensure the resources page loads before opening the modal
       setTimeout(() => {
-        // This will be handled by the Resources component receiving a signal
         window.dispatchEvent(new CustomEvent('openResourceModal'));
       }, 100);
     } else {
