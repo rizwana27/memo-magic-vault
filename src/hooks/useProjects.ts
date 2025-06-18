@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSupabaseOperations } from './useSupabaseOperations';
+import { supabase } from '@/integrations/supabase/client';
 
 export const useProjects = () => {
   const [projects, setProjects] = useState<any[]>([]);

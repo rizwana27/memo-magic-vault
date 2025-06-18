@@ -3,11 +3,13 @@ import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
+type TableName = 'clients' | 'projects' | 'vendors' | 'timesheets' | 'profiles' | 'tasks' | 'expenses' | 'invoices' | 'purchase_orders' | 'notifications' | 'activity_logs';
+
 export const useSupabaseOperations = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
-  const insertData = async (table: string, data: any, successMessage?: string) => {
+  const insertData = async (table: TableName, data: any, successMessage?: string) => {
     setIsLoading(true);
     try {
       console.log(`Inserting data into ${table}:`, data);
@@ -48,7 +50,7 @@ export const useSupabaseOperations = () => {
     }
   };
 
-  const fetchData = async (table: string, select?: string) => {
+  const fetchData = async (table: TableName, select?: string) => {
     setIsLoading(true);
     try {
       console.log(`Fetching data from ${table}`);

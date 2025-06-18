@@ -13,7 +13,7 @@ import NewPurchaseOrderForm from './forms/NewPurchaseOrderForm';
 const Vendors = () => {
   const { vendors, createVendor, isLoading } = useVendors();
   const [searchTerm, setSearchTerm] = useState('');
-  const [showNewVendorModal, setShowNewPOModal] = useState(false);
+  const [showNewVendorModal, setShowNewVendorModal] = useState(false);
   const [showNewPOModal, setShowNewPOModal] = useState(false);
 
   const getStatusColor = (status?: string) => {
