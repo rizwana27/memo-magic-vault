@@ -178,7 +178,6 @@ export const usePSAData = () => {
     mutationFn: async (clientData: any) => {
       console.log('Creating client:', clientData);
       
-      // Remove client_id from insert data as it's auto-generated
       const insertData = {
         client_name: clientData.clientName,
         company_name: clientData.companyName,
@@ -240,7 +239,6 @@ export const usePSAData = () => {
         throw new Error('Selected client does not exist. Please refresh the page and try again.');
       }
 
-      // Remove project_id from insert data as it's auto-generated
       const insertData = {
         project_name: projectData.name,
         client_id: projectData.client,
@@ -295,7 +293,6 @@ export const usePSAData = () => {
     mutationFn: async (resourceData: any) => {
       console.log('Creating resource:', resourceData);
       
-      // Remove resource_id from insert data as it's auto-generated
       const insertData = {
         full_name: resourceData.fullName,
         email_address: resourceData.email,
@@ -345,7 +342,6 @@ export const usePSAData = () => {
     mutationFn: async (timesheetData: any) => {
       console.log('Creating timesheet:', timesheetData);
       
-      // Remove timesheet_id from insert data as it's auto-generated
       const insertData = {
         project_id: timesheetData.project,
         task: timesheetData.task,
@@ -393,7 +389,6 @@ export const usePSAData = () => {
     mutationFn: async (vendorData: any) => {
       console.log('Creating vendor:', vendorData);
       
-      // Remove vendor_id from insert data as it's auto-generated
       const insertData = {
         vendor_name: vendorData.vendorName,
         contact_person: vendorData.contactPerson,
