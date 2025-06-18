@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -126,14 +127,22 @@ const NewPurchaseOrderForm = ({ onSubmit, onCancel }: NewPurchaseOrderFormProps)
 
     try {
       const poNumber = formData.poNumber || generatePONumber();
-      await onSubmit({
-        ...formData,
-        poNumber,
-        orderDate: orderDate.toISOString().split('T')[0],
-        deliveryDate: deliveryDate?.toISOString().split('T')[0],
-        lineItems,
-        totalAmount: getTotalAmount(),
-      });
+      
+      // Map the form data to the correct database schema
+      const poData = {
+        po_number: poNumber,
+        vendor_id: formData.vendor,
+        project_id: formData.project || null,
+        order_date: orderDate.toISOString().split('T')[0],
+        delivery_date: deliveryDate?.toISOString().split('T')[0] || null,
+        line_items: lineItems,
+        total_amount: getTotalAmount(),
+        status: formData.status,
+        notes: formData.notes || null,
+      };
+
+      console.log('Creating purchase order with data:', poData);
+      await onSubmit(poData);
     } catch (error: any) {
       console.error('Form submission error:', error);
       setError(error.message || 'Failed to create purchase order. Please try again.');
@@ -210,6 +219,7 @@ const NewPurchaseOrderForm = ({ onSubmit, onCancel }: NewPurchaseOrderFormProps)
                 {projects?.map((project) => (
                   <SelectItem key={project.project_id} value={project.project_id} className="text-white hover:bg-gray-700">
                     {project.project_name}
+                    {project.client && ` (${project.client.client_name})`}
                   </SelectItem>
                 ))}
               </SelectContent>

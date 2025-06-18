@@ -483,7 +483,13 @@ export const useCreateTimesheet = () => {
 
   return useMutation({
     mutationFn: async (timesheetData: any) => {
-      console.log('Creating timesheet:', timesheetData);
+      console.log('Creating timesheet with data:', timesheetData);
+      
+      // Check if user is authenticated
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('You must be logged in to create a timesheet entry');
+      }
       
       const { data, error } = await supabase
         .from('timesheets')
@@ -497,11 +503,15 @@ export const useCreateTimesheet = () => {
       }
 
       // Create a notification
-      await supabase.rpc('create_notification', {
-        p_message: `New timesheet entry created for ${timesheetData.hours} hours`,
-        p_type: 'timesheet',
-        p_related_id: data.timesheet_id
-      });
+      try {
+        await supabase.rpc('create_notification', {
+          p_message: `New timesheet entry created for ${timesheetData.hours} hours`,
+          p_type: 'timesheet',
+          p_related_id: data.timesheet_id
+        });
+      } catch (notificationError) {
+        console.warn('Failed to create notification:', notificationError);
+      }
 
       return data;
     },
@@ -513,11 +523,11 @@ export const useCreateTimesheet = () => {
         description: "Timesheet entry created successfully",
       });
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error('Failed to create timesheet:', error);
       toast({
         title: "Error",
-        description: "Failed to create timesheet entry",
+        description: error.message || "Failed to create timesheet entry",
         variant: "destructive",
       });
     },
@@ -530,7 +540,13 @@ export const useCreateInvoice = () => {
 
   return useMutation({
     mutationFn: async (invoiceData: any) => {
-      console.log('Creating invoice:', invoiceData);
+      console.log('Creating invoice with data:', invoiceData);
+      
+      // Check if user is authenticated
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('You must be logged in to create an invoice');
+      }
       
       const { data, error } = await supabase
         .from('invoices')
@@ -544,11 +560,15 @@ export const useCreateInvoice = () => {
       }
 
       // Create a notification
-      await supabase.rpc('create_notification', {
-        p_message: `New invoice ${data.invoice_number} created for $${invoiceData.total_amount}`,
-        p_type: 'invoice',
-        p_related_id: data.id
-      });
+      try {
+        await supabase.rpc('create_notification', {
+          p_message: `New invoice ${data.invoice_number} created for $${invoiceData.total_amount}`,
+          p_type: 'invoice',
+          p_related_id: data.id
+        });
+      } catch (notificationError) {
+        console.warn('Failed to create notification:', notificationError);
+      }
 
       return data;
     },
@@ -560,11 +580,11 @@ export const useCreateInvoice = () => {
         description: `Invoice ${data.invoice_number} created successfully`,
       });
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error('Failed to create invoice:', error);
       toast({
         title: "Error",
-        description: "Failed to create invoice",
+        description: error.message || "Failed to create invoice",
         variant: "destructive",
       });
     },
@@ -624,7 +644,13 @@ export const useCreatePurchaseOrder = () => {
 
   return useMutation({
     mutationFn: async (poData: any) => {
-      console.log('Creating purchase order:', poData);
+      console.log('Creating purchase order with data:', poData);
+      
+      // Check if user is authenticated
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('You must be logged in to create a purchase order');
+      }
       
       const { data, error } = await supabase
         .from('purchase_orders')
@@ -638,11 +664,15 @@ export const useCreatePurchaseOrder = () => {
       }
 
       // Create a notification
-      await supabase.rpc('create_notification', {
-        p_message: `New purchase order ${data.po_number} created`,
-        p_type: 'resource',
-        p_related_id: data.id
-      });
+      try {
+        await supabase.rpc('create_notification', {
+          p_message: `New purchase order ${data.po_number} created`,
+          p_type: 'resource',
+          p_related_id: data.id
+        });
+      } catch (notificationError) {
+        console.warn('Failed to create notification:', notificationError);
+      }
 
       return data;
     },
@@ -654,11 +684,11 @@ export const useCreatePurchaseOrder = () => {
         description: `Purchase order ${data.po_number} created successfully`,
       });
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error('Failed to create purchase order:', error);
       toast({
         title: "Error",
-        description: "Failed to create purchase order",
+        description: error.message || "Failed to create purchase order",
         variant: "destructive",
       });
     },

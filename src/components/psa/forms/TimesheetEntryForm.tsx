@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -89,16 +90,20 @@ const TimesheetEntryForm = ({ onSubmit, onCancel }: TimesheetEntryFormProps) => 
       return;
     }
 
-    onSubmit({
-      project: selectedProject, // This is the project_id
+    // Map the form data to the correct database schema
+    const timesheetData = {
+      project_id: selectedProject,
       task: selectedTask,
-      date: date.toISOString().split('T')[0], // Format as YYYY-MM-DD
-      startTime,
-      endTime,
+      date: date.toISOString().split('T')[0],
+      start_time: startTime,
+      end_time: endTime,
       hours: totalHours,
       billable,
-      notes,
-    });
+      notes: notes || null,
+    };
+
+    console.log('Creating timesheet with data:', timesheetData);
+    onSubmit(timesheetData);
   };
 
   const selectedProjectName = projects?.find(p => p.project_id === selectedProject)?.project_name;

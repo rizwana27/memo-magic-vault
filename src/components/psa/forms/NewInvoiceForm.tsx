@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -176,18 +177,27 @@ const NewInvoiceForm = ({ onSubmit, onCancel }: NewInvoiceFormProps) => {
     setIsSubmitting(true);
 
     try {
-      await onSubmit({
-        ...formData,
-        billingType,
-        invoiceDate: invoiceDate.toISOString().split('T')[0],
-        dueDate: dueDate?.toISOString().split('T')[0],
+      // Map the form data to the correct database schema
+      const invoiceData = {
+        project_id: formData.project,
+        client_id: formData.client,
+        billing_type: billingType,
+        invoice_date: invoiceDate.toISOString().split('T')[0],
+        due_date: dueDate?.toISOString().split('T')[0],
         items: billingType === 'milestone' ? milestoneItems : timeEntries,
         subtotal: getSubtotal(),
-        taxAmount: getTaxAmount(),
-        discountAmount: getDiscountAmount(),
-        total: getTotal(),
-        attachments,
-      });
+        tax_rate: formData.tax,
+        tax_amount: getTaxAmount(),
+        discount_rate: formData.discount,
+        discount_amount: getDiscountAmount(),
+        total_amount: getTotal(),
+        status: 'draft',
+        notes: '',
+        attachments: attachments ? Array.from(attachments).map(file => file.name) : []
+      };
+
+      console.log('Creating invoice with data:', invoiceData);
+      await onSubmit(invoiceData);
     } catch (error: any) {
       console.error('Form submission error:', error);
       setError(error.message || 'Failed to create invoice. Please try again.');
@@ -241,6 +251,7 @@ const NewInvoiceForm = ({ onSubmit, onCancel }: NewInvoiceFormProps) => {
                 {projects?.map((project) => (
                   <SelectItem key={project.project_id} value={project.project_id} className="text-white hover:bg-gray-700">
                     {project.project_name}
+                    {project.client && ` (${project.client.client_name})`}
                   </SelectItem>
                 ))}
               </SelectContent>
