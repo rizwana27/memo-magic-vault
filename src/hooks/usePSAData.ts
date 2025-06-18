@@ -1,137 +1,30 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 export const usePSAData = () => {
   const queryClient = useQueryClient();
-
-  // Mock data for demonstration since we only have profiles table
-  const mockClients = [
-    {
-      id: '1',
-      name: 'Acme Corporation',
-      email: 'contact@acme.com',
-      phone: '+1-555-0123',
-      website: 'https://acme.com',
-      address: '123 Business St, City, State 12345',
-      health_score: 8,
-      created_at: new Date().toISOString()
-    },
-    {
-      id: '2', 
-      name: 'Tech Solutions Inc',
-      email: 'info@techsolutions.com',
-      phone: '+1-555-0456',
-      website: 'https://techsolutions.com',
-      address: '456 Innovation Ave, Tech City, TC 67890',
-      health_score: 6,
-      created_at: new Date().toISOString()
-    }
-  ];
-
-  const mockResources = [
-    {
-      id: '1',
-      full_name: 'John Smith',
-      email: 'john@company.com',
-      phone: '+1-555-0123',
-      department: 'Engineering',
-      role: 'Senior Developer',
-      status: true,
-      join_date: '2024-01-15',
-      created_at: new Date().toISOString()
-    },
-    {
-      id: '2',
-      full_name: 'Sarah Johnson',
-      email: 'sarah@company.com',
-      phone: '+1-555-0456',
-      department: 'Design',
-      role: 'UI/UX Designer',
-      status: true,
-      join_date: '2024-02-01',
-      created_at: new Date().toISOString()
-    }
-  ];
-
-  const mockProjects = [
-    {
-      id: '1',
-      name: 'Website Redesign',
-      status: 'active',
-      description: 'Complete redesign of company website',
-      start_date: '2024-01-15',
-      budget: 50000,
-      client: mockClients[0],
-      created_at: new Date().toISOString()
-    },
-    {
-      id: '2',
-      name: 'Mobile App Development', 
-      status: 'planning',
-      description: 'Native mobile app for iOS and Android',
-      start_date: '2024-02-01',
-      budget: 120000,
-      client: mockClients[1],
-      created_at: new Date().toISOString()
-    }
-  ];
-
-  const mockTimesheets = [
-    {
-      id: '1',
-      user_id: '1',
-      date: '2024-01-15',
-      hours: 8,
-      status: 'approved',
-      description: 'Frontend development work',
-      project: mockProjects[0],
-      task: { id: '1', title: 'UI Development' },
-      created_at: new Date().toISOString()
-    },
-    {
-      id: '2',
-      user_id: '1', 
-      date: '2024-01-16',
-      hours: 6,
-      status: 'submitted',
-      description: 'API integration',
-      project: mockProjects[1],
-      task: { id: '2', title: 'Backend Work' },
-      created_at: new Date().toISOString()
-    }
-  ];
-
-  const mockInvoices = [
-    {
-      id: '1',
-      invoice_number: 'INV-001',
-      amount: 5000,
-      status: 'paid',
-      client: mockClients[0],
-      project: mockProjects[0],
-      created_at: new Date().toISOString()
-    }
-  ];
-
-  const mockExpenses = [
-    {
-      id: '1',
-      amount: 500,
-      description: 'Software licenses',
-      expense_date: '2024-01-15',
-      project: mockProjects[0],
-      created_at: new Date().toISOString()
-    }
-  ];
+  const { toast } = useToast();
 
   // Clients
   const useClients = () => {
     return useQuery({
       queryKey: ['clients'],
       queryFn: async () => {
-        // For now, return mock data since we don't have a clients table
-        return mockClients;
+        console.log('Fetching clients from database...');
+        const { data, error } = await supabase
+          .from('clients')
+          .select('*')
+          .order('created_at', { ascending: false });
+        
+        if (error) {
+          console.error('Error fetching clients:', error);
+          throw error;
+        }
+        
+        console.log('Clients fetched:', data);
+        return data || [];
       },
     });
   };
@@ -141,7 +34,19 @@ export const usePSAData = () => {
     return useQuery({
       queryKey: ['resources'],
       queryFn: async () => {
-        return mockResources;
+        console.log('Fetching resources from database...');
+        const { data, error } = await supabase
+          .from('resources')
+          .select('*')
+          .order('created_at', { ascending: false });
+        
+        if (error) {
+          console.error('Error fetching resources:', error);
+          throw error;
+        }
+        
+        console.log('Resources fetched:', data);
+        return data || [];
       },
     });
   };
@@ -151,17 +56,22 @@ export const usePSAData = () => {
     return useQuery({
       queryKey: ['projects'],
       queryFn: async () => {
-        return mockProjects;
-      },
-    });
-  };
-
-  // Tasks
-  const useTasks = () => {
-    return useQuery({
-      queryKey: ['tasks'],
-      queryFn: async () => {
-        return [];
+        console.log('Fetching projects from database...');
+        const { data, error } = await supabase
+          .from('projects')
+          .select(`
+            *,
+            client:clients(client_name, company_name)
+          `)
+          .order('created_at', { ascending: false });
+        
+        if (error) {
+          console.error('Error fetching projects:', error);
+          throw error;
+        }
+        
+        console.log('Projects fetched:', data);
+        return data || [];
       },
     });
   };
@@ -171,27 +81,22 @@ export const usePSAData = () => {
     return useQuery({
       queryKey: ['timesheets'],
       queryFn: async () => {
-        return mockTimesheets;
-      },
-    });
-  };
-
-  // Invoices
-  const useInvoices = () => {
-    return useQuery({
-      queryKey: ['invoices'],
-      queryFn: async () => {
-        return mockInvoices;
-      },
-    });
-  };
-
-  // Expenses
-  const useExpenses = () => {
-    return useQuery({
-      queryKey: ['expenses'],
-      queryFn: async () => {
-        return mockExpenses;
+        console.log('Fetching timesheets from database...');
+        const { data, error } = await supabase
+          .from('timesheets')
+          .select(`
+            *,
+            project:projects(project_name, client_id)
+          `)
+          .order('created_at', { ascending: false });
+        
+        if (error) {
+          console.error('Error fetching timesheets:', error);
+          throw error;
+        }
+        
+        console.log('Timesheets fetched:', data);
+        return data || [];
       },
     });
   };
@@ -201,12 +106,54 @@ export const usePSAData = () => {
     return useQuery({
       queryKey: ['vendors'],
       queryFn: async () => {
+        console.log('Fetching vendors from database...');
+        const { data, error } = await supabase
+          .from('vendors')
+          .select('*')
+          .order('created_at', { ascending: false });
+        
+        if (error) {
+          console.error('Error fetching vendors:', error);
+          throw error;
+        }
+        
+        console.log('Vendors fetched:', data);
+        return data || [];
+      },
+    });
+  };
+
+  // Tasks (placeholder for now)
+  const useTasks = () => {
+    return useQuery({
+      queryKey: ['tasks'],
+      queryFn: async () => {
         return [];
       },
     });
   };
 
-  // Opportunities
+  // Invoices (placeholder for now)
+  const useInvoices = () => {
+    return useQuery({
+      queryKey: ['invoices'],
+      queryFn: async () => {
+        return [];
+      },
+    });
+  };
+
+  // Expenses (placeholder for now)
+  const useExpenses = () => {
+    return useQuery({
+      queryKey: ['expenses'],
+      queryFn: async () => {
+        return [];
+      },
+    });
+  };
+
+  // Opportunities (placeholder for now)
   const useOpportunities = () => {
     return useQuery({
       queryKey: ['opportunities'],
@@ -216,7 +163,7 @@ export const usePSAData = () => {
     });
   };
 
-  // Purchase Orders
+  // Purchase Orders (placeholder for now)
   const usePurchaseOrders = () => {
     return useQuery({
       queryKey: ['purchase_orders'],
@@ -226,35 +173,243 @@ export const usePSAData = () => {
     });
   };
 
-  // Mutations - These will work with the profiles table for now
+  // Create Client Mutation
   const createClient = useMutation({
-    mutationFn: async (client: any) => {
-      // For now, just return the client data
-      return { ...client, id: Date.now().toString() };
+    mutationFn: async (clientData: any) => {
+      console.log('Creating client:', clientData);
+      
+      const { data, error } = await supabase
+        .from('clients')
+        .insert({
+          client_name: clientData.clientName,
+          company_name: clientData.companyName,
+          industry: clientData.industry,
+          client_type: clientData.clientType,
+          primary_contact_name: clientData.primaryContactName,
+          primary_contact_email: clientData.primaryContactEmail,
+          phone_number: clientData.phoneNumber,
+          revenue_tier: clientData.revenueTier,
+          tags: clientData.tags,
+          notes: clientData.notes,
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating client:', error);
+        throw error;
+      }
+
+      console.log('Client created successfully:', data);
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['clients'] });
+      toast({
+        title: "Success!",
+        description: "Client created successfully.",
+        variant: "default",
+      });
+    },
+    onError: (error: any) => {
+      console.error('Failed to create client:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create client. Please try again.",
+        variant: "destructive",
+      });
     },
   });
 
+  // Create Project Mutation
   const createProject = useMutation({
-    mutationFn: async (project: any) => {
-      return { ...project, id: Date.now().toString() };
+    mutationFn: async (projectData: any) => {
+      console.log('Creating project:', projectData);
+      
+      const { data, error } = await supabase
+        .from('projects')
+        .insert({
+          project_name: projectData.name,
+          client_id: projectData.client,
+          project_manager: projectData.projectManager,
+          region: projectData.region,
+          status: projectData.status,
+          delivery_status: projectData.deliveryStatus,
+          start_date: projectData.startDate,
+          end_date: projectData.endDate,
+          budget: projectData.budget ? parseFloat(projectData.budget) : null,
+          description: projectData.description,
+          tags: projectData.tags,
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating project:', error);
+        throw error;
+      }
+
+      console.log('Project created successfully:', data);
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
+      toast({
+        title: "Success!",
+        description: "Project created successfully.",
+        variant: "default",
+      });
+    },
+    onError: (error: any) => {
+      console.error('Failed to create project:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create project. Please try again.",
+        variant: "destructive",
+      });
     },
   });
 
+  // Create Resource Mutation
+  const createResource = useMutation({
+    mutationFn: async (resourceData: any) => {
+      console.log('Creating resource:', resourceData);
+      
+      const { data, error } = await supabase
+        .from('resources')
+        .insert({
+          full_name: resourceData.fullName,
+          email_address: resourceData.email,
+          phone_number: resourceData.phone,
+          department: resourceData.department,
+          role: resourceData.role,
+          join_date: resourceData.joinDate,
+          skills: resourceData.skills,
+          availability: resourceData.availability?.[0] || 100,
+          active_status: resourceData.status,
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating resource:', error);
+        throw error;
+      }
+
+      console.log('Resource created successfully:', data);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['resources'] });
+      toast({
+        title: "Success!",
+        description: "Resource created successfully.",
+        variant: "default",
+      });
+    },
+    onError: (error: any) => {
+      console.error('Failed to create resource:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create resource. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Create Timesheet Mutation
   const createTimesheet = useMutation({
-    mutationFn: async (timesheet: any) => {
-      return { ...timesheet, id: Date.now().toString() };
+    mutationFn: async (timesheetData: any) => {
+      console.log('Creating timesheet:', timesheetData);
+      
+      const { data, error } = await supabase
+        .from('timesheets')
+        .insert({
+          project_id: timesheetData.project,
+          task: timesheetData.task,
+          date: timesheetData.date,
+          start_time: timesheetData.startTime,
+          end_time: timesheetData.endTime,
+          billable: timesheetData.billable,
+          notes: timesheetData.notes,
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating timesheet:', error);
+        throw error;
+      }
+
+      console.log('Timesheet created successfully:', data);
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['timesheets'] });
+      toast({
+        title: "Success!",
+        description: "Time entry logged successfully.",
+        variant: "default",
+      });
+    },
+    onError: (error: any) => {
+      console.error('Failed to create timesheet:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to log time entry. Please try again.",
+        variant: "destructive",
+      });
     },
   });
 
+  // Create Vendor Mutation
+  const createVendor = useMutation({
+    mutationFn: async (vendorData: any) => {
+      console.log('Creating vendor:', vendorData);
+      
+      const { data, error } = await supabase
+        .from('vendors')
+        .insert({
+          vendor_name: vendorData.vendorName,
+          contact_person: vendorData.contactPerson,
+          contact_email: vendorData.contactEmail,
+          phone_number: vendorData.phoneNumber,
+          services_offered: vendorData.servicesOffered,
+          status: vendorData.status,
+          contract_start_date: vendorData.contractStart,
+          contract_end_date: vendorData.contractEnd,
+          notes: vendorData.notes,
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating vendor:', error);
+        throw error;
+      }
+
+      console.log('Vendor created successfully:', data);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['vendors'] });
+      toast({
+        title: "Success!",
+        description: "Vendor created successfully.",
+        variant: "default",
+      });
+    },
+    onError: (error: any) => {
+      console.error('Failed to create vendor:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create vendor. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Placeholder mutations for other entities
   const createInvoice = useMutation({
     mutationFn: async (invoice: any) => {
       return { ...invoice, id: Date.now().toString() };
@@ -286,7 +441,9 @@ export const usePSAData = () => {
     usePurchaseOrders,
     createClient,
     createProject,
+    createResource,
     createTimesheet,
+    createVendor,
     createInvoice,
     createExpense,
   };

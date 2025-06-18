@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,8 +10,8 @@ import { usePSAData } from '@/hooks/usePSAData';
 import NewClientForm from './forms/NewClientForm';
 
 const Clients = () => {
-  const { useClients } = usePSAData();
-  const { data: clients, isLoading } = useClients();
+  const { useClients, createClient } = usePSAData();
+  const { data: clients, isLoading, error } = useClients();
   const [searchTerm, setSearchTerm] = useState('');
   const [showNewClientModal, setShowNewClientModal] = useState(false);
 
@@ -22,22 +23,49 @@ const Clients = () => {
   };
 
   const getHealthStatus = (healthScore?: number) => {
-    if (!healthScore) return 'unknown';
+    if (!healthScore) return 'new';
     if (healthScore >= 8) return 'healthy';
     if (healthScore >= 5) return 'at risk';
     return 'critical';
   };
 
   const filteredClients = clients?.filter(client =>
-    client?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client?.email?.toLowerCase().includes(searchTerm.toLowerCase())
+    client?.client_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    client?.company_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    client?.primary_contact_email?.toLowerCase().includes(searchTerm.toLowerCase())
   ) || [];
 
-  const handleNewClient = (data: any) => {
-    console.log('Creating new client:', data);
-    setShowNewClientModal(false);
-    // Here you would typically call an API to create the client
+  const handleNewClient = async (data: any) => {
+    console.log('Submitting new client:', data);
+    try {
+      await createClient.mutateAsync(data);
+      setShowNewClientModal(false);
+    } catch (error) {
+      console.error('Error creating client:', error);
+    }
   };
+
+  if (error) {
+    console.error('Error loading clients:', error);
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-white">Clients</h1>
+            <p className="text-gray-400">Manage your client relationships</p>
+          </div>
+        </div>
+        <Card className="bg-gray-800/50 border-gray-700">
+          <CardContent className="p-12 text-center">
+            <h3 className="text-xl font-medium text-white mb-2">Error Loading Clients</h3>
+            <p className="text-gray-400 mb-4">
+              There was an error loading your clients. Please try refreshing the page.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -50,9 +78,10 @@ const Clients = () => {
         <Button 
           className="bg-blue-600 hover:bg-blue-700"
           onClick={() => setShowNewClientModal(true)}
+          disabled={createClient.isPending}
         >
           <Plus className="w-4 h-4 mr-2" />
-          New Client
+          {createClient.isPending ? 'Adding...' : 'New Client'}
         </Button>
       </div>
 
@@ -90,9 +119,9 @@ const Clients = () => {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-400 text-sm">Healthy Clients</p>
+                <p className="text-gray-400 text-sm">Active Clients</p>
                 <p className="text-2xl font-bold text-green-500">
-                  {clients?.filter(c => (c?.health_score || 0) >= 8).length || 0}
+                  {clients?.filter(c => c?.client_type === 'active').length || 0}
                 </p>
               </div>
               <div className="w-3 h-3 bg-green-500 rounded-full"></div>
@@ -103,9 +132,9 @@ const Clients = () => {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-400 text-sm">At Risk</p>
+                <p className="text-gray-400 text-sm">Prospects</p>
                 <p className="text-2xl font-bold text-yellow-500">
-                  {clients?.filter(c => (c?.health_score || 0) >= 5 && (c?.health_score || 0) < 8).length || 0}
+                  {clients?.filter(c => c?.client_type === 'prospect').length || 0}
                 </p>
               </div>
               <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
@@ -135,43 +164,44 @@ const Clients = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredClients.map((client) => (
-            <Card key={client.id} className="bg-gray-800/50 border-gray-700 hover:bg-gray-800/70 transition-colors cursor-pointer">
+            <Card key={client.client_id} className="bg-gray-800/50 border-gray-700 hover:bg-gray-800/70 transition-colors cursor-pointer">
               <CardHeader>
                 <div className="flex justify-between items-start">
-                  <CardTitle className="text-white text-lg">{client.name}</CardTitle>
-                  <Badge className={`${getHealthColor(client.health_score)} text-white`}>
-                    {getHealthStatus(client.health_score)}
+                  <CardTitle className="text-white text-lg">{client.client_name}</CardTitle>
+                  <Badge className={`${getHealthColor()} text-white`}>
+                    {client.client_type || 'new'}
                   </Badge>
                 </div>
+                <CardDescription className="text-gray-400">
+                  {client.company_name}
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {client.email && (
+                  {client.primary_contact_email && (
                     <div className="flex items-center text-gray-300 text-sm">
                       <Mail className="w-4 h-4 mr-2 text-gray-400" />
-                      {client.email}
+                      {client.primary_contact_email}
                     </div>
                   )}
                   
-                  {client.phone && (
+                  {client.phone_number && (
                     <div className="flex items-center text-gray-300 text-sm">
                       <Phone className="w-4 h-4 mr-2 text-gray-400" />
-                      {client.phone}
+                      {client.phone_number}
                     </div>
                   )}
                   
-                  {client.website && (
+                  {client.industry && (
                     <div className="flex items-center text-gray-300 text-sm">
-                      <Globe className="w-4 h-4 mr-2 text-gray-400" />
-                      <a href={client.website} target="_blank" rel="noopener noreferrer" className="hover:text-blue-400">
-                        {client.website}
-                      </a>
+                      <Building className="w-4 h-4 mr-2 text-gray-400" />
+                      {client.industry}
                     </div>
                   )}
                   
-                  {client.address && (
+                  {client.revenue_tier && (
                     <div className="text-gray-400 text-sm">
-                      <p className="line-clamp-2">{client.address}</p>
+                      <p>Revenue Tier: {client.revenue_tier}</p>
                     </div>
                   )}
                 </div>
@@ -189,7 +219,10 @@ const Clients = () => {
             <p className="text-gray-400 mb-4">
               {searchTerm ? 'Try adjusting your search terms' : 'Get started by adding your first client'}
             </p>
-            <Button className="bg-blue-600 hover:bg-blue-700">
+            <Button 
+              className="bg-blue-600 hover:bg-blue-700"
+              onClick={() => setShowNewClientModal(true)}
+            >
               <Plus className="w-4 h-4 mr-2" />
               Add Client
             </Button>

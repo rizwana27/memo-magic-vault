@@ -9,6 +9,57 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      clients: {
+        Row: {
+          client_id: string
+          client_name: string
+          client_type: string
+          company_name: string
+          created_at: string | null
+          created_by: string | null
+          industry: string | null
+          notes: string | null
+          phone_number: string | null
+          primary_contact_email: string
+          primary_contact_name: string
+          revenue_tier: string | null
+          tags: string[] | null
+          updated_at: string | null
+        }
+        Insert: {
+          client_id: string
+          client_name: string
+          client_type: string
+          company_name: string
+          created_at?: string | null
+          created_by?: string | null
+          industry?: string | null
+          notes?: string | null
+          phone_number?: string | null
+          primary_contact_email: string
+          primary_contact_name: string
+          revenue_tier?: string | null
+          tags?: string[] | null
+          updated_at?: string | null
+        }
+        Update: {
+          client_id?: string
+          client_name?: string
+          client_type?: string
+          company_name?: string
+          created_at?: string | null
+          created_by?: string | null
+          industry?: string | null
+          notes?: string | null
+          phone_number?: string | null
+          primary_contact_email?: string
+          primary_contact_name?: string
+          revenue_tier?: string | null
+          tags?: string[] | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -57,11 +108,251 @@ export type Database = {
         }
         Relationships: []
       }
+      projects: {
+        Row: {
+          attachments: string | null
+          budget: number | null
+          client_id: string | null
+          created_at: string | null
+          created_by: string | null
+          delivery_status: string | null
+          description: string | null
+          end_date: string | null
+          project_id: string
+          project_manager: string | null
+          project_name: string
+          region: string | null
+          start_date: string | null
+          status: string
+          tags: string[] | null
+          updated_at: string | null
+        }
+        Insert: {
+          attachments?: string | null
+          budget?: number | null
+          client_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          delivery_status?: string | null
+          description?: string | null
+          end_date?: string | null
+          project_id: string
+          project_manager?: string | null
+          project_name: string
+          region?: string | null
+          start_date?: string | null
+          status: string
+          tags?: string[] | null
+          updated_at?: string | null
+        }
+        Update: {
+          attachments?: string | null
+          budget?: number | null
+          client_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          delivery_status?: string | null
+          description?: string | null
+          end_date?: string | null
+          project_id?: string
+          project_manager?: string | null
+          project_name?: string
+          region?: string | null
+          start_date?: string | null
+          status?: string
+          tags?: string[] | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projects_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["client_id"]
+          },
+        ]
+      }
+      resources: {
+        Row: {
+          active_status: boolean | null
+          availability: number | null
+          created_at: string | null
+          created_by: string | null
+          department: string
+          email_address: string
+          full_name: string
+          join_date: string | null
+          phone_number: string | null
+          profile_picture: string | null
+          resource_id: string
+          role: string
+          skills: string[] | null
+          updated_at: string | null
+        }
+        Insert: {
+          active_status?: boolean | null
+          availability?: number | null
+          created_at?: string | null
+          created_by?: string | null
+          department: string
+          email_address: string
+          full_name: string
+          join_date?: string | null
+          phone_number?: string | null
+          profile_picture?: string | null
+          resource_id: string
+          role: string
+          skills?: string[] | null
+          updated_at?: string | null
+        }
+        Update: {
+          active_status?: boolean | null
+          availability?: number | null
+          created_at?: string | null
+          created_by?: string | null
+          department?: string
+          email_address?: string
+          full_name?: string
+          join_date?: string | null
+          phone_number?: string | null
+          profile_picture?: string | null
+          resource_id?: string
+          role?: string
+          skills?: string[] | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      timesheets: {
+        Row: {
+          billable: boolean | null
+          created_at: string | null
+          created_by: string | null
+          date: string
+          end_time: string
+          hours: number | null
+          notes: string | null
+          project_id: string | null
+          start_time: string
+          task: string
+          timesheet_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          billable?: boolean | null
+          created_at?: string | null
+          created_by?: string | null
+          date: string
+          end_time: string
+          hours?: number | null
+          notes?: string | null
+          project_id?: string | null
+          start_time: string
+          task: string
+          timesheet_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          billable?: boolean | null
+          created_at?: string | null
+          created_by?: string | null
+          date?: string
+          end_time?: string
+          hours?: number | null
+          notes?: string | null
+          project_id?: string | null
+          start_time?: string
+          task?: string
+          timesheet_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "timesheets_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["project_id"]
+          },
+        ]
+      }
+      vendors: {
+        Row: {
+          attachments: string | null
+          contact_email: string
+          contact_person: string
+          contract_end_date: string | null
+          contract_start_date: string | null
+          created_at: string | null
+          created_by: string | null
+          notes: string | null
+          phone_number: string | null
+          services_offered: string
+          status: string | null
+          updated_at: string | null
+          vendor_id: string
+          vendor_name: string
+        }
+        Insert: {
+          attachments?: string | null
+          contact_email: string
+          contact_person: string
+          contract_end_date?: string | null
+          contract_start_date?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          notes?: string | null
+          phone_number?: string | null
+          services_offered: string
+          status?: string | null
+          updated_at?: string | null
+          vendor_id: string
+          vendor_name: string
+        }
+        Update: {
+          attachments?: string | null
+          contact_email?: string
+          contact_person?: string
+          contract_end_date?: string | null
+          contract_start_date?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          notes?: string | null
+          phone_number?: string | null
+          services_offered?: string
+          status?: string | null
+          updated_at?: string | null
+          vendor_id?: string
+          vendor_name?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      generate_client_id: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      generate_project_id: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      generate_resource_id: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      generate_timesheet_id: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      generate_vendor_id: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       get_user_role: {
         Args: Record<PropertyKey, never>
         Returns: string
