@@ -83,6 +83,11 @@ const TimesheetEntryForm = ({ onSubmit, onCancel }: TimesheetEntryFormProps) => 
       return;
     }
 
+    if (!startTime || !endTime) {
+      setError('Start time and end time are required');
+      return;
+    }
+
     // Find the selected project to get its ID
     const project = projects?.find(p => p.project_id === selectedProject);
     if (!project) {
@@ -91,18 +96,19 @@ const TimesheetEntryForm = ({ onSubmit, onCancel }: TimesheetEntryFormProps) => 
     }
 
     // Map the form data to the correct database schema
+    // Note: We do NOT include 'hours' in the payload as it may be a computed column
     const timesheetData = {
       project_id: selectedProject,
       task: selectedTask,
       date: date.toISOString().split('T')[0],
       start_time: startTime,
       end_time: endTime,
-      hours: totalHours,
-      billable,
-      notes: notes || null,
+      billable: billable,
+      notes: notes?.trim() || null,
     };
 
     console.log('Creating timesheet with data:', timesheetData);
+    console.log('Calculated hours (for reference):', totalHours);
     onSubmit(timesheetData);
   };
 

@@ -20,11 +20,11 @@ interface NewVendorFormProps {
 
 const NewVendorForm = ({ onSubmit, onCancel }: NewVendorFormProps) => {
   const [formData, setFormData] = useState({
-    vendorName: '',
-    contactPerson: '',
-    contactEmail: '',
-    phoneNumber: '',
-    servicesOffered: '',
+    vendor_name: '',
+    contact_person: '',
+    contact_email: '',
+    phone_number: '',
+    services_offered: '',
     status: 'active',
     notes: '',
   });
@@ -36,7 +36,7 @@ const NewVendorForm = ({ onSubmit, onCancel }: NewVendorFormProps) => {
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    if (error) setError(''); // Clear error when user makes changes
+    if (error) setError('');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -45,31 +45,31 @@ const NewVendorForm = ({ onSubmit, onCancel }: NewVendorFormProps) => {
     setIsSubmitting(true);
 
     // Validation
-    if (!formData.vendorName.trim()) {
+    if (!formData.vendor_name.trim()) {
       setError('Vendor name is required');
       setIsSubmitting(false);
       return;
     }
 
-    if (!formData.contactPerson.trim()) {
+    if (!formData.contact_person.trim()) {
       setError('Contact person is required');
       setIsSubmitting(false);
       return;
     }
 
-    if (!formData.contactEmail.trim()) {
+    if (!formData.contact_email.trim()) {
       setError('Contact email is required');
       setIsSubmitting(false);
       return;
     }
 
-    if (!isEmailValid(formData.contactEmail)) {
+    if (!isEmailValid(formData.contact_email)) {
       setError('Please enter a valid email address');
       setIsSubmitting(false);
       return;
     }
 
-    if (!formData.servicesOffered.trim()) {
+    if (!formData.services_offered.trim()) {
       setError('Services offered is required');
       setIsSubmitting(false);
       return;
@@ -83,16 +83,27 @@ const NewVendorForm = ({ onSubmit, onCancel }: NewVendorFormProps) => {
     }
 
     try {
-      await onSubmit({
-        ...formData,
-        contractStart: contractStart?.toISOString(),
-        contractEnd: contractEnd?.toISOString(),
-        attachments,
-      });
+      // Map form data to match the database schema exactly
+      const vendorData = {
+        vendor_name: formData.vendor_name.trim(),
+        contact_person: formData.contact_person.trim(),
+        contact_email: formData.contact_email.trim(),
+        phone_number: formData.phone_number.trim() || null,
+        services_offered: formData.services_offered.trim(),
+        status: formData.status,
+        notes: formData.notes.trim() || null,
+        contract_start_date: contractStart ? contractStart.toISOString().split('T')[0] : null,
+        contract_end_date: contractEnd ? contractEnd.toISOString().split('T')[0] : null,
+        attachments: null, // For now, we'll set this to null
+      };
+
+      console.log('Submitting vendor data:', vendorData);
+      await onSubmit(vendorData);
       // Success is handled by the parent component
     } catch (error) {
       console.error('Error submitting vendor form:', error);
-      setError(error instanceof Error ? error.message : 'Failed to create vendor. Please try again.');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to create vendor. Please try again.';
+      setError(`Failed to create vendor: ${errorMessage}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -118,11 +129,11 @@ const NewVendorForm = ({ onSubmit, onCancel }: NewVendorFormProps) => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Vendor Name */}
           <div className="space-y-2">
-            <Label htmlFor="vendorName" className="text-gray-200">Vendor Name *</Label>
+            <Label htmlFor="vendor_name" className="text-gray-200">Vendor Name *</Label>
             <Input
-              id="vendorName"
-              value={formData.vendorName}
-              onChange={(e) => handleInputChange('vendorName', e.target.value)}
+              id="vendor_name"
+              value={formData.vendor_name}
+              onChange={(e) => handleInputChange('vendor_name', e.target.value)}
               className="bg-white/10 border-white/20 text-white placeholder-gray-400"
               placeholder="Enter vendor name"
               required
@@ -131,11 +142,11 @@ const NewVendorForm = ({ onSubmit, onCancel }: NewVendorFormProps) => {
 
           {/* Contact Person */}
           <div className="space-y-2">
-            <Label htmlFor="contactPerson" className="text-gray-200">Contact Person *</Label>
+            <Label htmlFor="contact_person" className="text-gray-200">Contact Person *</Label>
             <Input
-              id="contactPerson"
-              value={formData.contactPerson}
-              onChange={(e) => handleInputChange('contactPerson', e.target.value)}
+              id="contact_person"
+              value={formData.contact_person}
+              onChange={(e) => handleInputChange('contact_person', e.target.value)}
               className="bg-white/10 border-white/20 text-white placeholder-gray-400"
               placeholder="Enter contact person name"
               required
@@ -146,12 +157,12 @@ const NewVendorForm = ({ onSubmit, onCancel }: NewVendorFormProps) => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Contact Email */}
           <div className="space-y-2">
-            <Label htmlFor="contactEmail" className="text-gray-200">Contact Email *</Label>
+            <Label htmlFor="contact_email" className="text-gray-200">Contact Email *</Label>
             <Input
-              id="contactEmail"
+              id="contact_email"
               type="email"
-              value={formData.contactEmail}
-              onChange={(e) => handleInputChange('contactEmail', e.target.value)}
+              value={formData.contact_email}
+              onChange={(e) => handleInputChange('contact_email', e.target.value)}
               className="bg-white/10 border-white/20 text-white placeholder-gray-400"
               placeholder="vendor@example.com"
               required
@@ -160,12 +171,12 @@ const NewVendorForm = ({ onSubmit, onCancel }: NewVendorFormProps) => {
 
           {/* Phone Number */}
           <div className="space-y-2">
-            <Label htmlFor="phoneNumber" className="text-gray-200">Phone Number</Label>
+            <Label htmlFor="phone_number" className="text-gray-200">Phone Number</Label>
             <Input
-              id="phoneNumber"
+              id="phone_number"
               type="tel"
-              value={formData.phoneNumber}
-              onChange={(e) => handleInputChange('phoneNumber', e.target.value)}
+              value={formData.phone_number}
+              onChange={(e) => handleInputChange('phone_number', e.target.value)}
               className="bg-white/10 border-white/20 text-white placeholder-gray-400"
               placeholder="+1-555-0123"
             />
@@ -174,11 +185,11 @@ const NewVendorForm = ({ onSubmit, onCancel }: NewVendorFormProps) => {
 
         {/* Services Offered */}
         <div className="space-y-2">
-          <Label htmlFor="servicesOffered" className="text-gray-200">Services Offered *</Label>
+          <Label htmlFor="services_offered" className="text-gray-200">Services Offered *</Label>
           <Textarea
-            id="servicesOffered"
-            value={formData.servicesOffered}
-            onChange={(e) => handleInputChange('servicesOffered', e.target.value)}
+            id="services_offered"
+            value={formData.services_offered}
+            onChange={(e) => handleInputChange('services_offered', e.target.value)}
             className="bg-white/10 border-white/20 text-white placeholder-gray-400"
             placeholder="Describe the services this vendor provides..."
             rows={3}
@@ -223,7 +234,7 @@ const NewVendorForm = ({ onSubmit, onCancel }: NewVendorFormProps) => {
                   selected={contractStart}
                   onSelect={(date) => {
                     setContractStart(date);
-                    if (error) setError(''); // Clear error when user makes changes
+                    if (error) setError('');
                   }}
                   initialFocus
                   className="bg-gray-800 text-white"
@@ -253,7 +264,7 @@ const NewVendorForm = ({ onSubmit, onCancel }: NewVendorFormProps) => {
                   selected={contractEnd}
                   onSelect={(date) => {
                     setContractEnd(date);
-                    if (error) setError(''); // Clear error when user makes changes
+                    if (error) setError('');
                   }}
                   initialFocus
                   className="bg-gray-800 text-white"
@@ -306,7 +317,7 @@ const NewVendorForm = ({ onSubmit, onCancel }: NewVendorFormProps) => {
         <Button
           onClick={handleSubmit}
           className="bg-blue-600 hover:bg-blue-700 text-white"
-          disabled={isSubmitting || !formData.vendorName || !formData.contactPerson || !formData.contactEmail || !formData.servicesOffered || (formData.contactEmail && !isEmailValid(formData.contactEmail))}
+          disabled={isSubmitting || !formData.vendor_name || !formData.contact_person || !formData.contact_email || !formData.services_offered || (formData.contact_email && !isEmailValid(formData.contact_email))}
         >
           {isSubmitting ? 'Adding...' : 'Add Vendor'}
         </Button>

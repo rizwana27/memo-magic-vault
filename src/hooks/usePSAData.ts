@@ -499,13 +499,13 @@ export const useCreateTimesheet = () => {
 
       if (error) {
         console.error('Error creating timesheet:', error);
-        throw error;
+        throw new Error(`Failed to create timesheet: ${error.message}`);
       }
 
       // Create a notification
       try {
         await supabase.rpc('create_notification', {
-          p_message: `New timesheet entry created for ${timesheetData.hours} hours`,
+          p_message: `New timesheet entry created for ${timesheetData.task || 'unknown task'}`,
           p_type: 'timesheet',
           p_related_id: data.timesheet_id
         });
@@ -599,6 +599,12 @@ export const useCreateVendor = () => {
     mutationFn: async (vendorData: any) => {
       console.log('Creating vendor:', vendorData);
       
+      // Check if user is authenticated
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('You must be logged in to create a vendor');
+      }
+      
       const { data, error } = await supabase
         .from('vendors')
         .insert([vendorData])
@@ -607,15 +613,19 @@ export const useCreateVendor = () => {
 
       if (error) {
         console.error('Error creating vendor:', error);
-        throw error;
+        throw new Error(`Failed to create vendor: ${error.message}`);
       }
 
       // Create a notification
-      await supabase.rpc('create_notification', {
-        p_message: `New vendor "${vendorData.vendor_name}" was added`,
-        p_type: 'resource',
-        p_related_id: data.vendor_id
-      });
+      try {
+        await supabase.rpc('create_notification', {
+          p_message: `New vendor "${vendorData.vendor_name}" was added`,
+          p_type: 'resource',
+          p_related_id: data.vendor_id
+        });
+      } catch (notificationError) {
+        console.warn('Failed to create notification:', notificationError);
+      }
 
       return data;
     },
