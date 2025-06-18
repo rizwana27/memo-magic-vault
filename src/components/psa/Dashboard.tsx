@@ -100,9 +100,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onTabChange }) => {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="bg-gradient-to-br from-blue-600/20 to-blue-800/20 border-blue-500/30 backdrop-blur-sm">
+        <Card className="bg-blue-100/10 border-blue-400/30 backdrop-blur-sm hover:bg-blue-100/15 transition-all duration-200">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-blue-200">Active Projects</CardTitle>
+            <CardTitle className="text-sm font-medium text-blue-100">Active Projects</CardTitle>
             <FolderOpen className="h-4 w-4 text-blue-300" />
           </CardHeader>
           <CardContent>
@@ -113,9 +113,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onTabChange }) => {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-green-600/20 to-green-800/20 border-green-500/30 backdrop-blur-sm">
+        <Card className="bg-green-100/10 border-green-400/30 backdrop-blur-sm hover:bg-green-100/15 transition-all duration-200">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-green-200">Total Revenue</CardTitle>
+            <CardTitle className="text-sm font-medium text-green-100">Total Revenue</CardTitle>
             <DollarSign className="h-4 w-4 text-green-300" />
           </CardHeader>
           <CardContent>
@@ -126,9 +126,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onTabChange }) => {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-purple-600/20 to-purple-800/20 border-purple-500/30 backdrop-blur-sm">
+        <Card className="bg-purple-100/10 border-purple-400/30 backdrop-blur-sm hover:bg-purple-100/15 transition-all duration-200">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-purple-200">Team Members</CardTitle>
+            <CardTitle className="text-sm font-medium text-purple-100">Team Members</CardTitle>
             <Users className="h-4 w-4 text-purple-300" />
           </CardHeader>
           <CardContent>
@@ -139,9 +139,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onTabChange }) => {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-orange-600/20 to-orange-800/20 border-orange-500/30 backdrop-blur-sm">
+        <Card className="bg-orange-100/10 border-orange-400/30 backdrop-blur-sm hover:bg-orange-100/15 transition-all duration-200">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-orange-200">Utilization</CardTitle>
+            <CardTitle className="text-sm font-medium text-orange-100">Utilization</CardTitle>
             <TrendingUp className="h-4 w-4 text-orange-300" />
           </CardHeader>
           <CardContent>
