@@ -287,7 +287,7 @@ const TimesheetEntryForm = ({ onSubmit, onCancel }: TimesheetEntryFormProps) => 
             </p>
             {billable && (
               <p className="text-sm text-green-400 mt-1">✓ Billable time</p>
-            </p>
+            )}
           </div>
         )}
       </form>
