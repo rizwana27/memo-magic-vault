@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { useAuthContext } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/AuthContext';
 import SimplifiedLoginPage from './SimplifiedLoginPage';
 
 interface ProtectedRouteProps {
@@ -8,7 +8,7 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  const { user, loading } = useAuthContext();
+  const { user, loading } = useAuth();
 
   console.log('ProtectedRoute - loading:', loading, 'user:', user?.email);
 
