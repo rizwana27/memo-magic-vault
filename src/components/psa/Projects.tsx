@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,11 +6,12 @@ import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog } from '@/components/ui/dialog';
 import { Plus, Search, Filter, Calendar, Users, DollarSign } from 'lucide-react';
-import { useProjects } from '@/hooks/useProjects';
+import { usePSAData } from '@/hooks/usePSAData';
 import NewProjectForm from './forms/NewProjectForm';
 
 const Projects = () => {
-  const { projects, createProject, isLoading } = useProjects();
+  const { useProjects } = usePSAData();
+  const { data: projects, isLoading } = useProjects();
   const [searchTerm, setSearchTerm] = useState('');
   const [showNewProjectModal, setShowNewProjectModal] = useState(false);
 
@@ -31,12 +31,10 @@ const Projects = () => {
     project?.client?.name?.toLowerCase().includes(searchTerm.toLowerCase())
   ) || [];
 
-  const handleNewProject = async (data: any) => {
+  const handleNewProject = (data: any) => {
     console.log('Creating new project:', data);
-    const result = await createProject(data);
-    if (result.success) {
-      setShowNewProjectModal(false);
-    }
+    setShowNewProjectModal(false);
+    // Here you would typically call an API to create the project
   };
 
   return (
@@ -50,7 +48,6 @@ const Projects = () => {
         <Button 
           className="bg-blue-600 hover:bg-blue-700"
           onClick={() => setShowNewProjectModal(true)}
-          disabled={isLoading}
         >
           <Plus className="w-4 h-4 mr-2" />
           New Project
@@ -147,11 +144,7 @@ const Projects = () => {
                 <p className="text-gray-400 mb-4">
                   {searchTerm ? 'Try adjusting your search terms' : 'Get started by creating your first project'}
                 </p>
-                <Button 
-                  className="bg-blue-600 hover:bg-blue-700"
-                  onClick={() => setShowNewProjectModal(true)}
-                  disabled={isLoading}
-                >
+                <Button className="bg-blue-600 hover:bg-blue-700">
                   <Plus className="w-4 h-4 mr-2" />
                   Create Project
                 </Button>
@@ -230,7 +223,6 @@ const Projects = () => {
         <NewProjectForm
           onSubmit={handleNewProject}
           onCancel={() => setShowNewProjectModal(false)}
-          isLoading={isLoading}
         />
       </Dialog>
     </div>

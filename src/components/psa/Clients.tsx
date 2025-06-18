@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,11 +5,12 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Dialog } from '@/components/ui/dialog';
 import { Plus, Search, Filter, Globe, Mail, Phone, Building } from 'lucide-react';
-import { useClients } from '@/hooks/useClients';
+import { usePSAData } from '@/hooks/usePSAData';
 import NewClientForm from './forms/NewClientForm';
 
 const Clients = () => {
-  const { clients, createClient, isLoading } = useClients();
+  const { useClients } = usePSAData();
+  const { data: clients, isLoading } = useClients();
   const [searchTerm, setSearchTerm] = useState('');
   const [showNewClientModal, setShowNewClientModal] = useState(false);
 
@@ -33,12 +33,10 @@ const Clients = () => {
     client?.email?.toLowerCase().includes(searchTerm.toLowerCase())
   ) || [];
 
-  const handleNewClient = async (data: any) => {
+  const handleNewClient = (data: any) => {
     console.log('Creating new client:', data);
-    const result = await createClient(data);
-    if (result.success) {
-      setShowNewClientModal(false);
-    }
+    setShowNewClientModal(false);
+    // Here you would typically call an API to create the client
   };
 
   return (
@@ -52,7 +50,6 @@ const Clients = () => {
         <Button 
           className="bg-blue-600 hover:bg-blue-700"
           onClick={() => setShowNewClientModal(true)}
-          disabled={isLoading}
         >
           <Plus className="w-4 h-4 mr-2" />
           New Client
@@ -192,11 +189,7 @@ const Clients = () => {
             <p className="text-gray-400 mb-4">
               {searchTerm ? 'Try adjusting your search terms' : 'Get started by adding your first client'}
             </p>
-            <Button 
-              className="bg-blue-600 hover:bg-blue-700"
-              onClick={() => setShowNewClientModal(true)}
-              disabled={isLoading}
-            >
+            <Button className="bg-blue-600 hover:bg-blue-700">
               <Plus className="w-4 h-4 mr-2" />
               Add Client
             </Button>
@@ -209,7 +202,6 @@ const Clients = () => {
         <NewClientForm
           onSubmit={handleNewClient}
           onCancel={() => setShowNewClientModal(false)}
-          isLoading={isLoading}
         />
       </Dialog>
     </div>

@@ -8,17 +8,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { CalendarIcon, Upload, Loader2 } from 'lucide-react';
+import { CalendarIcon, Upload } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
 interface NewVendorFormProps {
   onSubmit: (data: any) => void;
   onCancel: () => void;
-  isLoading?: boolean;
 }
 
-const NewVendorForm = ({ onSubmit, onCancel, isLoading = false }: NewVendorFormProps) => {
+const NewVendorForm = ({ onSubmit, onCancel }: NewVendorFormProps) => {
   const [formData, setFormData] = useState({
     vendorName: '',
     contactPerson: '',
@@ -31,41 +30,13 @@ const NewVendorForm = ({ onSubmit, onCancel, isLoading = false }: NewVendorFormP
   const [contractStart, setContractStart] = useState<Date>();
   const [contractEnd, setContractEnd] = useState<Date>();
   const [attachments, setAttachments] = useState<FileList | null>(null);
-  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const validateForm = () => {
-    const newErrors: Record<string, string> = {};
-
-    if (!formData.vendorName.trim()) {
-      newErrors.vendorName = 'Vendor name is required';
-    }
-
-    if (!formData.contactPerson.trim()) {
-      newErrors.contactPerson = 'Contact person is required';
-    }
-
-    if (!formData.contactEmail.trim()) {
-      newErrors.contactEmail = 'Contact email is required';
-    } else if (!isEmailValid(formData.contactEmail)) {
-      newErrors.contactEmail = 'Please enter a valid email address';
-    }
-
-    if (!formData.servicesOffered.trim()) {
-      newErrors.servicesOffered = 'Services offered is required';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validateForm() || isLoading) return;
-
     onSubmit({
       ...formData,
       contractStart: contractStart?.toISOString(),
@@ -96,9 +67,7 @@ const NewVendorForm = ({ onSubmit, onCancel, isLoading = false }: NewVendorFormP
               className="bg-white/10 border-white/20 text-white placeholder-gray-400"
               placeholder="Enter vendor name"
               required
-              disabled={isLoading}
             />
-            {errors.vendorName && <p className="text-red-400 text-sm">{errors.vendorName}</p>}
           </div>
 
           {/* Contact Person */}
@@ -111,9 +80,7 @@ const NewVendorForm = ({ onSubmit, onCancel, isLoading = false }: NewVendorFormP
               className="bg-white/10 border-white/20 text-white placeholder-gray-400"
               placeholder="Enter contact person name"
               required
-              disabled={isLoading}
             />
-            {errors.contactPerson && <p className="text-red-400 text-sm">{errors.contactPerson}</p>}
           </div>
         </div>
 
@@ -129,9 +96,10 @@ const NewVendorForm = ({ onSubmit, onCancel, isLoading = false }: NewVendorFormP
               className="bg-white/10 border-white/20 text-white placeholder-gray-400"
               placeholder="vendor@example.com"
               required
-              disabled={isLoading}
             />
-            {errors.contactEmail && <p className="text-red-400 text-sm">{errors.contactEmail}</p>}
+            {formData.contactEmail && !isEmailValid(formData.contactEmail) && (
+              <p className="text-red-400 text-sm">Please enter a valid email address</p>
+            )}
           </div>
 
           {/* Phone Number */}
@@ -144,7 +112,6 @@ const NewVendorForm = ({ onSubmit, onCancel, isLoading = false }: NewVendorFormP
               onChange={(e) => handleInputChange('phoneNumber', e.target.value)}
               className="bg-white/10 border-white/20 text-white placeholder-gray-400"
               placeholder="+1-555-0123"
-              disabled={isLoading}
             />
           </div>
         </div>
@@ -160,19 +127,13 @@ const NewVendorForm = ({ onSubmit, onCancel, isLoading = false }: NewVendorFormP
             placeholder="Describe the services this vendor provides..."
             rows={3}
             required
-            disabled={isLoading}
           />
-          {errors.servicesOffered && <p className="text-red-400 text-sm">{errors.servicesOffered}</p>}
         </div>
 
         {/* Status */}
         <div className="space-y-2">
           <Label className="text-gray-200">Status *</Label>
-          <Select 
-            value={formData.status} 
-            onValueChange={(value) => handleInputChange('status', value)}
-            disabled={isLoading}
-          >
+          <Select value={formData.status} onValueChange={(value) => handleInputChange('status', value)}>
             <SelectTrigger className="bg-white/10 border-white/20 text-white">
               <SelectValue />
             </SelectTrigger>
@@ -265,7 +226,6 @@ const NewVendorForm = ({ onSubmit, onCancel, isLoading = false }: NewVendorFormP
             className="bg-white/10 border-white/20 text-white placeholder-gray-400"
             placeholder="Add any additional notes about this vendor..."
             rows={3}
-            disabled={isLoading}
           />
         </div>
       </form>
@@ -276,23 +236,15 @@ const NewVendorForm = ({ onSubmit, onCancel, isLoading = false }: NewVendorFormP
           variant="outline"
           onClick={onCancel}
           className="border-gray-600 text-gray-300 hover:bg-gray-700"
-          disabled={isLoading}
         >
           Cancel
         </Button>
         <Button
           onClick={handleSubmit}
           className="bg-blue-600 hover:bg-blue-700 text-white"
-          disabled={isLoading || !formData.vendorName || !formData.contactPerson || !formData.contactEmail || !formData.servicesOffered || (formData.contactEmail && !isEmailValid(formData.contactEmail))}
+          disabled={!formData.vendorName || !formData.contactPerson || !formData.contactEmail || !formData.servicesOffered || (formData.contactEmail && !isEmailValid(formData.contactEmail))}
         >
-          {isLoading ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Adding...
-            </>
-          ) : (
-            'Add Vendor'
-          )}
+          Add Vendor
         </Button>
       </DialogFooter>
     </DialogContent>
