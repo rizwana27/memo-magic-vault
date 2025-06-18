@@ -9,6 +9,39 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      client_invites: {
+        Row: {
+          client_name: string
+          created_at: string
+          email: string
+          id: string
+          invitation_message: string | null
+          invited_by: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          client_name: string
+          created_at?: string
+          email: string
+          id?: string
+          invitation_message?: string | null
+          invited_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          client_name?: string
+          created_at?: string
+          email?: string
+          id?: string
+          invitation_message?: string | null
+          invited_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       clients: {
         Row: {
           client_id: string
@@ -143,6 +176,36 @@ export type Database = {
             referencedColumns: ["project_id"]
           },
         ]
+      }
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+          related_id: string | null
+          seen: boolean
+          type: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message: string
+          related_id?: string | null
+          seen?: boolean
+          type: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string
+          related_id?: string | null
+          seen?: boolean
+          type?: string
+          user_id?: string | null
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
@@ -480,6 +543,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_notification: {
+        Args: {
+          p_message: string
+          p_type: string
+          p_related_id?: string
+          p_user_id?: string
+        }
+        Returns: string
+      }
       generate_client_id: {
         Args: Record<PropertyKey, never>
         Returns: string

@@ -1,295 +1,237 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
+import { Progress } from '@/components/ui/progress';
 import { 
-  TrendingUp, 
   Users, 
   FolderOpen, 
-  Clock, 
-  DollarSign, 
-  Plus, 
-  UserPlus, 
-  FileText,
-  BarChart3,
-  PieChart as PieChartIcon,
-  Activity,
-  ArrowUpRight,
-  ArrowDownRight
+  Clock,
+  DollarSign,
+  TrendingUp,
+  Plus,
+  UserPlus,
+  UserCheck,
+  Calendar,
+  AlertTriangle,
+  CheckCircle,
+  XCircle
 } from 'lucide-react';
+import { useProjects, useClients, useResources, useTimesheets, useInvoices } from '@/hooks/usePSAData';
+import NewProjectForm from './forms/NewProjectForm';
+import NewResourceForm from './forms/NewResourceForm';
+import ClientInviteForm from './forms/ClientInviteForm';
 
-const Dashboard = () => {
-  // Mock data for charts
-  const projectStatusData = [
-    { name: 'Active', value: 12, color: '#14b8a6' },
-    { name: 'Planning', value: 5, color: '#f59e0b' },
-    { name: 'On Hold', value: 2, color: '#ef4444' },
-    { name: 'Completed', value: 18, color: '#10b981' },
-  ];
+interface DashboardProps {
+  onTabChange?: (tab: string) => void;
+}
 
-  const revenueData = [
-    { month: 'Jan', revenue: 85000, expenses: 62000 },
-    { month: 'Feb', revenue: 92000, expenses: 68000 },
-    { month: 'Mar', revenue: 78000, expenses: 55000 },
-    { month: 'Apr', revenue: 105000, expenses: 78000 },
-    { month: 'May', revenue: 118000, expenses: 85000 },
-    { month: 'Jun', revenue: 124000, expenses: 89000 },
-  ];
+const Dashboard: React.FC<DashboardProps> = ({ onTabChange }) => {
+  const [showProjectForm, setShowProjectForm] = useState(false);
+  const [showResourceForm, setShowResourceForm] = useState(false);
+  const [showClientInviteForm, setShowClientInviteForm] = useState(false);
 
-  const utilizationData = [
-    { name: 'John Smith', utilization: 92 },
-    { name: 'Sarah Davis', utilization: 87 },
-    { name: 'Mike Johnson', utilization: 95 },
-    { name: 'Emily Brown', utilization: 78 },
-    { name: 'David Wilson', utilization: 85 },
-  ];
+  const { data: projects = [] } = useProjects();
+  const { data: clients = [] } = useClients();
+  const { data: resources = [] } = useResources();
+  const { data: timesheets = [] } = useTimesheets();
+  const { data: invoices = [] } = useInvoices();
 
-  const stats = [
-    { 
-      title: 'Active Projects', 
-      value: '12', 
-      change: '+2 this month', 
-      changeType: 'positive',
-      icon: FolderOpen, 
-      color: 'text-teal-600',
-      bgColor: 'from-teal-500/20 to-teal-600/10',
-      borderColor: 'border-teal-500/30'
-    },
-    { 
-      title: 'Total Clients', 
-      value: '48', 
-      change: '+5 this month', 
-      changeType: 'positive',
-      icon: Users, 
-      color: 'text-emerald-600',
-      bgColor: 'from-emerald-500/20 to-emerald-600/10',
-      borderColor: 'border-emerald-500/30'
-    },
-    { 
-      title: 'Billable Hours', 
-      value: '2,340', 
-      change: '+12% this month', 
-      changeType: 'positive',
-      icon: Clock, 
-      color: 'text-purple-600',
-      bgColor: 'from-purple-500/20 to-purple-600/10',
-      borderColor: 'border-purple-500/30'
-    },
-    { 
-      title: 'Revenue', 
-      value: '$124K', 
-      change: '+8% this month', 
-      changeType: 'positive',
-      icon: DollarSign, 
-      color: 'text-amber-600',
-      bgColor: 'from-amber-500/20 to-amber-600/10',
-      borderColor: 'border-amber-500/30'
+  // Calculate KPIs from real data
+  const activeProjects = projects.filter(p => p.status === 'active').length;
+  const totalRevenue = invoices.filter(inv => inv.status === 'paid').reduce((sum, inv) => sum + (inv.total_amount || 0), 0);
+  const pendingInvoices = invoices.filter(inv => inv.status === 'sent' || inv.status === 'overdue').length;
+  const utilization = resources.length > 0 ? Math.round((resources.filter(r => r.active_status).length / resources.length) * 100) : 0;
+
+  const handleAddProject = () => {
+    if (onTabChange) {
+      onTabChange('projects');
+      setTimeout(() => setShowProjectForm(true), 100);
+    } else {
+      setShowProjectForm(true);
     }
-  ];
+  };
+
+  const handleAddResource = () => {
+    if (onTabChange) {
+      onTabChange('resources');
+      setTimeout(() => setShowResourceForm(true), 100);
+    } else {
+      setShowResourceForm(true);
+    }
+  };
 
   return (
-    <div className="space-y-8">
-      {/* Enhanced Header */}
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold text-white mb-3">
-          Dashboard
-        </h1>
-        <p className="text-gray-300 text-lg">Welcome to your professional services overview</p>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-white">Dashboard</h1>
+          <p className="text-gray-400 mt-1">Welcome back! Here's what's happening with your projects.</p>
+        </div>
       </div>
 
-      {/* Quick Action Panel - Transparent White */}
-      <Card className="bg-white/10 backdrop-blur-md border-white/20 rounded-2xl shadow-2xl">
-        <CardHeader>
-          <CardTitle className="text-white text-xl flex items-center space-x-2">
-            <Plus className="h-5 w-5 text-teal-400" />
-            <span>Quick Actions</span>
-          </CardTitle>
-          <CardDescription className="text-gray-300">Fast access to commonly used features</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <Button className="bg-teal-600 hover:bg-teal-700 text-white font-medium py-3 rounded-xl">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Project
-            </Button>
-            <Button className="bg-purple-600 hover:bg-purple-700 text-white font-medium py-3 rounded-xl">
-              <UserPlus className="h-4 w-4 mr-2" />
-              Invite Client
-            </Button>
-            <Button className="bg-amber-600 hover:bg-amber-700 text-white font-medium py-3 rounded-xl">
-              <FileText className="h-4 w-4 mr-2" />
-              Add Task
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card className="bg-gradient-to-br from-blue-600/20 to-blue-800/20 border-blue-500/30 backdrop-blur-sm">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-blue-300">Active Projects</CardTitle>
+            <FolderOpen className="h-4 w-4 text-blue-400" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-white">{activeProjects}</div>
+            <p className="text-xs text-blue-300 mt-1">
+              {projects.length} total projects
+            </p>
+          </CardContent>
+        </Card>
 
-      {/* Enhanced Stats Cards - Transparent White */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat, index) => (
-          <Card key={index} className="bg-white/10 backdrop-blur-md border-white/20 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-semibold text-gray-200">{stat.title}</CardTitle>
-              <div className={`p-2 rounded-xl ${stat.color} bg-white/10`}>
-                <stat.icon className="h-5 w-5" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-white mb-1">{stat.value}</div>
-              <div className="flex items-center space-x-1">
-                {stat.changeType === 'positive' ? (
-                  <ArrowUpRight className="h-4 w-4 text-emerald-400" />
-                ) : (
-                  <ArrowDownRight className="h-4 w-4 text-red-400" />
-                )}
-                <p className={`text-sm font-medium ${stat.changeType === 'positive' ? 'text-emerald-400' : 'text-red-400'}`}>
-                  {stat.change}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+        <Card className="bg-gradient-to-br from-green-600/20 to-green-800/20 border-green-500/30 backdrop-blur-sm">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-green-300">Total Revenue</CardTitle>
+            <DollarSign className="h-4 w-4 text-green-400" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-white">${totalRevenue.toLocaleString()}</div>
+            <p className="text-xs text-green-300 mt-1">
+              {pendingInvoices} pending invoices
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-purple-600/20 to-purple-800/20 border-purple-500/30 backdrop-blur-sm">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-purple-300">Team Members</CardTitle>
+            <Users className="h-4 w-4 text-purple-400" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-white">{resources.length}</div>
+            <p className="text-xs text-purple-300 mt-1">
+              {resources.filter(r => r.active_status).length} active
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-orange-600/20 to-orange-800/20 border-orange-500/30 backdrop-blur-sm">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-orange-300">Utilization</CardTitle>
+            <TrendingUp className="h-4 w-4 text-orange-400" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-white">{utilization}%</div>
+            <Progress value={utilization} className="mt-2 h-2" />
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Enhanced Charts Grid - Transparent White */}
+      {/* Quick Actions */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card className="bg-gray-800/50 border-gray-700 hover:bg-gray-800/70 transition-all duration-300 cursor-pointer group" onClick={handleAddProject}>
+          <CardContent className="p-6 text-center">
+            <div className="mx-auto w-12 h-12 bg-blue-600/20 rounded-xl flex items-center justify-center mb-4 group-hover:bg-blue-600/30 transition-colors">
+              <Plus className="h-6 w-6 text-blue-400" />
+            </div>
+            <h3 className="font-semibold text-white mb-2">Add Project</h3>
+            <p className="text-sm text-gray-400">Create a new project and start tracking progress</p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gray-800/50 border-gray-700 hover:bg-gray-800/70 transition-all duration-300 cursor-pointer group" onClick={() => setShowClientInviteForm(true)}>
+          <CardContent className="p-6 text-center">
+            <div className="mx-auto w-12 h-12 bg-green-600/20 rounded-xl flex items-center justify-center mb-4 group-hover:bg-green-600/30 transition-colors">
+              <UserPlus className="h-6 w-6 text-green-400" />
+            </div>
+            <h3 className="font-semibold text-white mb-2">Invite Client</h3>
+            <p className="text-sm text-gray-400">Send an invitation to a new client</p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gray-800/50 border-gray-700 hover:bg-gray-800/70 transition-all duration-300 cursor-pointer group" onClick={handleAddResource}>
+          <CardContent className="p-6 text-center">
+            <div className="mx-auto w-12 h-12 bg-purple-600/20 rounded-xl flex items-center justify-center mb-4 group-hover:bg-purple-600/30 transition-colors">
+              <UserCheck className="h-6 w-6 text-purple-400" />
+            </div>
+            <h3 className="font-semibold text-white mb-2">Add Resource</h3>
+            <p className="text-sm text-gray-400">Onboard a new team member</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Recent Activity & Project Status */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Project Status Chart */}
-        <Card className="bg-white/10 backdrop-blur-md border-white/20 rounded-2xl shadow-2xl">
+        {/* Recent Projects */}
+        <Card className="bg-gray-800/50 border-gray-700">
           <CardHeader>
-            <div className="flex items-center space-x-2">
-              <PieChartIcon className="h-5 w-5 text-purple-400" />
-              <CardTitle className="text-white text-xl">Project Status Distribution</CardTitle>
-            </div>
-            <CardDescription className="text-gray-300">Current project status breakdown</CardDescription>
+            <CardTitle className="text-white flex items-center gap-2">
+              <FolderOpen className="h-5 w-5 text-blue-400" />
+              Recent Projects
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={280}>
-              <PieChart>
-                <Pie
-                  data={projectStatusData}
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={90}
-                  dataKey="value"
-                  label={({ name, value }) => `${name}: ${value}`}
-                  labelLine={false}
-                >
-                  {projectStatusData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: 'rgba(255, 255, 255, 0.1)', 
-                    border: '1px solid rgba(255, 255, 255, 0.2)',
-                    borderRadius: '12px',
-                    color: '#ffffff',
-                    backdropFilter: 'blur(8px)'
-                  }} 
-                />
-              </PieChart>
-            </ResponsiveContainer>
+            <div className="space-y-4">
+              {projects.slice(0, 5).map((project) => (
+                <div key={project.project_id} className="flex items-center justify-between p-3 bg-gray-700/30 rounded-lg">
+                  <div>
+                    <p className="font-medium text-white">{project.project_name}</p>
+                    <p className="text-sm text-gray-400">{project.client_id}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {project.status === 'active' && <CheckCircle className="h-4 w-4 text-green-400" />}
+                    {project.status === 'planning' && <Clock className="h-4 w-4 text-yellow-400" />}
+                    {project.status === 'on_hold' && <AlertTriangle className="h-4 w-4 text-orange-400" />}
+                    {project.status === 'completed' && <CheckCircle className="h-4 w-4 text-blue-400" />}
+                    {project.status === 'cancelled' && <XCircle className="h-4 w-4 text-red-400" />}
+                    <span className="text-xs text-gray-400 capitalize">{project.status}</span>
+                  </div>
+                </div>
+              ))}
+              {projects.length === 0 && (
+                <p className="text-gray-400 text-center py-4">No projects yet</p>
+              )}
+            </div>
           </CardContent>
         </Card>
 
-        {/* Revenue vs Expenses */}
-        <Card className="bg-white/10 backdrop-blur-md border-white/20 rounded-2xl shadow-2xl">
+        {/* Team Utilization */}
+        <Card className="bg-gray-800/50 border-gray-700">
           <CardHeader>
-            <div className="flex items-center space-x-2">
-              <BarChart3 className="h-5 w-5 text-teal-400" />
-              <CardTitle className="text-white text-xl">Revenue vs Expenses</CardTitle>
-            </div>
-            <CardDescription className="text-gray-300">Monthly financial performance</CardDescription>
+            <CardTitle className="text-white flex items-center gap-2">
+              <Users className="h-5 w-5 text-purple-400" />
+              Team Overview
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={280}>
-              <BarChart data={revenueData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.1)" />
-                <XAxis dataKey="month" stroke="#d1d5db" />
-                <YAxis stroke="#d1d5db" />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: 'rgba(255, 255, 255, 0.1)', 
-                    border: '1px solid rgba(255, 255, 255, 0.2)',
-                    borderRadius: '12px',
-                    color: '#ffffff',
-                    backdropFilter: 'blur(8px)'
-                  }} 
-                />
-                <Bar dataKey="revenue" fill="#14b8a6" name="Revenue" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="expenses" fill="#ef4444" name="Expenses" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            <div className="space-y-4">
+              {resources.slice(0, 5).map((resource) => (
+                <div key={resource.resource_id} className="flex items-center justify-between p-3 bg-gray-700/30 rounded-lg">
+                  <div>
+                    <p className="font-medium text-white">{resource.full_name}</p>
+                    <p className="text-sm text-gray-400">{resource.role} • {resource.department}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {resource.active_status ? (
+                      <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                    ) : (
+                      <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+                    )}
+                    <span className="text-xs text-gray-400">
+                      {resource.active_status ? 'Active' : 'Inactive'}
+                    </span>
+                  </div>
+                </div>
+              ))}
+              {resources.length === 0 && (
+                <p className="text-gray-400 text-center py-4">No team members yet</p>
+              )}
+            </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Enhanced Resource Utilization - Transparent White */}
-      <Card className="bg-white/10 backdrop-blur-md border-white/20 rounded-2xl shadow-2xl">
-        <CardHeader>
-          <div className="flex items-center space-x-2">
-            <Activity className="h-5 w-5 text-emerald-400" />
-            <CardTitle className="text-white text-xl">Resource Utilization</CardTitle>
-          </div>
-          <CardDescription className="text-gray-300">Team member utilization rates</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={320}>
-            <BarChart data={utilizationData} layout="horizontal">
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.1)" />
-              <XAxis type="number" domain={[0, 100]} stroke="#d1d5db" />
-              <YAxis dataKey="name" type="category" stroke="#d1d5db" width={120} />
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: 'rgba(255, 255, 255, 0.1)', 
-                  border: '1px solid rgba(255, 255, 255, 0.2)',
-                  borderRadius: '12px',
-                  color: '#ffffff',
-                  backdropFilter: 'blur(8px)'
-                }} 
-              />
-              <Bar dataKey="utilization" fill="#10b981" radius={[0, 6, 6, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
-
-      {/* Enhanced Recent Activity - Transparent White */}
-      <Card className="bg-white/10 backdrop-blur-md border-white/20 rounded-2xl shadow-2xl">
-        <CardHeader>
-          <div className="flex items-center space-x-2">
-            <Clock className="h-5 w-5 text-amber-400" />
-            <CardTitle className="text-white text-xl">Recent Activity</CardTitle>
-          </div>
-          <CardDescription className="text-gray-300">Latest updates across your projects</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {[
-              { activity: 'Project Alpha milestone completed by John Smith', time: '2 hours ago', type: 'success' },
-              { activity: 'New client TechCorp Inc. onboarded', time: '4 hours ago', type: 'info' },
-              { activity: 'Invoice #INV-2024-001 sent to Acme Corp', time: '6 hours ago', type: 'warning' },
-              { activity: 'Resource allocation updated for Q4 projects', time: '8 hours ago', type: 'info' },
-              { activity: 'Timesheet approval pending for 5 team members', time: '1 day ago', type: 'warning' },
-              { activity: 'Vendor contract renewal due in 30 days', time: '1 day ago', type: 'error' }
-            ].map((item, index) => (
-              <div key={index} className="flex items-start space-x-4 p-4 bg-white/5 backdrop-blur-sm rounded-xl hover:bg-white/10 transition-all duration-200">
-                <div className={`w-3 h-3 rounded-full mt-2 flex-shrink-0 ${
-                  item.type === 'success' ? 'bg-emerald-400' :
-                  item.type === 'warning' ? 'bg-amber-400' :
-                  item.type === 'error' ? 'bg-red-400' :
-                  'bg-teal-400'
-                }`}></div>
-                <div className="flex-1">
-                  <span className="text-gray-200 text-sm leading-relaxed font-medium">{item.activity}</span>
-                  <p className="text-xs text-gray-400 mt-1">{item.time}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+      {/* Modal Forms */}
+      <NewProjectForm open={showProjectForm} onOpenChange={setShowProjectForm} />
+      <NewResourceForm open={showResourceForm} onOpenChange={setShowResourceForm} />
+      <ClientInviteForm open={showClientInviteForm} onOpenChange={setShowClientInviteForm} />
     </div>
   );
 };

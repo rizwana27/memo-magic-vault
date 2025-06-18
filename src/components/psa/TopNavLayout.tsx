@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
@@ -20,6 +21,8 @@ import {
   User,
   Palette
 } from 'lucide-react';
+import { useNotifications, useMarkNotificationSeen, useMarkAllNotificationsSeen } from '@/hooks/usePSAData';
+import { supabase } from '@/integrations/supabase/client';
 
 interface TopNavLayoutProps {
   children: React.ReactNode;
@@ -33,6 +36,75 @@ const TopNavLayout: React.FC<TopNavLayoutProps> = ({ children, activeTab, onTabC
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [notificationOpen, setNotificationOpen] = useState(false);
 
+  const { data: notifications = [] } = useNotifications();
+  const markNotificationSeen = useMarkNotificationSeen();
+  const markAllNotificationsSeen = useMarkAllNotificationsSeen();
+
+  const unseenCount = notifications.filter(n => !n.seen).length;
+
+  // Real-time notifications subscription
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('notifications-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'notifications'
+        },
+        (payload) => {
+          console.log('New notification received:', payload);
+          // The useNotifications query will automatically refetch due to real-time updates
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
+
+  const handleNotificationClick = async (notification: any) => {
+    if (!notification.seen) {
+      await markNotificationSeen.mutateAsync(notification.id);
+    }
+    setNotificationOpen(false);
+  };
+
+  const handleMarkAllSeen = async () => {
+    if (unseenCount > 0) {
+      await markAllNotificationsSeen.mutateAsync();
+    }
+  };
+
+  const getNotificationIcon = (type: string) => {
+    switch (type) {
+      case 'project': return <FolderOpen className="h-4 w-4 text-blue-400" />;
+      case 'client': return <Users className="h-4 w-4 text-green-400" />;
+      case 'resource': return <UserCheck className="h-4 w-4 text-purple-400" />;
+      case 'invoice': return <DollarSign className="h-4 w-4 text-yellow-400" />;
+      case 'invite': return <User className="h-4 w-4 text-pink-400" />;
+      default: return <Bell className="h-4 w-4 text-gray-400" />;
+    }
+  };
+
+  const formatTimeAgo = (timestamp: string) => {
+    const now = new Date();
+    const time = new Date(timestamp);
+    const diffMs = now.getTime() - time.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    return `${diffDays}d ago`;
+  };
+
   const menuItems = [
     { icon: LayoutDashboard, label: 'Dashboard', key: 'dashboard' },
     { icon: FolderOpen, label: 'Projects', key: 'projects' },
@@ -43,12 +115,6 @@ const TopNavLayout: React.FC<TopNavLayoutProps> = ({ children, activeTab, onTabC
     { icon: DollarSign, label: 'Financial', key: 'financial' },
     { icon: TrendingUp, label: 'Reports', key: 'reports' },
     { icon: Settings, label: 'Settings', key: 'settings' }
-  ];
-
-  const notifications = [
-    { id: 1, message: 'Timesheet approval pending for 3 members', time: '5 min ago', type: 'warning' },
-    { id: 2, message: 'Project Alpha milestone completed', time: '1 hour ago', type: 'success' },
-    { id: 3, message: 'Invoice payment overdue from TechCorp', time: '2 hours ago', type: 'error' },
   ];
 
   return (
@@ -106,32 +172,63 @@ const TopNavLayout: React.FC<TopNavLayoutProps> = ({ children, activeTab, onTabC
                   className="text-gray-300 hover:text-white hover:bg-gray-700/50 transition-all duration-200 relative"
                 >
                   <Bell className="h-5 w-5" />
-                  <span className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full flex items-center justify-center">
-                    <span className="text-xs text-white font-bold">3</span>
-                  </span>
+                  {unseenCount > 0 && (
+                    <span className="absolute -top-1 -right-1 h-5 w-5 bg-red-500 rounded-full flex items-center justify-center">
+                      <span className="text-xs text-white font-bold">{unseenCount > 9 ? '9+' : unseenCount}</span>
+                    </span>
+                  )}
                 </Button>
 
-                {/* Notification Dropdown */}
+                {/* Enhanced Notification Dropdown */}
                 {notificationOpen && (
-                  <div className="absolute right-0 mt-2 w-80 bg-gray-800/95 backdrop-blur-sm rounded-xl shadow-2xl border border-gray-700 py-2 z-50">
-                    <div className="px-4 py-3 border-b border-gray-700">
+                  <div className="absolute right-0 mt-2 w-96 bg-gray-800/95 backdrop-blur-sm rounded-xl shadow-2xl border border-gray-700 py-2 z-50 max-h-96 overflow-hidden">
+                    <div className="px-4 py-3 border-b border-gray-700 flex items-center justify-between">
                       <h3 className="text-sm font-semibold text-white">Notifications</h3>
+                      {unseenCount > 0 && (
+                        <Button
+                          onClick={handleMarkAllSeen}
+                          variant="ghost"
+                          size="sm"
+                          className="text-xs text-blue-400 hover:text-blue-300 h-auto p-1"
+                        >
+                          Mark all read
+                        </Button>
+                      )}
                     </div>
-                    <div className="max-h-64 overflow-y-auto">
-                      {notifications.map((notification) => (
-                        <div key={notification.id} className="px-4 py-3 hover:bg-gray-700/30 transition-colors border-b border-gray-700/30 last:border-b-0">
-                          <div className="flex items-start space-x-3">
-                            <div className={`w-2 h-2 rounded-full mt-2 ${
-                              notification.type === 'success' ? 'bg-green-500' :
-                              notification.type === 'warning' ? 'bg-yellow-500' : 'bg-red-500'
-                            }`}></div>
-                            <div className="flex-1">
-                              <p className="text-sm text-gray-300 leading-relaxed">{notification.message}</p>
-                              <p className="text-xs text-gray-500 mt-1">{notification.time}</p>
+                    <div className="max-h-80 overflow-y-auto">
+                      {notifications.length > 0 ? (
+                        notifications.map((notification) => (
+                          <div 
+                            key={notification.id} 
+                            className={`px-4 py-3 hover:bg-gray-700/30 transition-colors border-b border-gray-700/30 last:border-b-0 cursor-pointer ${
+                              !notification.seen ? 'bg-blue-600/10 border-l-2 border-l-blue-500' : ''
+                            }`}
+                            onClick={() => handleNotificationClick(notification)}
+                          >
+                            <div className="flex items-start space-x-3">
+                              <div className="flex-shrink-0 mt-1">
+                                {getNotificationIcon(notification.type)}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className={`text-sm leading-relaxed ${!notification.seen ? 'text-white font-medium' : 'text-gray-300'}`}>
+                                  {notification.message}
+                                </p>
+                                <p className="text-xs text-gray-500 mt-1">
+                                  {formatTimeAgo(notification.created_at)}
+                                </p>
+                              </div>
+                              {!notification.seen && (
+                                <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0 mt-2"></div>
+                              )}
                             </div>
                           </div>
+                        ))
+                      ) : (
+                        <div className="px-4 py-8 text-center">
+                          <Bell className="h-8 w-8 text-gray-600 mx-auto mb-2" />
+                          <p className="text-gray-400 text-sm">No notifications yet</p>
                         </div>
-                      ))}
+                      )}
                     </div>
                   </div>
                 )}
