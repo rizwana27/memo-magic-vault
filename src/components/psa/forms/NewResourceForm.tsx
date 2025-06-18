@@ -10,7 +10,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { CalendarIcon, Upload } from 'lucide-react';
+import { CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
@@ -21,14 +21,14 @@ interface NewResourceFormProps {
 
 const NewResourceForm = ({ onSubmit, onCancel }: NewResourceFormProps) => {
   const [formData, setFormData] = React.useState({
-    fullName: '',
-    email: '',
-    phone: '',
+    full_name: '',
+    email_address: '',
+    phone_number: '',
     department: '',
     role: '',
     availability: [80],
-    status: true,
-    joinDate: undefined as Date | undefined,
+    active_status: true,
+    join_date: undefined as Date | undefined,
   });
 
   const [selectedSkills, setSelectedSkills] = React.useState<string[]>([]);
@@ -36,7 +36,42 @@ const NewResourceForm = ({ onSubmit, onCancel }: NewResourceFormProps) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit({ ...formData, skills: selectedSkills });
+    
+    // Validate required fields
+    if (!formData.full_name.trim()) {
+      alert('Full name is required');
+      return;
+    }
+    
+    if (!formData.email_address.trim()) {
+      alert('Email address is required');
+      return;
+    }
+    
+    if (!formData.department) {
+      alert('Department is required');
+      return;
+    }
+    
+    if (!formData.role) {
+      alert('Role is required');
+      return;
+    }
+
+    const submitData = {
+      full_name: formData.full_name.trim(),
+      email_address: formData.email_address.trim(),
+      phone_number: formData.phone_number.trim() || null,
+      department: formData.department,
+      role: formData.role,
+      availability: formData.availability[0],
+      active_status: formData.active_status,
+      join_date: formData.join_date ? formData.join_date.toISOString().split('T')[0] : null,
+      skills: selectedSkills.length > 0 ? selectedSkills : null,
+    };
+
+    console.log('Submitting resource data:', submitData);
+    onSubmit(submitData);
   };
 
   const toggleSkill = (skill: string) => {
@@ -56,36 +91,36 @@ const NewResourceForm = ({ onSubmit, onCancel }: NewResourceFormProps) => {
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
-            <Label htmlFor="fullName" className="text-gray-300">Full Name *</Label>
+            <Label htmlFor="full_name" className="text-gray-300">Full Name *</Label>
             <Input
-              id="fullName"
+              id="full_name"
               required
-              value={formData.fullName}
-              onChange={(e) => setFormData(prev => ({ ...prev, fullName: e.target.value }))}
+              value={formData.full_name}
+              onChange={(e) => setFormData(prev => ({ ...prev, full_name: e.target.value }))}
               className="bg-gray-800 border-gray-600 text-white"
               placeholder="Enter full name"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="email" className="text-gray-300">Email Address *</Label>
+            <Label htmlFor="email_address" className="text-gray-300">Email Address *</Label>
             <Input
-              id="email"
+              id="email_address"
               type="email"
               required
-              value={formData.email}
-              onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+              value={formData.email_address}
+              onChange={(e) => setFormData(prev => ({ ...prev, email_address: e.target.value }))}
               className="bg-gray-800 border-gray-600 text-white"
               placeholder="Enter email address"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="phone" className="text-gray-300">Phone Number</Label>
+            <Label htmlFor="phone_number" className="text-gray-300">Phone Number</Label>
             <Input
-              id="phone"
-              value={formData.phone}
-              onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+              id="phone_number"
+              value={formData.phone_number}
+              onChange={(e) => setFormData(prev => ({ ...prev, phone_number: e.target.value }))}
               className="bg-gray-800 border-gray-600 text-white"
               placeholder="Enter phone number"
             />
@@ -132,18 +167,18 @@ const NewResourceForm = ({ onSubmit, onCancel }: NewResourceFormProps) => {
                   variant="outline"
                   className={cn(
                     "w-full justify-start text-left font-normal bg-gray-800 border-gray-600 text-white",
-                    !formData.joinDate && "text-gray-400"
+                    !formData.join_date && "text-gray-400"
                   )}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {formData.joinDate ? format(formData.joinDate, "PPP") : "Pick a date"}
+                  {formData.join_date ? format(formData.join_date, "PPP") : "Pick a date"}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
                 <Calendar
                   mode="single"
-                  selected={formData.joinDate}
-                  onSelect={(date) => setFormData(prev => ({ ...prev, joinDate: date }))}
+                  selected={formData.join_date}
+                  onSelect={(date) => setFormData(prev => ({ ...prev, join_date: date }))}
                   initialFocus
                   className="bg-gray-800 border-gray-600"
                 />
@@ -182,22 +217,11 @@ const NewResourceForm = ({ onSubmit, onCancel }: NewResourceFormProps) => {
 
         <div className="flex items-center space-x-2">
           <Switch
-            id="status"
-            checked={formData.status}
-            onCheckedChange={(checked) => setFormData(prev => ({ ...prev, status: checked }))}
+            id="active_status"
+            checked={formData.active_status}
+            onCheckedChange={(checked) => setFormData(prev => ({ ...prev, active_status: checked }))}
           />
-          <Label htmlFor="status" className="text-gray-300">Active Status</Label>
-        </div>
-
-        <div className="space-y-2">
-          <Label className="text-gray-300">Profile Picture</Label>
-          <div className="border-2 border-dashed border-gray-600 rounded-lg p-4 text-center">
-            <Upload className="mx-auto h-8 w-8 text-gray-400" />
-            <p className="mt-1 text-sm text-gray-400">Upload profile picture</p>
-            <Button variant="outline" className="mt-2 border-gray-600 text-gray-300" size="sm">
-              Choose File
-            </Button>
-          </div>
+          <Label htmlFor="active_status" className="text-gray-300">Active Status</Label>
         </div>
 
         <div className="flex justify-end space-x-4 pt-6">

@@ -305,14 +305,20 @@ export const useMarkAllNotificationsSeen = () => {
   });
 };
 
-// Override existing mutations to include notifications
+// Create mutations with proper error handling and field mapping
 export const useCreateProject = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (projectData: any) => {
-      console.log('Creating project:', projectData);
+      console.log('Creating project with data:', projectData);
+      
+      // Check if user is authenticated
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('You must be logged in to create a project');
+      }
       
       const { data, error } = await supabase
         .from('projects')
@@ -326,11 +332,15 @@ export const useCreateProject = () => {
       }
 
       // Create a notification
-      await supabase.rpc('create_notification', {
-        p_message: `New project "${projectData.project_name}" was created`,
-        p_type: 'project',
-        p_related_id: data.project_id
-      });
+      try {
+        await supabase.rpc('create_notification', {
+          p_message: `New project "${projectData.project_name}" was created`,
+          p_type: 'project',
+          p_related_id: data.project_id
+        });
+      } catch (notificationError) {
+        console.warn('Failed to create notification:', notificationError);
+      }
 
       return data;
     },
@@ -342,11 +352,11 @@ export const useCreateProject = () => {
         description: `Project "${data.project_name}" created successfully`,
       });
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error('Failed to create project:', error);
       toast({
         title: "Error",
-        description: "Failed to create project",
+        description: error.message || "Failed to create project",
         variant: "destructive",
       });
     },
@@ -359,7 +369,13 @@ export const useCreateClient = () => {
 
   return useMutation({
     mutationFn: async (clientData: any) => {
-      console.log('Creating client:', clientData);
+      console.log('Creating client with data:', clientData);
+      
+      // Check if user is authenticated
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('You must be logged in to create a client');
+      }
       
       const { data, error } = await supabase
         .from('clients')
@@ -373,11 +389,15 @@ export const useCreateClient = () => {
       }
 
       // Create a notification
-      await supabase.rpc('create_notification', {
-        p_message: `New client "${clientData.client_name}" was added`,
-        p_type: 'client',
-        p_related_id: data.client_id
-      });
+      try {
+        await supabase.rpc('create_notification', {
+          p_message: `New client "${clientData.client_name}" was added`,
+          p_type: 'client',
+          p_related_id: data.client_id
+        });
+      } catch (notificationError) {
+        console.warn('Failed to create notification:', notificationError);
+      }
 
       return data;
     },
@@ -389,11 +409,11 @@ export const useCreateClient = () => {
         description: `Client "${data.client_name}" added successfully`,
       });
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error('Failed to create client:', error);
       toast({
         title: "Error",
-        description: "Failed to add client",
+        description: error.message || "Failed to add client",
         variant: "destructive",
       });
     },
@@ -406,7 +426,13 @@ export const useCreateResource = () => {
 
   return useMutation({
     mutationFn: async (resourceData: any) => {
-      console.log('Creating resource:', resourceData);
+      console.log('Creating resource with data:', resourceData);
+      
+      // Check if user is authenticated
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('You must be logged in to create a resource');
+      }
       
       const { data, error } = await supabase
         .from('resources')
@@ -420,11 +446,15 @@ export const useCreateResource = () => {
       }
 
       // Create a notification
-      await supabase.rpc('create_notification', {
-        p_message: `New resource "${resourceData.full_name}" was added`,
-        p_type: 'resource',
-        p_related_id: data.resource_id
-      });
+      try {
+        await supabase.rpc('create_notification', {
+          p_message: `New resource "${resourceData.full_name}" was added`,
+          p_type: 'resource',
+          p_related_id: data.resource_id
+        });
+      } catch (notificationError) {
+        console.warn('Failed to create notification:', notificationError);
+      }
 
       return data;
     },
@@ -436,11 +466,11 @@ export const useCreateResource = () => {
         description: `Resource "${data.full_name}" added successfully`,
       });
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error('Failed to create resource:', error);
       toast({
         title: "Error",
-        description: "Failed to add resource",
+        description: error.message || "Failed to add resource",
         variant: "destructive",
       });
     },

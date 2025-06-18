@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,22 +28,35 @@ const NewProjectForm = ({ onSubmit, onCancel }: NewProjectFormProps) => {
   const [startDate, setStartDate] = useState<Date | undefined>();
   const [endDate, setEndDate] = useState<Date | undefined>();
   const [budget, setBudget] = useState('');
-  const [attachments, setAttachments] = useState<File[]>([]);
   const [deliveryStatus, setDeliveryStatus] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit({
-      project_name: projectName,
+    
+    // Validate required fields
+    if (!projectName.trim()) {
+      alert('Project name is required');
+      return;
+    }
+    
+    if (!clientId) {
+      alert('Please select a client');
+      return;
+    }
+
+    const formData = {
+      project_name: projectName.trim(),
       client_id: clientId,
-      description,
+      description: description.trim() || null,
       status,
-      start_date: startDate ? startDate.toISOString() : null,
-      end_date: endDate ? endDate.toISOString() : null,
-      budget: budget ? parseFloat(budget) : 0,
-      attachments,
+      start_date: startDate ? startDate.toISOString().split('T')[0] : null,
+      end_date: endDate ? endDate.toISOString().split('T')[0] : null,
+      budget: budget ? parseFloat(budget) : null,
       delivery_status: deliveryStatus ? 'complete' : 'incomplete',
-    });
+    };
+
+    console.log('Submitting project data:', formData);
+    onSubmit(formData);
   };
 
   return (
@@ -52,18 +66,19 @@ const NewProjectForm = ({ onSubmit, onCancel }: NewProjectFormProps) => {
       </DialogHeader>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <Label htmlFor="projectName">Project Name</Label>
+          <Label htmlFor="projectName">Project Name *</Label>
           <Input
             type="text"
             id="projectName"
             value={projectName}
             onChange={(e) => setProjectName(e.target.value)}
             className="bg-white/10 border-white/20"
+            required
           />
         </div>
         <div>
-          <Label htmlFor="clientId">Client</Label>
-          <Select value={clientId} onValueChange={setClientId}>
+          <Label htmlFor="clientId">Client *</Label>
+          <Select value={clientId} onValueChange={setClientId} required>
             <SelectTrigger className="bg-white/10 border-white/20 text-white">
               <SelectValue placeholder="Select a client" />
             </SelectTrigger>
@@ -121,9 +136,6 @@ const NewProjectForm = ({ onSubmit, onCancel }: NewProjectFormProps) => {
                   mode="single"
                   selected={startDate}
                   onSelect={setStartDate}
-                  disabled={(date) =>
-                    date > new Date()
-                  }
                   initialFocus
                 />
               </PopoverContent>
@@ -149,9 +161,6 @@ const NewProjectForm = ({ onSubmit, onCancel }: NewProjectFormProps) => {
                   mode="single"
                   selected={endDate}
                   onSelect={setEndDate}
-                  disabled={(date) =>
-                    date > new Date()
-                  }
                   initialFocus
                 />
               </PopoverContent>
@@ -166,31 +175,23 @@ const NewProjectForm = ({ onSubmit, onCancel }: NewProjectFormProps) => {
             value={budget}
             onChange={(e) => setBudget(e.target.value)}
             className="bg-white/10 border-white/20"
+            step="0.01"
+            min="0"
           />
         </div>
-        <div>
-          <Label htmlFor="attachments">Attachments</Label>
-          <Input
-            type="file"
-            id="attachments"
-            multiple
-            onChange={(e) => {
-              if (e.target.files) {
-                setAttachments(Array.from(e.target.files));
-              }
-            }}
-            className="bg-white/10 border-white/20"
+        <div className="flex items-center space-x-2">
+          <Switch 
+            id="deliveryStatus" 
+            checked={deliveryStatus} 
+            onCheckedChange={setDeliveryStatus} 
           />
-        </div>
-        <div>
-          <Label htmlFor="deliveryStatus">Delivery Status</Label>
-          <Switch id="deliveryStatus" checked={deliveryStatus} onCheckedChange={setDeliveryStatus} />
+          <Label htmlFor="deliveryStatus">Mark as Delivered</Label>
         </div>
         <DialogFooter>
           <Button type="button" variant="secondary" onClick={onCancel}>
             Cancel
           </Button>
-          <Button type="submit">Create</Button>
+          <Button type="submit">Create Project</Button>
         </DialogFooter>
       </form>
     </DialogContent>
