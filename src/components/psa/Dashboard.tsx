@@ -49,7 +49,11 @@ const Dashboard: React.FC<DashboardProps> = ({ onTabChange }) => {
   const handleAddProject = () => {
     if (onTabChange) {
       onTabChange('projects');
-      setTimeout(() => setShowProjectForm(true), 100);
+      // Small delay to ensure the projects page loads before opening the modal
+      setTimeout(() => {
+        // This will be handled by the Projects component receiving a signal
+        window.dispatchEvent(new CustomEvent('openProjectModal'));
+      }, 100);
     } else {
       setShowProjectForm(true);
     }
@@ -58,7 +62,11 @@ const Dashboard: React.FC<DashboardProps> = ({ onTabChange }) => {
   const handleAddResource = () => {
     if (onTabChange) {
       onTabChange('resources');
-      setTimeout(() => setShowResourceForm(true), 100);
+      // Small delay to ensure the resources page loads before opening the modal
+      setTimeout(() => {
+        // This will be handled by the Resources component receiving a signal
+        window.dispatchEvent(new CustomEvent('openResourceModal'));
+      }, 100);
     } else {
       setShowResourceForm(true);
     }
@@ -88,7 +96,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onTabChange }) => {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold text-white">Dashboard</h1>
-          <p className="text-gray-400 mt-1">Welcome back! Here's what's happening with your projects.</p>
+          <p className="text-gray-300 mt-1">Welcome back! Here's what's happening with your projects.</p>
         </div>
       </div>
 
@@ -96,12 +104,12 @@ const Dashboard: React.FC<DashboardProps> = ({ onTabChange }) => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card className="bg-gradient-to-br from-blue-600/20 to-blue-800/20 border-blue-500/30 backdrop-blur-sm">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-blue-300">Active Projects</CardTitle>
-            <FolderOpen className="h-4 w-4 text-blue-400" />
+            <CardTitle className="text-sm font-medium text-blue-200">Active Projects</CardTitle>
+            <FolderOpen className="h-4 w-4 text-blue-300" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-white">{activeProjects}</div>
-            <p className="text-xs text-blue-300 mt-1">
+            <p className="text-xs text-blue-200 mt-1">
               {projects.length} total projects
             </p>
           </CardContent>
@@ -109,12 +117,12 @@ const Dashboard: React.FC<DashboardProps> = ({ onTabChange }) => {
 
         <Card className="bg-gradient-to-br from-green-600/20 to-green-800/20 border-green-500/30 backdrop-blur-sm">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-green-300">Total Revenue</CardTitle>
-            <DollarSign className="h-4 w-4 text-green-400" />
+            <CardTitle className="text-sm font-medium text-green-200">Total Revenue</CardTitle>
+            <DollarSign className="h-4 w-4 text-green-300" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-white">${totalRevenue.toLocaleString()}</div>
-            <p className="text-xs text-green-300 mt-1">
+            <p className="text-xs text-green-200 mt-1">
               {pendingInvoices} pending invoices
             </p>
           </CardContent>
@@ -122,12 +130,12 @@ const Dashboard: React.FC<DashboardProps> = ({ onTabChange }) => {
 
         <Card className="bg-gradient-to-br from-purple-600/20 to-purple-800/20 border-purple-500/30 backdrop-blur-sm">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-purple-300">Team Members</CardTitle>
-            <Users className="h-4 w-4 text-purple-400" />
+            <CardTitle className="text-sm font-medium text-purple-200">Team Members</CardTitle>
+            <Users className="h-4 w-4 text-purple-300" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-white">{resources.length}</div>
-            <p className="text-xs text-purple-300 mt-1">
+            <p className="text-xs text-purple-200 mt-1">
               {resources.filter(r => r.active_status).length} active
             </p>
           </CardContent>
@@ -135,8 +143,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onTabChange }) => {
 
         <Card className="bg-gradient-to-br from-orange-600/20 to-orange-800/20 border-orange-500/30 backdrop-blur-sm">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-orange-300">Utilization</CardTitle>
-            <TrendingUp className="h-4 w-4 text-orange-400" />
+            <CardTitle className="text-sm font-medium text-orange-200">Utilization</CardTitle>
+            <TrendingUp className="h-4 w-4 text-orange-300" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-white">{utilization}%</div>
@@ -147,33 +155,33 @@ const Dashboard: React.FC<DashboardProps> = ({ onTabChange }) => {
 
       {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="bg-gray-800/50 border-gray-700 hover:bg-gray-800/70 transition-all duration-300 cursor-pointer group" onClick={handleAddProject}>
+        <Card className="bg-gray-800/50 border-gray-600 hover:bg-gray-700/50 transition-all duration-300 cursor-pointer group" onClick={handleAddProject}>
           <CardContent className="p-6 text-center">
             <div className="mx-auto w-12 h-12 bg-blue-600/20 rounded-xl flex items-center justify-center mb-4 group-hover:bg-blue-600/30 transition-colors">
               <Plus className="h-6 w-6 text-blue-400" />
             </div>
             <h3 className="font-semibold text-white mb-2">Add Project</h3>
-            <p className="text-sm text-gray-400">Create a new project and start tracking progress</p>
+            <p className="text-sm text-gray-300">Create a new project and start tracking progress</p>
           </CardContent>
         </Card>
 
-        <Card className="bg-gray-800/50 border-gray-700 hover:bg-gray-800/70 transition-all duration-300 cursor-pointer group" onClick={() => setShowClientInviteForm(true)}>
+        <Card className="bg-gray-800/50 border-gray-600 hover:bg-gray-700/50 transition-all duration-300 cursor-pointer group" onClick={() => setShowClientInviteForm(true)}>
           <CardContent className="p-6 text-center">
             <div className="mx-auto w-12 h-12 bg-green-600/20 rounded-xl flex items-center justify-center mb-4 group-hover:bg-green-600/30 transition-colors">
               <UserPlus className="h-6 w-6 text-green-400" />
             </div>
             <h3 className="font-semibold text-white mb-2">Invite Client</h3>
-            <p className="text-sm text-gray-400">Send an invitation to a new client</p>
+            <p className="text-sm text-gray-300">Send an invitation to a new client</p>
           </CardContent>
         </Card>
 
-        <Card className="bg-gray-800/50 border-gray-700 hover:bg-gray-800/70 transition-all duration-300 cursor-pointer group" onClick={handleAddResource}>
+        <Card className="bg-gray-800/50 border-gray-600 hover:bg-gray-700/50 transition-all duration-300 cursor-pointer group" onClick={handleAddResource}>
           <CardContent className="p-6 text-center">
             <div className="mx-auto w-12 h-12 bg-purple-600/20 rounded-xl flex items-center justify-center mb-4 group-hover:bg-purple-600/30 transition-colors">
               <UserCheck className="h-6 w-6 text-purple-400" />
             </div>
             <h3 className="font-semibold text-white mb-2">Add Resource</h3>
-            <p className="text-sm text-gray-400">Onboard a new team member</p>
+            <p className="text-sm text-gray-300">Onboard a new team member</p>
           </CardContent>
         </Card>
       </div>
@@ -181,7 +189,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onTabChange }) => {
       {/* Recent Activity & Project Status */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Projects */}
-        <Card className="bg-gray-800/50 border-gray-700">
+        <Card className="bg-gray-800/50 border-gray-600">
           <CardHeader>
             <CardTitle className="text-white flex items-center gap-2">
               <FolderOpen className="h-5 w-5 text-blue-400" />
@@ -194,7 +202,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onTabChange }) => {
                 <div key={project.project_id} className="flex items-center justify-between p-3 bg-gray-700/30 rounded-lg">
                   <div>
                     <p className="font-medium text-white">{project.project_name}</p>
-                    <p className="text-sm text-gray-400">{project.client_id}</p>
+                    <p className="text-sm text-gray-300">{project.client_id}</p>
                   </div>
                   <div className="flex items-center gap-2">
                     {project.status === 'active' && <CheckCircle className="h-4 w-4 text-green-400" />}
@@ -202,19 +210,19 @@ const Dashboard: React.FC<DashboardProps> = ({ onTabChange }) => {
                     {project.status === 'on_hold' && <AlertTriangle className="h-4 w-4 text-orange-400" />}
                     {project.status === 'completed' && <CheckCircle className="h-4 w-4 text-blue-400" />}
                     {project.status === 'cancelled' && <XCircle className="h-4 w-4 text-red-400" />}
-                    <span className="text-xs text-gray-400 capitalize">{project.status}</span>
+                    <span className="text-xs text-gray-300 capitalize">{project.status}</span>
                   </div>
                 </div>
               ))}
               {projects.length === 0 && (
-                <p className="text-gray-400 text-center py-4">No projects yet</p>
+                <p className="text-gray-300 text-center py-4">No projects yet</p>
               )}
             </div>
           </CardContent>
         </Card>
 
         {/* Team Utilization */}
-        <Card className="bg-gray-800/50 border-gray-700">
+        <Card className="bg-gray-800/50 border-gray-600">
           <CardHeader>
             <CardTitle className="text-white flex items-center gap-2">
               <Users className="h-5 w-5 text-purple-400" />
@@ -227,7 +235,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onTabChange }) => {
                 <div key={resource.resource_id} className="flex items-center justify-between p-3 bg-gray-700/30 rounded-lg">
                   <div>
                     <p className="font-medium text-white">{resource.full_name}</p>
-                    <p className="text-sm text-gray-400">{resource.role} • {resource.department}</p>
+                    <p className="text-sm text-gray-300">{resource.role} • {resource.department}</p>
                   </div>
                   <div className="flex items-center gap-2">
                     {resource.active_status ? (
@@ -235,21 +243,21 @@ const Dashboard: React.FC<DashboardProps> = ({ onTabChange }) => {
                     ) : (
                       <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
                     )}
-                    <span className="text-xs text-gray-400">
+                    <span className="text-xs text-gray-300">
                       {resource.active_status ? 'Active' : 'Inactive'}
                     </span>
                   </div>
                 </div>
               ))}
               {resources.length === 0 && (
-                <p className="text-gray-400 text-center py-4">No team members yet</p>
+                <p className="text-gray-300 text-center py-4">No team members yet</p>
               )}
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Modal Forms - Fixed props */}
+      {/* Modal Forms */}
       {showProjectForm && (
         <NewProjectForm
           onSubmit={handleCreateProject}

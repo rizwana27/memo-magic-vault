@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -14,6 +14,18 @@ const Projects = () => {
   const createProject = useCreateProject();
   const [searchTerm, setSearchTerm] = useState('');
   const [showNewProjectModal, setShowNewProjectModal] = useState(false);
+
+  // Listen for custom event from Dashboard
+  useEffect(() => {
+    const handleOpenModal = () => {
+      setShowNewProjectModal(true);
+    };
+
+    window.addEventListener('openProjectModal', handleOpenModal);
+    return () => {
+      window.removeEventListener('openProjectModal', handleOpenModal);
+    };
+  }, []);
 
   const getStatusColor = (status?: string) => {
     switch (status) {

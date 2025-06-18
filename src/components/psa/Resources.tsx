@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -13,6 +13,18 @@ const Resources = () => {
   const createResource = useCreateResource();
   const [searchTerm, setSearchTerm] = useState('');
   const [showNewResourceModal, setShowNewResourceModal] = useState(false);
+
+  // Listen for custom event from Dashboard
+  useEffect(() => {
+    const handleOpenModal = () => {
+      setShowNewResourceModal(true);
+    };
+
+    window.addEventListener('openResourceModal', handleOpenModal);
+    return () => {
+      window.removeEventListener('openResourceModal', handleOpenModal);
+    };
+  }, []);
 
   const getStatusColor = (status?: boolean) => {
     return status ? 'bg-green-500' : 'bg-red-500';
