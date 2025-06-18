@@ -89,7 +89,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/`,
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
         }
       });
       
@@ -112,15 +112,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setLoading(true);
       console.log('Starting Microsoft sign in with MFA for email:', email);
       
+      // Determine if this is a work/school account or personal account
+      const isWorkAccount = email && !email.includes('@gmail.com') && !email.includes('@outlook.com') && !email.includes('@hotmail.com') && !email.includes('@live.com');
+      
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'azure',
         options: {
           redirectTo: `${window.location.origin}/auth/callback`,
           queryParams: {
-            tenant: 'common',
-            prompt: 'login', // Force login prompt
-            acr_values: 'urn:microsoft:reqauth:mfa', // Force MFA
-            domain_hint: email ? (email.includes('@gmail.com') || email.includes('@outlook.com') || email.includes('@hotmail.com') ? 'consumers' : 'organizations') : undefined,
+            prompt: 'login', // Force login prompt to ensure fresh authentication
+            acr_values: 'urn:microsoft:req:auth:mfa', // Force MFA requirement
+            domain_hint: isWorkAccount ? 'organizations' : 'consumers',
             ...(email && { login_hint: email })
           },
           scopes: 'openid email profile User.Read'

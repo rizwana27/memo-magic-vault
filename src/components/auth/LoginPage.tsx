@@ -27,7 +27,7 @@ const LoginPage = () => {
   };
 
   const handleEmailLogin = async (e: React.FormEvent) => {
-    e.preventDefault(); // Prevent page refresh
+    e.preventDefault();
     
     if (!formData.email || !formData.password) {
       setError('Please fill in all fields');
@@ -42,23 +42,13 @@ const LoginPage = () => {
       
       if (error) {
         console.error('Login error:', error);
-        if (error.message.includes('Invalid login credentials') || 
-            error.message.includes('Email not confirmed') ||
-            error.message.includes('Invalid email or password')) {
-          setError('Email or password incorrect. Please try again.');
-          toast({
-            title: "Login Failed",
-            description: "Email or password incorrect. Please try again.",
-            variant: "destructive",
-          });
-        } else {
-          setError(error.message);
-          toast({
-            title: "Login Failed",
-            description: error.message,
-            variant: "destructive",
-          });
-        }
+        const errorMessage = 'Email or password incorrect. Please try again.';
+        setError(errorMessage);
+        toast({
+          title: "Login Failed",
+          description: errorMessage,
+          variant: "destructive",
+        });
       } else {
         toast({
           title: "Welcome back!",
@@ -67,10 +57,11 @@ const LoginPage = () => {
       }
     } catch (err) {
       console.error('Unexpected login error:', err);
-      setError('An unexpected error occurred. Please try again.');
+      const errorMessage = 'An unexpected error occurred. Please try again.';
+      setError(errorMessage);
       toast({
         title: "Login Failed",
-        description: "An unexpected error occurred. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -87,12 +78,24 @@ const LoginPage = () => {
         description: "You'll be redirected to Microsoft for authentication with MFA...",
       });
       
-      await signInWithMicrosoft();
-    } catch (error) {
+      await signInWithMicrosoft(formData.email || undefined);
+    } catch (error: any) {
       console.error('Microsoft login error:', error);
+      
+      let errorMessage = "Microsoft login failed or was cancelled.";
+      
+      // Handle specific error types
+      if (error?.message?.includes('popup_closed_by_user')) {
+        errorMessage = "Microsoft login was cancelled. Please try again.";
+      } else if (error?.message?.includes('network')) {
+        errorMessage = "Network error during Microsoft login. Please check your connection.";
+      } else if (error?.message?.includes('oauth')) {
+        errorMessage = "Microsoft authentication failed. Please try again or contact support.";
+      }
+      
       toast({
         title: "Microsoft Login Failed",
-        description: "Microsoft login failed or was cancelled. Try again or use email login.",
+        description: `${errorMessage} Try again or use email login.`,
         variant: "destructive",
       });
     } finally {
