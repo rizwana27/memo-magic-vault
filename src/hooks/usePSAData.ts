@@ -178,22 +178,20 @@ export const usePSAData = () => {
     mutationFn: async (clientData: any) => {
       console.log('Creating client:', clientData);
       
-      const insertData = {
-        client_name: clientData.clientName,
-        company_name: clientData.companyName,
-        industry: clientData.industry,
-        client_type: clientData.clientType,
-        primary_contact_name: clientData.primaryContactName,
-        primary_contact_email: clientData.primaryContactEmail,
-        phone_number: clientData.phoneNumber,
-        revenue_tier: clientData.revenueTier,
-        tags: clientData.tags,
-        notes: clientData.notes,
-      };
-
       const { data, error } = await supabase
         .from('clients')
-        .insert(insertData)
+        .insert([{
+          client_name: clientData.clientName,
+          company_name: clientData.companyName,
+          industry: clientData.industry,
+          client_type: clientData.clientType,
+          primary_contact_name: clientData.primaryContactName,
+          primary_contact_email: clientData.primaryContactEmail,
+          phone_number: clientData.phoneNumber,
+          revenue_tier: clientData.revenueTier,
+          tags: clientData.tags,
+          notes: clientData.notes,
+        }])
         .select()
         .single();
 
@@ -239,23 +237,21 @@ export const usePSAData = () => {
         throw new Error('Selected client does not exist. Please refresh the page and try again.');
       }
 
-      const insertData = {
-        project_name: projectData.name,
-        client_id: projectData.client,
-        project_manager: projectData.projectManager,
-        region: projectData.region,
-        status: projectData.status,
-        delivery_status: projectData.deliveryStatus,
-        start_date: projectData.startDate,
-        end_date: projectData.endDate,
-        budget: projectData.budget ? parseFloat(projectData.budget) : null,
-        description: projectData.description,
-        tags: projectData.tags,
-      };
-
       const { data, error } = await supabase
         .from('projects')
-        .insert(insertData)
+        .insert([{
+          project_name: projectData.name,
+          client_id: projectData.client,
+          project_manager: projectData.projectManager,
+          region: projectData.region,
+          status: projectData.status,
+          delivery_status: projectData.deliveryStatus,
+          start_date: projectData.startDate,
+          end_date: projectData.endDate,
+          budget: projectData.budget ? parseFloat(projectData.budget) : null,
+          description: projectData.description,
+          tags: projectData.tags,
+        }])
         .select()
         .single();
 
@@ -293,21 +289,19 @@ export const usePSAData = () => {
     mutationFn: async (resourceData: any) => {
       console.log('Creating resource:', resourceData);
       
-      const insertData = {
-        full_name: resourceData.fullName,
-        email_address: resourceData.email,
-        phone_number: resourceData.phone,
-        department: resourceData.department,
-        role: resourceData.role,
-        join_date: resourceData.joinDate,
-        skills: resourceData.skills,
-        availability: resourceData.availability?.[0] || 100,
-        active_status: resourceData.status,
-      };
-
       const { data, error } = await supabase
         .from('resources')
-        .insert(insertData)
+        .insert([{
+          full_name: resourceData.fullName,
+          email_address: resourceData.email,
+          phone_number: resourceData.phone,
+          department: resourceData.department,
+          role: resourceData.role,
+          join_date: resourceData.joinDate,
+          skills: resourceData.skills,
+          availability: resourceData.availability?.[0] || 100,
+          active_status: resourceData.status,
+        }])
         .select()
         .single();
 
@@ -342,19 +336,17 @@ export const usePSAData = () => {
     mutationFn: async (timesheetData: any) => {
       console.log('Creating timesheet:', timesheetData);
       
-      const insertData = {
-        project_id: timesheetData.project,
-        task: timesheetData.task,
-        date: timesheetData.date,
-        start_time: timesheetData.startTime,
-        end_time: timesheetData.endTime,
-        billable: timesheetData.billable,
-        notes: timesheetData.notes,
-      };
-
       const { data, error } = await supabase
         .from('timesheets')
-        .insert(insertData)
+        .insert([{
+          project_id: timesheetData.project,
+          task: timesheetData.task,
+          date: timesheetData.date,
+          start_time: timesheetData.startTime,
+          end_time: timesheetData.endTime,
+          billable: timesheetData.billable,
+          notes: timesheetData.notes,
+        }])
         .select()
         .single();
 
@@ -389,21 +381,19 @@ export const usePSAData = () => {
     mutationFn: async (vendorData: any) => {
       console.log('Creating vendor:', vendorData);
       
-      const insertData = {
-        vendor_name: vendorData.vendorName,
-        contact_person: vendorData.contactPerson,
-        contact_email: vendorData.contactEmail,
-        phone_number: vendorData.phoneNumber,
-        services_offered: vendorData.servicesOffered,
-        status: vendorData.status,
-        contract_start_date: vendorData.contractStart,
-        contract_end_date: vendorData.contractEnd,
-        notes: vendorData.notes,
-      };
-
       const { data, error } = await supabase
         .from('vendors')
-        .insert(insertData)
+        .insert([{
+          vendor_name: vendorData.vendorName,
+          contact_person: vendorData.contactPerson,
+          contact_email: vendorData.contactEmail,
+          phone_number: vendorData.phoneNumber,
+          services_offered: vendorData.servicesOffered,
+          status: vendorData.status,
+          contract_start_date: vendorData.contractStart,
+          contract_end_date: vendorData.contractEnd,
+          notes: vendorData.notes,
+        }])
         .select()
         .single();
 
