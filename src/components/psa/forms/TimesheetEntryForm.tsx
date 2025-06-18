@@ -58,58 +58,60 @@ const TimesheetEntryForm = ({ onSubmit, onCancel }: TimesheetEntryFormProps) => 
     }
   }, [startTime, endTime]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
-    // Validation
-    if (!selectedProject) {
-      setError('Please select a project');
-      return;
+    try {
+      // Comprehensive validation
+      if (!selectedProject) {
+        throw new Error('Please select a project');
+      }
+
+      if (!selectedTask) {
+        throw new Error('Please select a task');
+      }
+
+      if (!date) {
+        throw new Error('Please select a date');
+      }
+
+      if (!startTime || !endTime) {
+        throw new Error('Start time and end time are required');
+      }
+
+      if (totalHours <= 0) {
+        throw new Error('End time must be after start time');
+      }
+
+      // Find the selected project to verify it exists
+      const project = projects?.find(p => p.project_id === selectedProject);
+      if (!project) {
+        throw new Error('Selected project not found. Please refresh and try again.');
+      }
+
+      // Map the form data to the correct database schema
+      // IMPORTANT: Do NOT include 'hours' in the payload as it's likely a computed column
+      const timesheetData = {
+        project_id: selectedProject,
+        task: selectedTask,
+        date: date.toISOString().split('T')[0],
+        start_time: startTime,
+        end_time: endTime,
+        billable: billable,
+        notes: notes?.trim() || null,
+      };
+
+      console.log('Creating timesheet with data:', timesheetData);
+      console.log('Calculated hours (for reference only):', totalHours);
+      
+      await onSubmit(timesheetData);
+      
+    } catch (error) {
+      console.error('Timesheet form validation error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to create timesheet entry. Please check your input and try again.';
+      setError(errorMessage);
     }
-
-    if (!selectedTask) {
-      setError('Please select a task');
-      return;
-    }
-
-    if (!date) {
-      setError('Please select a date');
-      return;
-    }
-
-    if (totalHours <= 0) {
-      setError('End time must be after start time');
-      return;
-    }
-
-    if (!startTime || !endTime) {
-      setError('Start time and end time are required');
-      return;
-    }
-
-    // Find the selected project to get its ID
-    const project = projects?.find(p => p.project_id === selectedProject);
-    if (!project) {
-      setError('Selected project not found. Please refresh and try again.');
-      return;
-    }
-
-    // Map the form data to the correct database schema
-    // Note: We do NOT include 'hours' in the payload as it may be a computed column
-    const timesheetData = {
-      project_id: selectedProject,
-      task: selectedTask,
-      date: date.toISOString().split('T')[0],
-      start_time: startTime,
-      end_time: endTime,
-      billable: billable,
-      notes: notes?.trim() || null,
-    };
-
-    console.log('Creating timesheet with data:', timesheetData);
-    console.log('Calculated hours (for reference):', totalHours);
-    onSubmit(timesheetData);
   };
 
   const selectedProjectName = projects?.find(p => p.project_id === selectedProject)?.project_name;
@@ -285,7 +287,7 @@ const TimesheetEntryForm = ({ onSubmit, onCancel }: TimesheetEntryFormProps) => 
             </p>
             {billable && (
               <p className="text-sm text-green-400 mt-1">✓ Billable time</p>
-            )}
+            </p>
           </div>
         )}
       </form>

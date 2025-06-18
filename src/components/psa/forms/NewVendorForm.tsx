@@ -44,46 +44,34 @@ const NewVendorForm = ({ onSubmit, onCancel }: NewVendorFormProps) => {
     setError('');
     setIsSubmitting(true);
 
-    // Validation
-    if (!formData.vendor_name.trim()) {
-      setError('Vendor name is required');
-      setIsSubmitting(false);
-      return;
-    }
-
-    if (!formData.contact_person.trim()) {
-      setError('Contact person is required');
-      setIsSubmitting(false);
-      return;
-    }
-
-    if (!formData.contact_email.trim()) {
-      setError('Contact email is required');
-      setIsSubmitting(false);
-      return;
-    }
-
-    if (!isEmailValid(formData.contact_email)) {
-      setError('Please enter a valid email address');
-      setIsSubmitting(false);
-      return;
-    }
-
-    if (!formData.services_offered.trim()) {
-      setError('Services offered is required');
-      setIsSubmitting(false);
-      return;
-    }
-
-    // Validate contract dates
-    if (contractStart && contractEnd && contractStart >= contractEnd) {
-      setError('Contract end date must be after start date');
-      setIsSubmitting(false);
-      return;
-    }
-
     try {
-      // Map form data to match the database schema exactly
+      // Comprehensive validation
+      if (!formData.vendor_name.trim()) {
+        throw new Error('Vendor name is required');
+      }
+
+      if (!formData.contact_person.trim()) {
+        throw new Error('Contact person is required');
+      }
+
+      if (!formData.contact_email.trim()) {
+        throw new Error('Contact email is required');
+      }
+
+      if (!isEmailValid(formData.contact_email)) {
+        throw new Error('Please enter a valid email address');
+      }
+
+      if (!formData.services_offered.trim()) {
+        throw new Error('Services offered is required');
+      }
+
+      // Validate contract dates
+      if (contractStart && contractEnd && contractStart >= contractEnd) {
+        throw new Error('Contract end date must be after start date');
+      }
+
+      // Map form data to exact database schema
       const vendorData = {
         vendor_name: formData.vendor_name.trim(),
         contact_person: formData.contact_person.trim(),
@@ -94,16 +82,16 @@ const NewVendorForm = ({ onSubmit, onCancel }: NewVendorFormProps) => {
         notes: formData.notes.trim() || null,
         contract_start_date: contractStart ? contractStart.toISOString().split('T')[0] : null,
         contract_end_date: contractEnd ? contractEnd.toISOString().split('T')[0] : null,
-        attachments: null, // For now, we'll set this to null
+        attachments: null, // Setting to null as per schema
       };
 
       console.log('Submitting vendor data:', vendorData);
       await onSubmit(vendorData);
-      // Success is handled by the parent component
+      
     } catch (error) {
-      console.error('Error submitting vendor form:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to create vendor. Please try again.';
-      setError(`Failed to create vendor: ${errorMessage}`);
+      console.error('Vendor form validation error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to create vendor. Please check your input and try again.';
+      setError(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
