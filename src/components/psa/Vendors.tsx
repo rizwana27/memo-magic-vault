@@ -6,86 +6,44 @@ import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog } from '@/components/ui/dialog';
 import { Plus, Search, Filter, Building, Mail, Phone, FileText, ShoppingCart } from 'lucide-react';
+import { useVendors } from '@/hooks/useVendors';
 import NewVendorForm from './forms/NewVendorForm';
 import NewPurchaseOrderForm from './forms/NewPurchaseOrderForm';
 
-// Mock data for demonstration
-const mockVendors = [
-  {
-    id: 1,
-    name: 'ABC Software Solutions',
-    contactPerson: 'John Smith',
-    email: 'john@abcsoftware.com',
-    phone: '+1-555-0123',
-    status: true,
-    services: 'Custom software development, UI/UX design',
-    contractStart: '2024-01-15',
-    contractEnd: '2024-12-31',
-  },
-  {
-    id: 2,
-    name: 'Tech Hardware Co.',
-    contactPerson: 'Sarah Johnson',
-    email: 'sarah@techhardware.com',
-    phone: '+1-555-0456',
-    status: true,
-    services: 'Hardware procurement, IT equipment',
-    contractStart: '2024-02-01',
-    contractEnd: '2024-11-30',
-  },
-];
-
-const mockPurchaseOrders = [
-  {
-    id: 1,
-    poNumber: 'PO-2024-001',
-    vendor: 'ABC Software Solutions',
-    orderDate: '2024-03-15',
-    deliveryDate: '2024-04-15',
-    status: 'Open',
-    totalAmount: 15000,
-  },
-  {
-    id: 2,
-    poNumber: 'PO-2024-002',
-    vendor: 'Tech Hardware Co.',
-    orderDate: '2024-03-10',
-    deliveryDate: '2024-03-25',
-    status: 'In Progress',
-    totalAmount: 8500,
-  },
-];
-
 const Vendors = () => {
+  const { vendors, createVendor, isLoading } = useVendors();
   const [searchTerm, setSearchTerm] = useState('');
-  const [showNewVendorModal, setShowNewVendorModal] = useState(false);
+  const [showNewVendorModal, setShowNewPOModal] = useState(false);
   const [showNewPOModal, setShowNewPOModal] = useState(false);
 
-  const getStatusColor = (status?: boolean) => {
-    return status ? 'bg-green-500' : 'bg-red-500';
+  const getStatusColor = (status?: string) => {
+    return status === 'active' ? 'bg-green-500' : 'bg-red-500';
   };
 
-  const getStatusText = (status?: boolean) => {
-    return status ? 'Active' : 'Inactive';
+  const getStatusText = (status?: string) => {
+    return status === 'active' ? 'Active' : 'Inactive';
   };
 
   const getPOStatusColor = (status?: string) => {
     switch (status) {
-      case 'Open': return 'bg-blue-500';
-      case 'In Progress': return 'bg-yellow-500';
-      case 'Closed': return 'bg-green-500';
+      case 'open': return 'bg-blue-500';
+      case 'in_progress': return 'bg-yellow-500';
+      case 'closed': return 'bg-green-500';
       default: return 'bg-gray-500';
     }
   };
 
-  const filteredVendors = mockVendors.filter(vendor =>
-    vendor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    vendor.contactPerson.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredVendors = vendors?.filter(vendor =>
+    vendor?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    vendor?.contact_person?.toLowerCase().includes(searchTerm.toLowerCase())
+  ) || [];
 
-  const handleNewVendor = (data: any) => {
+  const handleNewVendor = async (data: any) => {
     console.log('Creating new vendor:', data);
-    setShowNewVendorModal(false);
+    const result = await createVendor(data);
+    if (result.success) {
+      setShowNewVendorModal(false);
+    }
   };
 
   const handleNewPurchaseOrder = (data: any) => {
@@ -104,6 +62,7 @@ const Vendors = () => {
         <Button 
           className="bg-blue-600 hover:bg-blue-700"
           onClick={() => setShowNewVendorModal(true)}
+          disabled={isLoading}
         >
           <Plus className="w-4 h-4 mr-2" />
           Add Vendor
@@ -138,44 +97,85 @@ const Vendors = () => {
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredVendors.map((vendor) => (
-              <Card key={vendor.id} className="bg-white/10 backdrop-blur-md border-white/20 hover:bg-white/15 transition-colors cursor-pointer">
-                <CardHeader>
-                  <div className="flex justify-between items-start">
-                    <CardTitle className="text-white text-lg">{vendor.name}</CardTitle>
-                    <Badge className={`${getStatusColor(vendor.status)} text-white`}>
-                      {getStatusText(vendor.status)}
-                    </Badge>
-                  </div>
-                  <CardDescription className="text-gray-300">
-                    Contact: {vendor.contactPerson}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <div className="flex items-center text-gray-300 text-sm">
-                      <Mail className="w-4 h-4 mr-2 text-gray-400" />
-                      {vendor.email}
+          {isLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[...Array(6)].map((_, i) => (
+                <Card key={i} className="bg-white/10 backdrop-blur-md border-white/20 animate-pulse">
+                  <CardHeader>
+                    <div className="h-4 bg-gray-600 rounded w-3/4"></div>
+                    <div className="h-3 bg-gray-600 rounded w-1/2"></div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      <div className="h-3 bg-gray-600 rounded"></div>
+                      <div className="h-3 bg-gray-600 rounded w-2/3"></div>
                     </div>
-                    
-                    <div className="flex items-center text-gray-300 text-sm">
-                      <Phone className="w-4 h-4 mr-2 text-gray-400" />
-                      {vendor.phone}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredVendors.map((vendor) => (
+                <Card key={vendor.id} className="bg-white/10 backdrop-blur-md border-white/20 hover:bg-white/15 transition-colors cursor-pointer">
+                  <CardHeader>
+                    <div className="flex justify-between items-start">
+                      <CardTitle className="text-white text-lg">{vendor.name}</CardTitle>
+                      <Badge className={`${getStatusColor(vendor.status)} text-white`}>
+                        {getStatusText(vendor.status)}
+                      </Badge>
                     </div>
-                    
-                    <div className="text-gray-300 text-sm">
-                      <p className="line-clamp-2">{vendor.services}</p>
-                    </div>
+                    <CardDescription className="text-gray-300">
+                      Contact: {vendor.contact_person}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      <div className="flex items-center text-gray-300 text-sm">
+                        <Mail className="w-4 h-4 mr-2 text-gray-400" />
+                        {vendor.email}
+                      </div>
+                      
+                      <div className="flex items-center text-gray-300 text-sm">
+                        <Phone className="w-4 h-4 mr-2 text-gray-400" />
+                        {vendor.phone}
+                      </div>
+                      
+                      <div className="text-gray-300 text-sm">
+                        <p className="line-clamp-2">{vendor.services_offered}</p>
+                      </div>
 
-                    <div className="text-gray-400 text-xs">
-                      Contract: {new Date(vendor.contractStart).toLocaleDateString()} - {new Date(vendor.contractEnd).toLocaleDateString()}
+                      {vendor.contract_start_date && vendor.contract_end_date && (
+                        <div className="text-gray-400 text-xs">
+                          Contract: {new Date(vendor.contract_start_date).toLocaleDateString()} - {new Date(vendor.contract_end_date).toLocaleDateString()}
+                        </div>
+                      )}
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+
+          {filteredVendors.length === 0 && !isLoading && (
+            <Card className="bg-white/10 backdrop-blur-md border-white/20">
+              <CardContent className="p-12 text-center">
+                <Building className="w-16 h-16 mx-auto mb-4 text-gray-400 opacity-50" />
+                <h3 className="text-xl font-medium text-white mb-2">No vendors found</h3>
+                <p className="text-gray-400 mb-4">
+                  {searchTerm ? 'Try adjusting your search terms' : 'Get started by adding your first vendor'}
+                </p>
+                <Button 
+                  className="bg-blue-600 hover:bg-blue-700"
+                  onClick={() => setShowNewVendorModal(true)}
+                  disabled={isLoading}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Vendor
+                </Button>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
 
         <TabsContent value="contracts" className="space-y-4">
@@ -206,39 +206,13 @@ const Vendors = () => {
             </Button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {mockPurchaseOrders.map((po) => (
-              <Card key={po.id} className="bg-white/10 backdrop-blur-md border-white/20 hover:bg-white/15 transition-colors cursor-pointer">
-                <CardHeader>
-                  <div className="flex justify-between items-start">
-                    <CardTitle className="text-white text-lg">{po.poNumber}</CardTitle>
-                    <Badge className={`${getPOStatusColor(po.status)} text-white`}>
-                      {po.status}
-                    </Badge>
-                  </div>
-                  <CardDescription className="text-gray-300">
-                    {po.vendor}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-400">Order Date:</span>
-                      <span className="text-white">{new Date(po.orderDate).toLocaleDateString()}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-400">Delivery Date:</span>
-                      <span className="text-white">{new Date(po.deliveryDate).toLocaleDateString()}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-400">Total Amount:</span>
-                      <span className="text-green-400 font-semibold">${po.totalAmount.toLocaleString()}</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          <Card className="bg-white/10 backdrop-blur-md border-white/20">
+            <CardContent className="p-12 text-center">
+              <ShoppingCart className="w-16 h-16 mx-auto mb-4 text-gray-400 opacity-50" />
+              <h3 className="text-xl font-medium text-white mb-2">No Purchase Orders</h3>
+              <p className="text-gray-400">Purchase orders will appear here once created</p>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="performance" className="space-y-4">
@@ -279,6 +253,7 @@ const Vendors = () => {
         <NewVendorForm
           onSubmit={handleNewVendor}
           onCancel={() => setShowNewVendorModal(false)}
+          isLoading={isLoading}
         />
       </Dialog>
 

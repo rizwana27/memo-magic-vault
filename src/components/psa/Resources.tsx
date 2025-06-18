@@ -6,12 +6,11 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Dialog } from '@/components/ui/dialog';
 import { Plus, Search, Filter, User, Mail, Phone, Calendar } from 'lucide-react';
-import { usePSAData } from '@/hooks/usePSAData';
+import { useResources } from '@/hooks/useResources';
 import NewResourceForm from './forms/NewResourceForm';
 
 const Resources = () => {
-  const { useResources } = usePSAData();
-  const { data: resources, isLoading } = useResources();
+  const { resources, createResource, isLoading } = useResources();
   const [searchTerm, setSearchTerm] = useState('');
   const [showNewResourceModal, setShowNewResourceModal] = useState(false);
 
@@ -29,10 +28,12 @@ const Resources = () => {
     resource?.department?.toLowerCase().includes(searchTerm.toLowerCase())
   ) || [];
 
-  const handleNewResource = (data: any) => {
+  const handleNewResource = async (data: any) => {
     console.log('Creating new resource:', data);
-    setShowNewResourceModal(false);
-    // Here you would typically call an API to create the resource
+    const result = await createResource(data);
+    if (result.success) {
+      setShowNewResourceModal(false);
+    }
   };
 
   return (
@@ -46,6 +47,7 @@ const Resources = () => {
         <Button 
           className="bg-blue-600 hover:bg-blue-700"
           onClick={() => setShowNewResourceModal(true)}
+          disabled={isLoading}
         >
           <Plus className="w-4 h-4 mr-2" />
           Add Resource
@@ -149,6 +151,7 @@ const Resources = () => {
             <Button 
               className="bg-blue-600 hover:bg-blue-700"
               onClick={() => setShowNewResourceModal(true)}
+              disabled={isLoading}
             >
               <Plus className="w-4 h-4 mr-2" />
               Add Resource
@@ -162,6 +165,7 @@ const Resources = () => {
         <NewResourceForm
           onSubmit={handleNewResource}
           onCancel={() => setShowNewResourceModal(false)}
+          isLoading={isLoading}
         />
       </Dialog>
     </div>

@@ -9,16 +9,22 @@ import { Switch } from '@/components/ui/switch';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { CalendarIcon, Clock } from 'lucide-react';
+import { CalendarIcon, Clock, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { usePSAData } from '@/hooks/usePSAData';
 
 interface TimesheetEntryFormProps {
   onSubmit: (data: any) => void;
   onCancel: () => void;
+  isLoading?: boolean;
 }
 
-const TimesheetEntryForm = ({ onSubmit, onCancel }: TimesheetEntryFormProps) => {
+const TimesheetEntryForm = ({ onSubmit, onCancel, isLoading = false }: TimesheetEntryFormProps) => {
+  const { useProjects, useTasks } = usePSAData();
+  const { data: projects } = useProjects();
+  const { data: tasks } = useTasks();
+  
   const [selectedProject, setSelectedProject] = useState('');
   const [selectedTask, setSelectedTask] = useState('');
   const [date, setDate] = useState<Date>(new Date());
@@ -27,29 +33,10 @@ const TimesheetEntryForm = ({ onSubmit, onCancel }: TimesheetEntryFormProps) => 
   const [billable, setBillable] = useState(true);
   const [notes, setNotes] = useState('');
   const [totalHours, setTotalHours] = useState(0);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Mock data for projects and tasks
-  const projects = [
-    { id: '1', name: 'Project Alpha' },
-    { id: '2', name: 'Project Beta' },
-    { id: '3', name: 'Project Gamma' },
-  ];
-
-  const tasksByProject: Record<string, Array<{ id: string; name: string }>> = {
-    '1': [
-      { id: '1', name: 'Code Review' },
-      { id: '2', name: 'Frontend Development' },
-      { id: '3', name: 'Testing' },
-    ],
-    '2': [
-      { id: '4', name: 'API Integration' },
-      { id: '5', name: 'Database Design' },
-    ],
-    '3': [
-      { id: '6', name: 'Planning' },
-      { id: '7', name: 'Documentation' },
-    ],
-  };
+  // Filter tasks based on selected project
+  const filteredTasks = tasks?.filter(task => task.project_id === selectedProject) || [];
 
   // Calculate total hours when start/end time changes
   useEffect(() => {
@@ -62,8 +49,29 @@ const TimesheetEntryForm = ({ onSubmit, onCancel }: TimesheetEntryFormProps) => 
     }
   }, [startTime, endTime]);
 
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+
+    if (!selectedProject) {
+      newErrors.project = 'Project is required';
+    }
+
+    if (!selectedTask) {
+      newErrors.task = 'Task is required';
+    }
+
+    if (totalHours <= 0) {
+      newErrors.hours = 'Hours must be greater than 0';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validateForm() || isLoading) return;
+
     onSubmit({
       project: selectedProject,
       task: selectedTask,
@@ -76,8 +84,8 @@ const TimesheetEntryForm = ({ onSubmit, onCancel }: TimesheetEntryFormProps) => 
     });
   };
 
-  const selectedProjectName = projects.find(p => p.id === selectedProject)?.name;
-  const selectedTaskName = tasksByProject[selectedProject]?.find(t => t.id === selectedTask)?.name;
+  const selectedProjectName = projects?.find(p => p.id === selectedProject)?.name;
+  const selectedTaskName = filteredTasks.find(t => t.id === selectedTask)?.title;
 
   return (
     <DialogContent className="bg-white/10 backdrop-blur-md border-white/20 text-white max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -90,38 +98,48 @@ const TimesheetEntryForm = ({ onSubmit, onCancel }: TimesheetEntryFormProps) => 
           {/* Project Selection */}
           <div className="space-y-2">
             <Label htmlFor="project" className="text-gray-200">Project *</Label>
-            <Select value={selectedProject} onValueChange={(value) => {
-              setSelectedProject(value);
-              setSelectedTask(''); // Reset task when project changes
-            }}>
+            <Select 
+              value={selectedProject} 
+              onValueChange={(value) => {
+                setSelectedProject(value);
+                setSelectedTask(''); // Reset task when project changes
+              }}
+              disabled={isLoading}
+            >
               <SelectTrigger className="bg-white/10 border-white/20 text-white">
                 <SelectValue placeholder="Select a project" />
               </SelectTrigger>
               <SelectContent className="bg-gray-800 border-gray-600">
-                {projects.map((project) => (
+                {projects?.map((project) => (
                   <SelectItem key={project.id} value={project.id} className="text-white hover:bg-gray-700">
                     {project.name}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
+            {errors.project && <p className="text-red-400 text-sm">{errors.project}</p>}
           </div>
 
           {/* Task Selection */}
           <div className="space-y-2">
             <Label htmlFor="task" className="text-gray-200">Task *</Label>
-            <Select value={selectedTask} onValueChange={setSelectedTask} disabled={!selectedProject}>
+            <Select 
+              value={selectedTask} 
+              onValueChange={setSelectedTask} 
+              disabled={!selectedProject || isLoading}
+            >
               <SelectTrigger className="bg-white/10 border-white/20 text-white">
                 <SelectValue placeholder="Select a task" />
               </SelectTrigger>
               <SelectContent className="bg-gray-800 border-gray-600">
-                {(tasksByProject[selectedProject] || []).map((task) => (
+                {filteredTasks.map((task) => (
                   <SelectItem key={task.id} value={task.id} className="text-white hover:bg-gray-700">
-                    {task.name}
+                    {task.title}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
+            {errors.task && <p className="text-red-400 text-sm">{errors.task}</p>}
           </div>
         </div>
 
@@ -132,6 +150,7 @@ const TimesheetEntryForm = ({ onSubmit, onCancel }: TimesheetEntryFormProps) => 
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
+                disabled={isLoading}
                 className={cn(
                   "w-full justify-start text-left font-normal bg-white/10 border-white/20 text-white hover:bg-white/20",
                   !date && "text-gray-400"
@@ -166,6 +185,7 @@ const TimesheetEntryForm = ({ onSubmit, onCancel }: TimesheetEntryFormProps) => 
                 onChange={(e) => setStartTime(e.target.value)}
                 className="pl-10 bg-white/10 border-white/20 text-white"
                 required
+                disabled={isLoading}
               />
             </div>
           </div>
@@ -181,10 +201,13 @@ const TimesheetEntryForm = ({ onSubmit, onCancel }: TimesheetEntryFormProps) => 
                 onChange={(e) => setEndTime(e.target.value)}
                 className="pl-10 bg-white/10 border-white/20 text-white"
                 required
+                disabled={isLoading}
               />
             </div>
           </div>
         </div>
+
+        {errors.hours && <p className="text-red-400 text-sm">{errors.hours}</p>}
 
         {/* Billable Toggle */}
         <div className="flex items-center space-x-2">
@@ -192,6 +215,7 @@ const TimesheetEntryForm = ({ onSubmit, onCancel }: TimesheetEntryFormProps) => 
             id="billable"
             checked={billable}
             onCheckedChange={setBillable}
+            disabled={isLoading}
           />
           <Label htmlFor="billable" className="text-gray-200">Billable</Label>
         </div>
@@ -206,6 +230,7 @@ const TimesheetEntryForm = ({ onSubmit, onCancel }: TimesheetEntryFormProps) => 
             className="bg-white/10 border-white/20 text-white placeholder-gray-400"
             placeholder="Add any additional notes..."
             rows={3}
+            disabled={isLoading}
           />
         </div>
 
@@ -231,15 +256,23 @@ const TimesheetEntryForm = ({ onSubmit, onCancel }: TimesheetEntryFormProps) => 
           variant="outline"
           onClick={onCancel}
           className="border-gray-600 text-gray-300 hover:bg-gray-700"
+          disabled={isLoading}
         >
           Cancel
         </Button>
         <Button
           onClick={handleSubmit}
           className="bg-blue-600 hover:bg-blue-700 text-white"
-          disabled={!selectedProject || !selectedTask || totalHours <= 0}
+          disabled={isLoading || !selectedProject || !selectedTask || totalHours <= 0}
         >
-          Log Time
+          {isLoading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Logging...
+            </>
+          ) : (
+            'Log Time'
+          )}
         </Button>
       </DialogFooter>
     </DialogContent>

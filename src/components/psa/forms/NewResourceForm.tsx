@@ -10,16 +10,17 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { CalendarIcon, Upload } from 'lucide-react';
+import { CalendarIcon, Upload, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
 interface NewResourceFormProps {
   onSubmit: (data: any) => void;
   onCancel: () => void;
+  isLoading?: boolean;
 }
 
-const NewResourceForm = ({ onSubmit, onCancel }: NewResourceFormProps) => {
+const NewResourceForm = ({ onSubmit, onCancel, isLoading = false }: NewResourceFormProps) => {
   const [formData, setFormData] = React.useState({
     fullName: '',
     email: '',
@@ -32,10 +33,38 @@ const NewResourceForm = ({ onSubmit, onCancel }: NewResourceFormProps) => {
   });
 
   const [selectedSkills, setSelectedSkills] = React.useState<string[]>([]);
+  const [errors, setErrors] = React.useState<Record<string, string>>({});
   const availableSkills = ['React', 'Node.js', 'Python', 'Project Management', 'UI/UX Design', 'DevOps', 'Database', 'Mobile Development'];
+
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+
+    if (!formData.fullName.trim()) {
+      newErrors.fullName = 'Full name is required';
+    }
+
+    if (!formData.email.trim()) {
+      newErrors.email = 'Email is required';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = 'Please enter a valid email address';
+    }
+
+    if (!formData.department) {
+      newErrors.department = 'Department is required';
+    }
+
+    if (!formData.role) {
+      newErrors.role = 'Role is required';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validateForm() || isLoading) return;
+    
     onSubmit({ ...formData, skills: selectedSkills });
   };
 
@@ -64,7 +93,9 @@ const NewResourceForm = ({ onSubmit, onCancel }: NewResourceFormProps) => {
               onChange={(e) => setFormData(prev => ({ ...prev, fullName: e.target.value }))}
               className="bg-gray-800 border-gray-600 text-white"
               placeholder="Enter full name"
+              disabled={isLoading}
             />
+            {errors.fullName && <p className="text-red-400 text-sm">{errors.fullName}</p>}
           </div>
 
           <div className="space-y-2">
@@ -77,7 +108,9 @@ const NewResourceForm = ({ onSubmit, onCancel }: NewResourceFormProps) => {
               onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
               className="bg-gray-800 border-gray-600 text-white"
               placeholder="Enter email address"
+              disabled={isLoading}
             />
+            {errors.email && <p className="text-red-400 text-sm">{errors.email}</p>}
           </div>
 
           <div className="space-y-2">
@@ -88,12 +121,17 @@ const NewResourceForm = ({ onSubmit, onCancel }: NewResourceFormProps) => {
               onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
               className="bg-gray-800 border-gray-600 text-white"
               placeholder="Enter phone number"
+              disabled={isLoading}
             />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="department" className="text-gray-300">Department *</Label>
-            <Select value={formData.department} onValueChange={(value) => setFormData(prev => ({ ...prev, department: value }))}>
+            <Select 
+              value={formData.department} 
+              onValueChange={(value) => setFormData(prev => ({ ...prev, department: value }))}
+              disabled={isLoading}
+            >
               <SelectTrigger className="bg-gray-800 border-gray-600 text-white">
                 <SelectValue placeholder="Select department" />
               </SelectTrigger>
@@ -105,11 +143,16 @@ const NewResourceForm = ({ onSubmit, onCancel }: NewResourceFormProps) => {
                 <SelectItem value="devops">DevOps</SelectItem>
               </SelectContent>
             </Select>
+            {errors.department && <p className="text-red-400 text-sm">{errors.department}</p>}
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="role" className="text-gray-300">Role *</Label>
-            <Select value={formData.role} onValueChange={(value) => setFormData(prev => ({ ...prev, role: value }))}>
+            <Select 
+              value={formData.role} 
+              onValueChange={(value) => setFormData(prev => ({ ...prev, role: value }))}
+              disabled={isLoading}
+            >
               <SelectTrigger className="bg-gray-800 border-gray-600 text-white">
                 <SelectValue placeholder="Select role" />
               </SelectTrigger>
@@ -122,6 +165,7 @@ const NewResourceForm = ({ onSubmit, onCancel }: NewResourceFormProps) => {
                 <SelectItem value="qa-engineer">QA Engineer</SelectItem>
               </SelectContent>
             </Select>
+            {errors.role && <p className="text-red-400 text-sm">{errors.role}</p>}
           </div>
 
           <div className="space-y-2">
@@ -130,6 +174,7 @@ const NewResourceForm = ({ onSubmit, onCancel }: NewResourceFormProps) => {
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
+                  disabled={isLoading}
                   className={cn(
                     "w-full justify-start text-left font-normal bg-gray-800 border-gray-600 text-white",
                     !formData.joinDate && "text-gray-400"
@@ -201,11 +246,28 @@ const NewResourceForm = ({ onSubmit, onCancel }: NewResourceFormProps) => {
         </div>
 
         <div className="flex justify-end space-x-4 pt-6">
-          <Button type="button" variant="outline" onClick={onCancel} className="border-gray-600 text-gray-300">
+          <Button 
+            type="button" 
+            variant="outline" 
+            onClick={onCancel} 
+            className="border-gray-600 text-gray-300"
+            disabled={isLoading}
+          >
             Cancel
           </Button>
-          <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
-            Add Resource
+          <Button 
+            type="submit" 
+            className="bg-blue-600 hover:bg-blue-700"
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Adding...
+              </>
+            ) : (
+              'Add Resource'
+            )}
           </Button>
         </div>
       </form>
