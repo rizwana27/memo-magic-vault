@@ -1,60 +1,181 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
-import { Building2, LogIn } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { LogIn, Mail, Lock, Loader2 } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import AuthCard from './AuthCard';
 
 const LoginPage = () => {
-  const { signInWithMicrosoft, loading } = useAuth();
+  const { signInWithEmail, signInWithMicrosoft, loading } = useAuth();
+  const { toast } = useToast();
+  const [formData, setFormData] = useState({
+    email: '',
+    password: ''
+  });
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleSignIn = () => {
-    signInWithMicrosoft();
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+    if (error) setError(''); // Clear error when user starts typing
+  };
+
+  const handleEmailLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.email || !formData.password) {
+      setError('Please fill in all fields');
+      return;
+    }
+
+    setIsLoading(true);
+    setError('');
+
+    try {
+      const { error } = await signInWithEmail(formData.email, formData.password);
+      
+      if (error) {
+        if (error.message.includes('Invalid login credentials') || 
+            error.message.includes('Email not confirmed') ||
+            error.message.includes('Invalid email or password')) {
+          setError('Incorrect email or password. Please try again.');
+        } else {
+          setError(error.message);
+        }
+      } else {
+        toast({
+          title: "Welcome back!",
+          description: "You have been successfully logged in.",
+        });
+      }
+    } catch (err) {
+      setError('An unexpected error occurred. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleMicrosoftLogin = async () => {
+    try {
+      await signInWithMicrosoft();
+    } catch (error) {
+      console.error('Microsoft login error:', error);
+      toast({
+        title: "Login Error",
+        description: "Failed to sign in with Microsoft. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-gray-900 to-black flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        {/* Logo and App Name */}
-        <div className="text-center mb-8 animate-fade-in">
-          <div className="flex items-center justify-center mb-4">
-            <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-3 rounded-xl">
-              <Building2 className="h-8 w-8 text-white" />
-            </div>
-          </div>
-          <h1 className="text-3xl font-bold text-white mb-2">PSA Portal</h1>
-          <p className="text-gray-400">Professional Services Automation</p>
-        </div>
-
-        {/* Login Card */}
-        <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-8 shadow-2xl animate-scale-in">
-          <div className="text-center mb-8">
-            <h2 className="text-2xl font-semibold text-white mb-2">Welcome Back</h2>
-            <p className="text-gray-400">Sign in to access your PSA dashboard</p>
-          </div>
-
-          {/* Microsoft Login Button */}
-          <Button
-            onClick={handleSignIn}
-            disabled={loading}
-            className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium py-3 px-4 rounded-lg transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-          >
-            <LogIn className="w-5 h-5 mr-3" />
-            {loading ? 'Connecting...' : 'Continue with Microsoft'}
-          </Button>
-
-          <div className="mt-6 text-center">
-            <p className="text-sm text-gray-500">
-              Secure authentication powered by Microsoft Azure AD
-            </p>
+    <AuthCard 
+      title="Welcome Back" 
+      description="Sign in to access your PSA dashboard"
+    >
+      <form onSubmit={handleEmailLogin} className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="email" className="text-gray-300">Email</Label>
+          <div className="relative">
+            <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <Input
+              id="email"
+              name="email"
+              type="email"
+              placeholder="Enter your email"
+              value={formData.email}
+              onChange={handleInputChange}
+              className="pl-10 bg-white/10 border-white/20 text-white placeholder-gray-400"
+              required
+            />
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="text-center mt-8 text-gray-500 text-sm">
-          <p>© 2024 PSA Portal. All rights reserved.</p>
+        <div className="space-y-2">
+          <Label htmlFor="password" className="text-gray-300">Password</Label>
+          <div className="relative">
+            <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <Input
+              id="password"
+              name="password"
+              type="password"
+              placeholder="Enter your password"
+              value={formData.password}
+              onChange={handleInputChange}
+              className="pl-10 bg-white/10 border-white/20 text-white placeholder-gray-400"
+              required
+            />
+          </div>
+        </div>
+
+        {error && (
+          <div className="bg-red-500/20 border border-red-500/40 text-red-300 px-4 py-3 rounded-lg text-sm">
+            ❌ {error}
+          </div>
+        )}
+
+        <Button
+          type="submit"
+          disabled={isLoading || loading}
+          className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium py-3 transition-all duration-200"
+        >
+          {isLoading ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Signing in...
+            </>
+          ) : (
+            <>
+              <LogIn className="w-4 h-4 mr-2" />
+              Sign In
+            </>
+          )}
+        </Button>
+      </form>
+
+      <div className="relative">
+        <div className="absolute inset-0 flex items-center">
+          <span className="w-full border-t border-gray-600" />
+        </div>
+        <div className="relative flex justify-center text-xs uppercase">
+          <span className="bg-gray-800 px-2 text-gray-400">Or continue with</span>
         </div>
       </div>
-    </div>
+
+      <Button
+        onClick={handleMicrosoftLogin}
+        disabled={loading || isLoading}
+        variant="outline"
+        className="w-full border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white"
+      >
+        <svg className="w-5 h-5 mr-3" viewBox="0 0 21 21">
+          <rect x="1" y="1" width="9" height="9" fill="#f25022"/>
+          <rect x="12" y="1" width="9" height="9" fill="#00a4ef"/>
+          <rect x="1" y="12" width="9" height="9" fill="#ffb900"/>
+          <rect x="12" y="12" width="9" height="9" fill="#7fba00"/>
+        </svg>
+        Continue with Microsoft
+      </Button>
+
+      <div className="text-center">
+        <p className="text-sm text-gray-400">
+          Don't have an account?{' '}
+          <Link to="/signup" className="text-blue-400 hover:text-blue-300 underline">
+            Sign up here
+          </Link>
+        </p>
+      </div>
+
+      <div className="text-center">
+        <p className="text-xs text-gray-500">
+          Secure authentication powered by Microsoft Azure AD
+        </p>
+      </div>
+    </AuthCard>
   );
 };
 

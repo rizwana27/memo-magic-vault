@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import AuthCallback from "./components/auth/AuthCallback";
+import SignUpPage from "./components/auth/SignUpPage";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 
@@ -21,6 +22,7 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/auth/callback" element={<AuthCallback />} />
+            <Route path="/signup" element={<SignUpPage />} />
             <Route 
               path="/" 
               element={

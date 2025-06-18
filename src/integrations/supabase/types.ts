@@ -14,30 +14,45 @@ export type Database = {
           avatar_url: string | null
           company: string | null
           created_at: string | null
+          department: string | null
           email: string | null
           full_name: string | null
+          hourly_rate: number | null
           id: string
+          is_active: boolean | null
+          phone: string | null
           role: string | null
+          timezone: string | null
           updated_at: string | null
         }
         Insert: {
           avatar_url?: string | null
           company?: string | null
           created_at?: string | null
+          department?: string | null
           email?: string | null
           full_name?: string | null
+          hourly_rate?: number | null
           id: string
+          is_active?: boolean | null
+          phone?: string | null
           role?: string | null
+          timezone?: string | null
           updated_at?: string | null
         }
         Update: {
           avatar_url?: string | null
           company?: string | null
           created_at?: string | null
+          department?: string | null
           email?: string | null
           full_name?: string | null
+          hourly_rate?: number | null
           id?: string
+          is_active?: boolean | null
+          phone?: string | null
           role?: string | null
+          timezone?: string | null
           updated_at?: string | null
         }
         Relationships: []
@@ -47,10 +62,39 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_role: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      is_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      is_client: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      is_project_manager: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      invoice_status: "draft" | "sent" | "paid" | "overdue" | "cancelled"
+      invoice_type: "time_material" | "milestone" | "fixed_price"
+      notification_type: "system" | "invoice" | "timesheet" | "project" | "task"
+      po_status: "draft" | "approved" | "sent" | "received" | "cancelled"
+      project_status:
+        | "planning"
+        | "active"
+        | "on_hold"
+        | "completed"
+        | "cancelled"
+      task_priority: "low" | "medium" | "high" | "urgent"
+      task_status: "not_started" | "in_progress" | "completed" | "blocked"
+      timesheet_status: "draft" | "submitted" | "approved" | "rejected"
+      user_role: "admin" | "project_manager" | "client" | "resource"
+      vendor_status: "active" | "inactive" | "suspended"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -165,6 +209,23 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      invoice_status: ["draft", "sent", "paid", "overdue", "cancelled"],
+      invoice_type: ["time_material", "milestone", "fixed_price"],
+      notification_type: ["system", "invoice", "timesheet", "project", "task"],
+      po_status: ["draft", "approved", "sent", "received", "cancelled"],
+      project_status: [
+        "planning",
+        "active",
+        "on_hold",
+        "completed",
+        "cancelled",
+      ],
+      task_priority: ["low", "medium", "high", "urgent"],
+      task_status: ["not_started", "in_progress", "completed", "blocked"],
+      timesheet_status: ["draft", "submitted", "approved", "rejected"],
+      user_role: ["admin", "project_manager", "client", "resource"],
+      vendor_status: ["active", "inactive", "suspended"],
+    },
   },
 } as const
