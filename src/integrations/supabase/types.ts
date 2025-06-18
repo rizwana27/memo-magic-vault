@@ -895,7 +895,22 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_role: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      is_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      is_client: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      is_project_manager: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
     }
     Enums: {
       invoice_status: "draft" | "sent" | "paid" | "overdue" | "cancelled"
