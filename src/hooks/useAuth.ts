@@ -1,54 +1,73 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+
+import { useState, useEffect } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
-interface AuthContextType {
-  user: User | null;
-  session: Session | null;
-  loading: boolean;
-  signInWithEmail: (email: string, password: string) => Promise<{ error?: any }>;
-  signUpWithEmail: (email: string, password: string) => Promise<{ error?: any }>;
-  signInWithMicrosoft: (email?: string) => Promise<void>;
-  signOut: () => Promise<void>;
+export type UserRole = 'admin' | 'client' | 'vendor' | 'employee';
+
+export interface UserProfile {
+  id: string;
+  email: string;
+  full_name: string;
+  user_role: UserRole;
+  company?: string;
+  avatar_url?: string;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
 export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
-
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         console.log('Auth state changed:', event, session);
         setSession(session);
         setUser(session?.user ?? null);
-        setLoading(false);
         
-        // Log user details for debugging
         if (session?.user) {
-          console.log('User authenticated:', session.user.email);
-          console.log('User metadata:', session.user.user_metadata);
+          // Fetch user profile
+          const { data: profileData, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+          
+          if (profileData && !error) {
+            setProfile(profileData);
+          } else {
+            console.error('Error fetching profile:', error);
+          }
+        } else {
+          setProfile(null);
         }
+        
+        setLoading(false);
       }
     );
 
     // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       console.log('Initial session check:', session);
       setSession(session);
       setUser(session?.user ?? null);
+      
+      if (session?.user) {
+        // Fetch user profile
+        const { data: profileData, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', session.user.id)
+          .single();
+        
+        if (profileData && !error) {
+          setProfile(profileData);
+        }
+      }
+      
       setLoading(false);
     });
 
@@ -111,7 +130,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setLoading(true);
       console.log('Starting Microsoft sign in with MFA for email:', email);
       
-      // Determine if this is a work/school account or personal account
       const isWorkAccount = email && !email.includes('@gmail.com') && !email.includes('@outlook.com') && !email.includes('@hotmail.com') && !email.includes('@live.com');
       
       const { error } = await supabase.auth.signInWithOAuth({
@@ -119,8 +137,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         options: {
           redirectTo: `${window.location.origin}/auth/callback`,
           queryParams: {
-            prompt: 'login', // Force login prompt to ensure fresh authentication
-            acr_values: 'urn:microsoft:req:auth:mfa', // Force MFA requirement
+            prompt: 'login',
+            acr_values: 'urn:microsoft:req:auth:mfa',
             domain_hint: isWorkAccount ? 'organizations' : 'consumers',
             ...(email && { login_hint: email })
           },
@@ -149,15 +167,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const value = {
+  return {
     user,
     session,
+    profile,
     loading,
     signInWithEmail,
     signUpWithEmail,
     signInWithMicrosoft,
     signOut,
   };
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
