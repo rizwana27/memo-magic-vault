@@ -11,6 +11,7 @@ import { DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/compon
 import { CalendarIcon, Upload } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface NewVendorFormProps {
   onSubmit: (data: any) => void;
@@ -30,19 +31,71 @@ const NewVendorForm = ({ onSubmit, onCancel }: NewVendorFormProps) => {
   const [contractStart, setContractStart] = useState<Date>();
   const [contractEnd, setContractEnd] = useState<Date>();
   const [attachments, setAttachments] = useState<FileList | null>(null);
+  const [error, setError] = useState<string>('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+    if (error) setError(''); // Clear error when user makes changes
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit({
-      ...formData,
-      contractStart: contractStart?.toISOString(),
-      contractEnd: contractEnd?.toISOString(),
-      attachments,
-    });
+    setError('');
+    setIsSubmitting(true);
+
+    // Validation
+    if (!formData.vendorName.trim()) {
+      setError('Vendor name is required');
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (!formData.contactPerson.trim()) {
+      setError('Contact person is required');
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (!formData.contactEmail.trim()) {
+      setError('Contact email is required');
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (!isEmailValid(formData.contactEmail)) {
+      setError('Please enter a valid email address');
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (!formData.servicesOffered.trim()) {
+      setError('Services offered is required');
+      setIsSubmitting(false);
+      return;
+    }
+
+    // Validate contract dates
+    if (contractStart && contractEnd && contractStart >= contractEnd) {
+      setError('Contract end date must be after start date');
+      setIsSubmitting(false);
+      return;
+    }
+
+    try {
+      await onSubmit({
+        ...formData,
+        contractStart: contractStart?.toISOString(),
+        contractEnd: contractEnd?.toISOString(),
+        attachments,
+      });
+      // Success is handled by the parent component
+    } catch (error) {
+      console.error('Error submitting vendor form:', error);
+      setError(error instanceof Error ? error.message : 'Failed to create vendor. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const isEmailValid = (email: string) => {
@@ -56,6 +109,12 @@ const NewVendorForm = ({ onSubmit, onCancel }: NewVendorFormProps) => {
       </DialogHeader>
       
       <form onSubmit={handleSubmit} className="space-y-6">
+        {error && (
+          <Alert className="border-red-500 bg-red-500/10">
+            <AlertDescription className="text-red-400">{error}</AlertDescription>
+          </Alert>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Vendor Name */}
           <div className="space-y-2">
@@ -97,9 +156,6 @@ const NewVendorForm = ({ onSubmit, onCancel }: NewVendorFormProps) => {
               placeholder="vendor@example.com"
               required
             />
-            {formData.contactEmail && !isEmailValid(formData.contactEmail) && (
-              <p className="text-red-400 text-sm">Please enter a valid email address</p>
-            )}
           </div>
 
           {/* Phone Number */}
@@ -165,7 +221,10 @@ const NewVendorForm = ({ onSubmit, onCancel }: NewVendorFormProps) => {
                 <Calendar
                   mode="single"
                   selected={contractStart}
-                  onSelect={setContractStart}
+                  onSelect={(date) => {
+                    setContractStart(date);
+                    if (error) setError(''); // Clear error when user makes changes
+                  }}
                   initialFocus
                   className="bg-gray-800 text-white"
                 />
@@ -192,7 +251,10 @@ const NewVendorForm = ({ onSubmit, onCancel }: NewVendorFormProps) => {
                 <Calendar
                   mode="single"
                   selected={contractEnd}
-                  onSelect={setContractEnd}
+                  onSelect={(date) => {
+                    setContractEnd(date);
+                    if (error) setError(''); // Clear error when user makes changes
+                  }}
                   initialFocus
                   className="bg-gray-800 text-white"
                 />
@@ -214,6 +276,7 @@ const NewVendorForm = ({ onSubmit, onCancel }: NewVendorFormProps) => {
             />
             <Upload className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
           </div>
+          <p className="text-xs text-gray-400">Upload contracts, certificates, or other relevant documents</p>
         </div>
 
         {/* Notes */}
@@ -236,15 +299,16 @@ const NewVendorForm = ({ onSubmit, onCancel }: NewVendorFormProps) => {
           variant="outline"
           onClick={onCancel}
           className="border-gray-600 text-gray-300 hover:bg-gray-700"
+          disabled={isSubmitting}
         >
           Cancel
         </Button>
         <Button
           onClick={handleSubmit}
           className="bg-blue-600 hover:bg-blue-700 text-white"
-          disabled={!formData.vendorName || !formData.contactPerson || !formData.contactEmail || !formData.servicesOffered || (formData.contactEmail && !isEmailValid(formData.contactEmail))}
+          disabled={isSubmitting || !formData.vendorName || !formData.contactPerson || !formData.contactEmail || !formData.servicesOffered || (formData.contactEmail && !isEmailValid(formData.contactEmail))}
         >
-          Add Vendor
+          {isSubmitting ? 'Adding...' : 'Add Vendor'}
         </Button>
       </DialogFooter>
     </DialogContent>

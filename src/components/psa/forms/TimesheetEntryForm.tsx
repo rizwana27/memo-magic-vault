@@ -12,6 +12,8 @@ import { DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/compon
 import { CalendarIcon, Clock } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { usePSAData } from '@/hooks/usePSAData';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface TimesheetEntryFormProps {
   onSubmit: (data: any) => void;
@@ -19,6 +21,9 @@ interface TimesheetEntryFormProps {
 }
 
 const TimesheetEntryForm = ({ onSubmit, onCancel }: TimesheetEntryFormProps) => {
+  const { useProjects } = usePSAData();
+  const { data: projects, isLoading: projectsLoading } = useProjects();
+  
   const [selectedProject, setSelectedProject] = useState('');
   const [selectedTask, setSelectedTask] = useState('');
   const [date, setDate] = useState<Date>(new Date());
@@ -27,29 +32,21 @@ const TimesheetEntryForm = ({ onSubmit, onCancel }: TimesheetEntryFormProps) => 
   const [billable, setBillable] = useState(true);
   const [notes, setNotes] = useState('');
   const [totalHours, setTotalHours] = useState(0);
+  const [error, setError] = useState<string>('');
 
-  // Mock data for projects and tasks
-  const projects = [
-    { id: '1', name: 'Project Alpha' },
-    { id: '2', name: 'Project Beta' },
-    { id: '3', name: 'Project Gamma' },
+  // Common tasks - in a real app, these would come from a tasks table
+  const commonTasks = [
+    'Development',
+    'Code Review', 
+    'Testing',
+    'Bug Fixes',
+    'Planning',
+    'Documentation',
+    'Meeting',
+    'Research',
+    'Deployment',
+    'Training'
   ];
-
-  const tasksByProject: Record<string, Array<{ id: string; name: string }>> = {
-    '1': [
-      { id: '1', name: 'Code Review' },
-      { id: '2', name: 'Frontend Development' },
-      { id: '3', name: 'Testing' },
-    ],
-    '2': [
-      { id: '4', name: 'API Integration' },
-      { id: '5', name: 'Database Design' },
-    ],
-    '3': [
-      { id: '6', name: 'Planning' },
-      { id: '7', name: 'Documentation' },
-    ],
-  };
 
   // Calculate total hours when start/end time changes
   useEffect(() => {
@@ -64,10 +61,40 @@ const TimesheetEntryForm = ({ onSubmit, onCancel }: TimesheetEntryFormProps) => 
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
+
+    // Validation
+    if (!selectedProject) {
+      setError('Please select a project');
+      return;
+    }
+
+    if (!selectedTask) {
+      setError('Please select a task');
+      return;
+    }
+
+    if (!date) {
+      setError('Please select a date');
+      return;
+    }
+
+    if (totalHours <= 0) {
+      setError('End time must be after start time');
+      return;
+    }
+
+    // Find the selected project to get its ID
+    const project = projects?.find(p => p.project_id === selectedProject);
+    if (!project) {
+      setError('Selected project not found. Please refresh and try again.');
+      return;
+    }
+
     onSubmit({
-      project: selectedProject,
+      project: selectedProject, // This is the project_id
       task: selectedTask,
-      date: date.toISOString(),
+      date: date.toISOString().split('T')[0], // Format as YYYY-MM-DD
       startTime,
       endTime,
       hours: totalHours,
@@ -76,8 +103,18 @@ const TimesheetEntryForm = ({ onSubmit, onCancel }: TimesheetEntryFormProps) => 
     });
   };
 
-  const selectedProjectName = projects.find(p => p.id === selectedProject)?.name;
-  const selectedTaskName = tasksByProject[selectedProject]?.find(t => t.id === selectedTask)?.name;
+  const selectedProjectName = projects?.find(p => p.project_id === selectedProject)?.project_name;
+
+  if (projectsLoading) {
+    return (
+      <DialogContent className="bg-white/10 backdrop-blur-md border-white/20 text-white max-w-2xl">
+        <DialogHeader>
+          <DialogTitle className="text-white text-xl">Log Time Entry</DialogTitle>
+        </DialogHeader>
+        <div className="py-8 text-center text-gray-300">Loading projects...</div>
+      </DialogContent>
+    );
+  }
 
   return (
     <DialogContent className="bg-white/10 backdrop-blur-md border-white/20 text-white max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -86,6 +123,12 @@ const TimesheetEntryForm = ({ onSubmit, onCancel }: TimesheetEntryFormProps) => 
       </DialogHeader>
       
       <form onSubmit={handleSubmit} className="space-y-6">
+        {error && (
+          <Alert className="border-red-500 bg-red-500/10">
+            <AlertDescription className="text-red-400">{error}</AlertDescription>
+          </Alert>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Project Selection */}
           <div className="space-y-2">
@@ -93,14 +136,15 @@ const TimesheetEntryForm = ({ onSubmit, onCancel }: TimesheetEntryFormProps) => 
             <Select value={selectedProject} onValueChange={(value) => {
               setSelectedProject(value);
               setSelectedTask(''); // Reset task when project changes
+              setError(''); // Clear error when user makes changes
             }}>
               <SelectTrigger className="bg-white/10 border-white/20 text-white">
                 <SelectValue placeholder="Select a project" />
               </SelectTrigger>
-              <SelectContent className="bg-gray-800 border-gray-600">
-                {projects.map((project) => (
-                  <SelectItem key={project.id} value={project.id} className="text-white hover:bg-gray-700">
-                    {project.name}
+              <SelectContent className="bg-gray-800 border-gray-600 max-h-60 overflow-y-auto">
+                {projects?.map((project) => (
+                  <SelectItem key={project.project_id} value={project.project_id} className="text-white hover:bg-gray-700">
+                    {project.project_name} {project.client && `(${project.client.client_name})`}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -110,14 +154,17 @@ const TimesheetEntryForm = ({ onSubmit, onCancel }: TimesheetEntryFormProps) => 
           {/* Task Selection */}
           <div className="space-y-2">
             <Label htmlFor="task" className="text-gray-200">Task *</Label>
-            <Select value={selectedTask} onValueChange={setSelectedTask} disabled={!selectedProject}>
+            <Select value={selectedTask} onValueChange={(value) => {
+              setSelectedTask(value);
+              setError(''); // Clear error when user makes changes
+            }} disabled={!selectedProject}>
               <SelectTrigger className="bg-white/10 border-white/20 text-white">
                 <SelectValue placeholder="Select a task" />
               </SelectTrigger>
               <SelectContent className="bg-gray-800 border-gray-600">
-                {(tasksByProject[selectedProject] || []).map((task) => (
-                  <SelectItem key={task.id} value={task.id} className="text-white hover:bg-gray-700">
-                    {task.name}
+                {commonTasks.map((task) => (
+                  <SelectItem key={task} value={task} className="text-white hover:bg-gray-700">
+                    {task}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -145,7 +192,10 @@ const TimesheetEntryForm = ({ onSubmit, onCancel }: TimesheetEntryFormProps) => 
               <Calendar
                 mode="single"
                 selected={date}
-                onSelect={setDate}
+                onSelect={(newDate) => {
+                  setDate(newDate);
+                  setError(''); // Clear error when user makes changes
+                }}
                 initialFocus
                 className="bg-gray-800 text-white"
               />
@@ -163,7 +213,10 @@ const TimesheetEntryForm = ({ onSubmit, onCancel }: TimesheetEntryFormProps) => 
                 id="startTime"
                 type="time"
                 value={startTime}
-                onChange={(e) => setStartTime(e.target.value)}
+                onChange={(e) => {
+                  setStartTime(e.target.value);
+                  setError(''); // Clear error when user makes changes
+                }}
                 className="pl-10 bg-white/10 border-white/20 text-white"
                 required
               />
@@ -178,7 +231,10 @@ const TimesheetEntryForm = ({ onSubmit, onCancel }: TimesheetEntryFormProps) => 
                 id="endTime"
                 type="time"
                 value={endTime}
-                onChange={(e) => setEndTime(e.target.value)}
+                onChange={(e) => {
+                  setEndTime(e.target.value);
+                  setError(''); // Clear error when user makes changes
+                }}
                 className="pl-10 bg-white/10 border-white/20 text-white"
                 required
               />
@@ -216,7 +272,7 @@ const TimesheetEntryForm = ({ onSubmit, onCancel }: TimesheetEntryFormProps) => 
             <p className="text-gray-200">
               You're logging <span className="font-semibold text-blue-400">{totalHours.toFixed(1)} hours</span> on{' '}
               <span className="font-semibold text-green-400">{selectedProjectName}</span> – Task:{' '}
-              <span className="font-semibold text-purple-400">{selectedTaskName}</span>
+              <span className="font-semibold text-purple-400">{selectedTask}</span>
             </p>
             {billable && (
               <p className="text-sm text-green-400 mt-1">✓ Billable time</p>

@@ -13,7 +13,7 @@ import TimesheetEntryForm from './forms/TimesheetEntryForm';
 
 const Timesheets = () => {
   const { useTimesheets, createTimesheet } = usePSAData();
-  const { data: timesheets, isLoading } = useTimesheets();
+  const { data: timesheets, isLoading, error } = useTimesheets();
   const [searchTerm, setSearchTerm] = useState('');
   const [showNewEntryModal, setShowNewEntryModal] = useState(false);
 
@@ -39,21 +39,71 @@ const Timesheets = () => {
       setShowNewEntryModal(false);
     } catch (error) {
       console.error('Error creating timesheet:', error);
+      // Error is handled by the mutation's onError callback
     }
   };
 
-  // Mock weekly timesheet data
-  const weeklyData = [
-    { date: '2024-01-15', project: 'Project Alpha', task: 'Development', hours: 8, status: 'draft' },
-    { date: '2024-01-16', project: 'Project Beta', task: 'Testing', hours: 6, status: 'submitted' },
-    { date: '2024-01-17', project: 'Project Alpha', task: 'Code Review', hours: 4, status: 'approved' },
-    { date: '2024-01-18', project: 'Project Gamma', task: 'Planning', hours: 7, status: 'draft' },
-    { date: '2024-01-19', project: 'Project Beta', task: 'Bug Fixes', hours: 5, status: 'submitted' },
-  ];
+  // Calculate totals from real data
+  const calculateTotals = () => {
+    if (!timesheets || timesheets.length === 0) {
+      return { dailyTotal: 0, weeklyTotal: 0, pendingCount: 0, approvedCount: 0 };
+    }
 
-  // Calculate daily and weekly totals
-  const dailyTotal = 8; // Mock data for today
-  const weeklyTotal = weeklyData.reduce((sum, entry) => sum + entry.hours, 0);
+    const today = new Date();
+    const todayStr = today.toISOString().split('T')[0];
+    
+    // Get start of current week (Monday)
+    const startOfWeek = new Date(today);
+    startOfWeek.setDate(today.getDate() - today.getDay() + 1);
+    startOfWeek.setHours(0, 0, 0, 0);
+
+    const dailyTotal = timesheets
+      .filter(ts => ts.date === todayStr)
+      .reduce((sum, ts) => sum + (ts.hours || 0), 0);
+
+    const weeklyTotal = timesheets
+      .filter(ts => {
+        const tsDate = new Date(ts.date);
+        return tsDate >= startOfWeek && tsDate <= today;
+      })
+      .reduce((sum, ts) => sum + (ts.hours || 0), 0);
+
+    // Mock status counts for now since we don't have status field
+    const pendingCount = Math.floor(timesheets.length * 0.3);
+    const approvedCount = timesheets.length - pendingCount;
+
+    return { dailyTotal, weeklyTotal, pendingCount, approvedCount };
+  };
+
+  const { dailyTotal, weeklyTotal, pendingCount, approvedCount } = calculateTotals();
+
+  // Calculate hours from start/end time for display
+  const calculateHours = (startTime: string, endTime: string) => {
+    if (!startTime || !endTime) return 0;
+    
+    const start = new Date(`2000-01-01T${startTime}:00`);
+    const end = new Date(`2000-01-01T${endTime}:00`);
+    const diffMs = end.getTime() - start.getTime();
+    return Math.max(0, diffMs / (1000 * 60 * 60));
+  };
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-white">Timesheets</h1>
+            <p className="text-gray-400">Track and manage your time entries</p>
+          </div>
+        </div>
+        <Card className="bg-red-900/20 border-red-500">
+          <CardContent className="p-6">
+            <p className="text-red-400">Error loading timesheets: {error.message}</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -80,7 +130,7 @@ const Timesheets = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-300 text-sm">Today</p>
-                <p className="text-2xl font-bold text-white">{dailyTotal}h</p>
+                <p className="text-2xl font-bold text-white">{dailyTotal.toFixed(1)}h</p>
               </div>
               <Clock className="w-8 h-8 text-blue-500" />
             </div>
@@ -91,7 +141,7 @@ const Timesheets = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-300 text-sm">This Week</p>
-                <p className="text-2xl font-bold text-white">{weeklyTotal}h</p>
+                <p className="text-2xl font-bold text-white">{weeklyTotal.toFixed(1)}h</p>
               </div>
               <Calendar className="w-8 h-8 text-purple-500" />
             </div>
@@ -102,7 +152,7 @@ const Timesheets = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-300 text-sm">Pending</p>
-                <p className="text-2xl font-bold text-yellow-500">5</p>
+                <p className="text-2xl font-bold text-yellow-500">{pendingCount}</p>
               </div>
               <Calendar className="w-8 h-8 text-yellow-500" />
             </div>
@@ -113,7 +163,7 @@ const Timesheets = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-300 text-sm">Approved</p>
-                <p className="text-2xl font-bold text-green-500">12</p>
+                <p className="text-2xl font-bold text-green-500">{approvedCount}</p>
               </div>
               <CheckCircle className="w-8 h-8 text-green-500" />
             </div>
@@ -153,40 +203,70 @@ const Timesheets = () => {
               <CardDescription className="text-gray-300">Your latest timesheet entries</CardDescription>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow className="border-gray-700">
-                    <TableHead className="text-gray-300">Date</TableHead>
-                    <TableHead className="text-gray-300">Project</TableHead>
-                    <TableHead className="text-gray-300">Task</TableHead>
-                    <TableHead className="text-gray-300">Hours</TableHead>
-                    <TableHead className="text-gray-300">Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredTimesheets.slice(0, 10).map((timesheet) => (
-                    <TableRow key={timesheet.timesheet_id} className="border-gray-700">
-                      <TableCell className="text-gray-300">
-                        {new Date(timesheet.date).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell className="text-white">
-                        {timesheet.project?.project_name || 'No Project'}
-                      </TableCell>
-                      <TableCell className="text-gray-300">
-                        {timesheet.task || 'No task'}
-                      </TableCell>
-                      <TableCell className="text-white font-medium">
-                        {timesheet.hours}h
-                      </TableCell>
-                      <TableCell>
-                        <Badge className="bg-gray-500 text-white">
-                          draft
-                        </Badge>
-                      </TableCell>
+              {isLoading ? (
+                <div className="text-center py-8">
+                  <p className="text-gray-400">Loading timesheets...</p>
+                </div>
+              ) : filteredTimesheets.length === 0 ? (
+                <div className="text-center py-8">
+                  <Clock className="w-16 h-16 mx-auto mb-4 text-gray-400 opacity-50" />
+                  <h3 className="text-xl font-medium text-white mb-2">No Time Entries Found</h3>
+                  <p className="text-gray-400 mb-4">
+                    {searchTerm ? 'No timesheets match your search criteria.' : 'Get started by logging your first time entry.'}
+                  </p>
+                  {!searchTerm && (
+                    <Button 
+                      className="bg-blue-600 hover:bg-blue-700"
+                      onClick={() => setShowNewEntryModal(true)}
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Log Your First Entry
+                    </Button>
+                  )}
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow className="border-gray-700">
+                      <TableHead className="text-gray-300">Date</TableHead>
+                      <TableHead className="text-gray-300">Project</TableHead>
+                      <TableHead className="text-gray-300">Task</TableHead>
+                      <TableHead className="text-gray-300">Time</TableHead>
+                      <TableHead className="text-gray-300">Hours</TableHead>
+                      <TableHead className="text-gray-300">Billable</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredTimesheets.slice(0, 10).map((timesheet) => {
+                      const hours = timesheet.hours || calculateHours(timesheet.start_time, timesheet.end_time);
+                      return (
+                        <TableRow key={timesheet.timesheet_id} className="border-gray-700">
+                          <TableCell className="text-gray-300">
+                            {new Date(timesheet.date).toLocaleDateString()}
+                          </TableCell>
+                          <TableCell className="text-white">
+                            {timesheet.project?.project_name || 'No Project'}
+                          </TableCell>
+                          <TableCell className="text-gray-300">
+                            {timesheet.task || 'No task'}
+                          </TableCell>
+                          <TableCell className="text-gray-300">
+                            {timesheet.start_time} - {timesheet.end_time}
+                          </TableCell>
+                          <TableCell className="text-white font-medium">
+                            {hours.toFixed(1)}h
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={timesheet.billable ? 'bg-green-500' : 'bg-gray-500'}>
+                              {timesheet.billable ? 'Billable' : 'Non-billable'}
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -195,40 +275,14 @@ const Timesheets = () => {
           <Card className="bg-gray-800/50 border-gray-700">
             <CardHeader>
               <CardTitle className="text-white">Weekly Timesheet</CardTitle>
-              <CardDescription className="text-gray-400">Week of January 15 - 19, 2024</CardDescription>
+              <CardDescription className="text-gray-400">Current week overview</CardDescription>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow className="border-gray-700">
-                    <TableHead className="text-gray-300">Date</TableHead>
-                    <TableHead className="text-gray-300">Project</TableHead>
-                    <TableHead className="text-gray-300">Task</TableHead>
-                    <TableHead className="text-gray-300">Hours</TableHead>
-                    <TableHead className="text-gray-300">Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {weeklyData.map((entry, index) => (
-                    <TableRow key={index} className="border-gray-700">
-                      <TableCell className="text-gray-300">
-                        {new Date(entry.date).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell className="text-white">{entry.project}</TableCell>
-                      <TableCell className="text-gray-300">{entry.task}</TableCell>
-                      <TableCell className="text-white font-medium">{entry.hours}h</TableCell>
-                      <TableCell>
-                        <Badge className={`${getStatusColor(entry.status)} text-white`}>
-                          {entry.status}
-                        </Badge>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-              <div className="flex justify-between items-center mt-4 pt-4 border-t border-gray-700">
-                <span className="text-gray-400">Total Hours:</span>
-                <span className="text-white font-bold text-lg">30h</span>
+              <div className="text-center py-8">
+                <Calendar className="w-16 h-16 mx-auto mb-4 text-gray-400 opacity-50" />
+                <h3 className="text-xl font-medium text-white mb-2">Weekly View</h3>
+                <p className="text-gray-400">Detailed weekly timesheet view coming soon</p>
+                <p className="text-sm text-gray-500 mt-2">Current week total: {weeklyTotal.toFixed(1)} hours</p>
               </div>
             </CardContent>
           </Card>
@@ -241,27 +295,10 @@ const Timesheets = () => {
               <CardDescription className="text-gray-400">Review and approve team timesheets</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {[
-                  { name: 'John Smith', project: 'Project Alpha', hours: 40, status: 'pending' },
-                  { name: 'Sarah Davis', project: 'Project Beta', hours: 38, status: 'pending' },
-                  { name: 'Mike Johnson', project: 'Project Gamma', hours: 42, status: 'pending' },
-                ].map((approval, index) => (
-                  <div key={index} className="flex items-center justify-between p-4 bg-gray-700/30 rounded-lg">
-                    <div>
-                      <h4 className="text-white font-medium">{approval.name}</h4>
-                      <p className="text-gray-400 text-sm">{approval.project} • {approval.hours} hours</p>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button size="sm" variant="outline" className="border-red-600 text-red-400 hover:bg-red-600/20">
-                        Reject
-                      </Button>
-                      <Button size="sm" className="bg-green-600 hover:bg-green-700">
-                        Approve
-                      </Button>
-                    </div>
-                  </div>
-                ))}
+              <div className="text-center py-8">
+                <CheckCircle className="w-16 h-16 mx-auto mb-4 text-gray-400 opacity-50" />
+                <h3 className="text-xl font-medium text-white mb-2">Approval System</h3>
+                <p className="text-gray-400">Timesheet approval workflow coming soon</p>
               </div>
             </CardContent>
           </Card>
