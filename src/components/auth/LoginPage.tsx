@@ -17,6 +17,7 @@ const LoginPage = () => {
     password: ''
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [isMicrosoftLoading, setIsMicrosoftLoading] = useState(false);
   const [error, setError] = useState('');
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -26,7 +27,8 @@ const LoginPage = () => {
   };
 
   const handleEmailLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
+    e.preventDefault(); // Prevent page refresh
+    
     if (!formData.email || !formData.password) {
       setError('Please fill in all fields');
       return;
@@ -39,12 +41,23 @@ const LoginPage = () => {
       const { error } = await signInWithEmail(formData.email, formData.password);
       
       if (error) {
+        console.error('Login error:', error);
         if (error.message.includes('Invalid login credentials') || 
             error.message.includes('Email not confirmed') ||
             error.message.includes('Invalid email or password')) {
-          setError('Incorrect email or password. Please try again.');
+          setError('Email or password incorrect. Please try again.');
+          toast({
+            title: "Login Failed",
+            description: "Email or password incorrect. Please try again.",
+            variant: "destructive",
+          });
         } else {
           setError(error.message);
+          toast({
+            title: "Login Failed",
+            description: error.message,
+            variant: "destructive",
+          });
         }
       } else {
         toast({
@@ -53,22 +66,37 @@ const LoginPage = () => {
         });
       }
     } catch (err) {
+      console.error('Unexpected login error:', err);
       setError('An unexpected error occurred. Please try again.');
+      toast({
+        title: "Login Failed",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleMicrosoftLogin = async () => {
+    setIsMicrosoftLoading(true);
+    
     try {
+      toast({
+        title: "Redirecting to Microsoft",
+        description: "You'll be redirected to Microsoft for authentication with MFA...",
+      });
+      
       await signInWithMicrosoft();
     } catch (error) {
       console.error('Microsoft login error:', error);
       toast({
-        title: "Login Error",
-        description: "Failed to sign in with Microsoft. Please try again.",
+        title: "Microsoft Login Failed",
+        description: "Microsoft login failed or was cancelled. Try again or use email login.",
         variant: "destructive",
       });
+    } finally {
+      setIsMicrosoftLoading(false);
     }
   };
 
@@ -148,17 +176,26 @@ const LoginPage = () => {
 
       <Button
         onClick={handleMicrosoftLogin}
-        disabled={loading || isLoading}
+        disabled={loading || isLoading || isMicrosoftLoading}
         variant="outline"
         className="w-full border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white"
       >
-        <svg className="w-5 h-5 mr-3" viewBox="0 0 21 21">
-          <rect x="1" y="1" width="9" height="9" fill="#f25022"/>
-          <rect x="12" y="1" width="9" height="9" fill="#00a4ef"/>
-          <rect x="1" y="12" width="9" height="9" fill="#ffb900"/>
-          <rect x="12" y="12" width="9" height="9" fill="#7fba00"/>
-        </svg>
-        Continue with Microsoft
+        {isMicrosoftLoading ? (
+          <>
+            <Loader2 className="w-4 h-4 mr-3 animate-spin" />
+            Redirecting to Microsoft...
+          </>
+        ) : (
+          <>
+            <svg className="w-5 h-5 mr-3" viewBox="0 0 21 21">
+              <rect x="1" y="1" width="9" height="9" fill="#f25022"/>
+              <rect x="12" y="1" width="9" height="9" fill="#00a4ef"/>
+              <rect x="1" y="12" width="9" height="9" fill="#ffb900"/>
+              <rect x="12" y="12" width="9" height="9" fill="#7fba00"/>
+            </svg>
+            Continue with Microsoft (MFA Required)
+          </>
+        )}
       </Button>
 
       <div className="text-center">
@@ -172,7 +209,7 @@ const LoginPage = () => {
 
       <div className="text-center">
         <p className="text-xs text-gray-500">
-          Secure authentication powered by Microsoft Azure AD
+          Secure authentication powered by Microsoft Azure AD with MFA
         </p>
       </div>
     </AuthCard>

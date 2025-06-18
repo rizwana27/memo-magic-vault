@@ -3,7 +3,6 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { UserPlus, Mail, Lock, Loader2, CheckCircle } from 'lucide-react';
@@ -17,15 +16,14 @@ interface FormErrors {
 }
 
 const SignUpPage = () => {
-  const { signUpWithEmail, verifyOtp, loading } = useAuth();
+  const { signUpWithEmail, loading } = useAuth();
   const { toast } = useToast();
-  const [step, setStep] = useState<'form' | 'otp'>('form');
+  const [step, setStep] = useState<'form' | 'confirmation'>('form');
   const [formData, setFormData] = useState({
     email: '',
     password: '',
     confirmPassword: ''
   });
-  const [otp, setOtp] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
   const [generalError, setGeneralError] = useState('');
@@ -100,10 +98,10 @@ const SignUpPage = () => {
           setGeneralError(error.message);
         }
       } else {
-        setStep('otp');
+        setStep('confirmation');
         toast({
           title: "Check your email",
-          description: "We've sent you a 6-digit verification code. Please check your email to continue.",
+          description: "We've sent you a verification link. Please check your inbox and click the link to confirm your account.",
         });
       }
     } catch (err) {
@@ -113,102 +111,46 @@ const SignUpPage = () => {
     }
   };
 
-  const handleOtpVerification = async () => {
-    if (otp.length !== 6) {
-      toast({
-        title: "Invalid OTP",
-        description: "Please enter the complete 6-digit code.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsLoading(true);
-
-    try {
-      const { error } = await verifyOtp(formData.email, otp);
-      
-      if (error) {
-        toast({
-          title: "Verification failed",
-          description: "Invalid OTP code. Please check your email and try again.",
-          variant: "destructive",
-        });
-      } else {
-        toast({
-          title: "🎉 Account created successfully!",
-          description: "Welcome to PSA Portal. You are now logged in.",
-        });
-        
-        // User will be automatically redirected by auth state change
-      }
-    } catch (err) {
-      toast({
-        title: "Verification failed",
-        description: "❌ Invalid OTP or email verification failed. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  if (step === 'otp') {
+  if (step === 'confirmation') {
     return (
       <AuthCard 
-        title="Verify Your Email" 
-        description="Enter the 6-digit code sent to your email"
+        title="Check Your Email" 
+        description="We've sent you a verification link"
       >
-        <div className="text-center space-y-4">
+        <div className="text-center space-y-6">
           <div className="mx-auto w-16 h-16 bg-blue-500/20 rounded-full flex items-center justify-center">
             <Mail className="w-8 h-8 text-blue-400" />
           </div>
           
-          <p className="text-gray-300 text-sm">
-            We sent a verification code to<br />
-            <span className="text-white font-medium">{formData.email}</span>
-          </p>
-
-          <div className="flex justify-center">
-            <InputOTP maxLength={6} value={otp} onChange={setOtp}>
-              <InputOTPGroup>
-                <InputOTPSlot index={0} className="bg-white/10 border-white/20 text-white" />
-                <InputOTPSlot index={1} className="bg-white/10 border-white/20 text-white" />
-                <InputOTPSlot index={2} className="bg-white/10 border-white/20 text-white" />
-                <InputOTPSlot index={3} className="bg-white/10 border-white/20 text-white" />
-                <InputOTPSlot index={4} className="bg-white/10 border-white/20 text-white" />
-                <InputOTPSlot index={5} className="bg-white/10 border-white/20 text-white" />
-              </InputOTPGroup>
-            </InputOTP>
+          <div className="space-y-2">
+            <h3 className="text-lg font-semibold text-white">Verification Link Sent</h3>
+            <p className="text-gray-300 text-sm">
+              We've sent a verification link to<br />
+              <span className="text-white font-medium">{formData.email}</span>
+            </p>
           </div>
 
-          <Button
-            onClick={handleOtpVerification}
-            disabled={isLoading || otp.length !== 6}
-            className="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-medium py-3"
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Verifying...
-              </>
-            ) : (
-              <>
-                <CheckCircle className="w-4 h-4 mr-2" />
-                Verify Account
-              </>
-            )}
-          </Button>
+          <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
+            <div className="flex items-center space-x-2 text-blue-300 text-sm">
+              <CheckCircle className="w-4 h-4" />
+              <span>Click the link in your email to verify your account</span>
+            </div>
+          </div>
 
-          <p className="text-xs text-gray-400">
-            Didn't receive the code?{' '}
-            <button 
-              onClick={() => setStep('form')}
-              className="text-blue-400 hover:text-blue-300 underline"
-            >
-              Go back and try again
-            </button>
-          </p>
+          <div className="space-y-3 text-sm text-gray-400">
+            <p>
+              After clicking the verification link, you'll be automatically signed in and redirected to your dashboard.
+            </p>
+            <p>
+              Didn't receive the email?{' '}
+              <button 
+                onClick={() => setStep('form')}
+                className="text-blue-400 hover:text-blue-300 underline"
+              >
+                Try signing up again
+              </button>
+            </p>
+          </div>
         </div>
       </AuthCard>
     );

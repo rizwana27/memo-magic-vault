@@ -9,7 +9,6 @@ interface AuthContextType {
   loading: boolean;
   signInWithEmail: (email: string, password: string) => Promise<{ error?: any }>;
   signUpWithEmail: (email: string, password: string) => Promise<{ error?: any }>;
-  verifyOtp: (email: string, token: string) => Promise<{ error?: any }>;
   signInWithMicrosoft: (email?: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
@@ -108,35 +107,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const verifyOtp = async (email: string, token: string) => {
-    try {
-      setLoading(true);
-      console.log('Verifying OTP for:', email);
-      
-      const { error } = await supabase.auth.verifyOtp({
-        email,
-        token,
-        type: 'signup'
-      });
-      
-      if (error) {
-        console.error('OTP verification error:', error);
-        return { error };
-      }
-      
-      return {};
-    } catch (error) {
-      console.error('Error verifying OTP:', error);
-      return { error };
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const signInWithMicrosoft = async (email?: string) => {
     try {
       setLoading(true);
-      console.log('Starting Microsoft sign in for email:', email);
+      console.log('Starting Microsoft sign in with MFA for email:', email);
       
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'azure',
@@ -144,7 +118,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           redirectTo: `${window.location.origin}/auth/callback`,
           queryParams: {
             tenant: 'common',
-            prompt: 'select_account',
+            prompt: 'login', // Force login prompt
+            acr_values: 'urn:microsoft:reqauth:mfa', // Force MFA
             domain_hint: email ? (email.includes('@gmail.com') || email.includes('@outlook.com') || email.includes('@hotmail.com') ? 'consumers' : 'organizations') : undefined,
             ...(email && { login_hint: email })
           },
@@ -179,7 +154,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     loading,
     signInWithEmail,
     signUpWithEmail,
-    verifyOtp,
     signInWithMicrosoft,
     signOut,
   };
