@@ -11,9 +11,10 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { CalendarIcon, Upload, X } from 'lucide-react';
+import { CalendarIcon, Upload, X, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { usePSAData } from '@/hooks/usePSAData';
 
 interface NewProjectFormProps {
   onSubmit: (data: any) => void;
@@ -21,6 +22,10 @@ interface NewProjectFormProps {
 }
 
 const NewProjectForm = ({ onSubmit, onCancel }: NewProjectFormProps) => {
+  const { useClients, useResources } = usePSAData();
+  const { data: clients, isLoading: clientsLoading } = useClients();
+  const { data: resources, isLoading: resourcesLoading } = useResources();
+  
   const [formData, setFormData] = React.useState({
     name: '',
     client: '',
@@ -36,11 +41,46 @@ const NewProjectForm = ({ onSubmit, onCancel }: NewProjectFormProps) => {
   });
 
   const [selectedTags, setSelectedTags] = React.useState<string[]>([]);
+  const [error, setError] = React.useState<string>('');
   const availableTags = ['High Priority', 'Backend', 'Frontend', 'Mobile', 'API', 'Database'];
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit({ ...formData, tags: selectedTags });
+    setError('');
+
+    // Validate required fields
+    if (!formData.name.trim()) {
+      setError('Project name is required');
+      return;
+    }
+
+    if (!formData.client) {
+      setError('Please select a client');
+      return;
+    }
+
+    if (!formData.status) {
+      setError('Please select a project status');
+      return;
+    }
+
+    // Validate that the selected client exists
+    const selectedClient = clients?.find(client => client.client_id === formData.client);
+    if (!selectedClient) {
+      setError('Selected client is invalid. Please choose a valid client from the dropdown.');
+      return;
+    }
+
+    try {
+      await onSubmit({ ...formData, tags: selectedTags });
+    } catch (error: any) {
+      console.error('Form submission error:', error);
+      if (error.message?.includes('foreign key constraint')) {
+        setError('The selected client does not exist. Please refresh the page and try again.');
+      } else {
+        setError(error.message || 'Failed to create project. Please try again.');
+      }
+    }
   };
 
   const toggleTag = (tag: string) => {
@@ -56,6 +96,13 @@ const NewProjectForm = ({ onSubmit, onCancel }: NewProjectFormProps) => {
       <DialogHeader>
         <DialogTitle className="text-white text-2xl">Create New Project</DialogTitle>
       </DialogHeader>
+      
+      {error && (
+        <div className="flex items-center gap-2 p-3 bg-red-900/20 border border-red-700 rounded-md">
+          <AlertCircle className="w-4 h-4 text-red-400" />
+          <p className="text-red-400 text-sm">{error}</p>
+        </div>
+      )}
       
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -73,28 +120,40 @@ const NewProjectForm = ({ onSubmit, onCancel }: NewProjectFormProps) => {
 
           <div className="space-y-2">
             <Label htmlFor="client" className="text-gray-300">Client *</Label>
-            <Select value={formData.client} onValueChange={(value) => setFormData(prev => ({ ...prev, client: value }))}>
+            <Select 
+              value={formData.client} 
+              onValueChange={(value) => setFormData(prev => ({ ...prev, client: value }))}
+              disabled={clientsLoading}
+            >
               <SelectTrigger className="bg-gray-800 border-gray-600 text-white">
-                <SelectValue placeholder="Select client" />
+                <SelectValue placeholder={clientsLoading ? "Loading clients..." : "Select client"} />
               </SelectTrigger>
               <SelectContent className="bg-gray-800 border-gray-600">
-                <SelectItem value="acme-corp">Acme Corporation</SelectItem>
-                <SelectItem value="tech-solutions">Tech Solutions Inc</SelectItem>
-                <SelectItem value="digital-agency">Digital Agency</SelectItem>
+                {clients?.map((client) => (
+                  <SelectItem key={client.client_id} value={client.client_id}>
+                    {client.client_name} ({client.company_name})
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="projectManager" className="text-gray-300">Project Manager</Label>
-            <Select value={formData.projectManager} onValueChange={(value) => setFormData(prev => ({ ...prev, projectManager: value }))}>
+            <Select 
+              value={formData.projectManager} 
+              onValueChange={(value) => setFormData(prev => ({ ...prev, projectManager: value }))}
+              disabled={resourcesLoading}
+            >
               <SelectTrigger className="bg-gray-800 border-gray-600 text-white">
-                <SelectValue placeholder="Select project manager" />
+                <SelectValue placeholder={resourcesLoading ? "Loading resources..." : "Select project manager"} />
               </SelectTrigger>
               <SelectContent className="bg-gray-800 border-gray-600">
-                <SelectItem value="john-doe">John Doe</SelectItem>
-                <SelectItem value="jane-smith">Jane Smith</SelectItem>
-                <SelectItem value="mike-johnson">Mike Johnson</SelectItem>
+                {resources?.filter(resource => resource.active_status).map((resource) => (
+                  <SelectItem key={resource.resource_id} value={resource.resource_id}>
+                    {resource.full_name} - {resource.role}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -120,9 +179,9 @@ const NewProjectForm = ({ onSubmit, onCancel }: NewProjectFormProps) => {
                 <SelectValue placeholder="Select status" />
               </SelectTrigger>
               <SelectContent className="bg-gray-800 border-gray-600">
-                <SelectItem value="planned">Planned</SelectItem>
-                <SelectItem value="in-progress">In Progress</SelectItem>
-                <SelectItem value="on-hold">On Hold</SelectItem>
+                <SelectItem value="planning">Planning</SelectItem>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="on_hold">On Hold</SelectItem>
                 <SelectItem value="completed">Completed</SelectItem>
               </SelectContent>
             </Select>

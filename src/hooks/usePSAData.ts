@@ -178,20 +178,23 @@ export const usePSAData = () => {
     mutationFn: async (clientData: any) => {
       console.log('Creating client:', clientData);
       
+      // Remove client_id from insert data as it's auto-generated
+      const insertData = {
+        client_name: clientData.clientName,
+        company_name: clientData.companyName,
+        industry: clientData.industry,
+        client_type: clientData.clientType,
+        primary_contact_name: clientData.primaryContactName,
+        primary_contact_email: clientData.primaryContactEmail,
+        phone_number: clientData.phoneNumber,
+        revenue_tier: clientData.revenueTier,
+        tags: clientData.tags,
+        notes: clientData.notes,
+      };
+
       const { data, error } = await supabase
         .from('clients')
-        .insert({
-          client_name: clientData.clientName,
-          company_name: clientData.companyName,
-          industry: clientData.industry,
-          client_type: clientData.clientType,
-          primary_contact_name: clientData.primaryContactName,
-          primary_contact_email: clientData.primaryContactEmail,
-          phone_number: clientData.phoneNumber,
-          revenue_tier: clientData.revenueTier,
-          tags: clientData.tags,
-          notes: clientData.notes,
-        })
+        .insert(insertData)
         .select()
         .single();
 
@@ -226,26 +229,43 @@ export const usePSAData = () => {
     mutationFn: async (projectData: any) => {
       console.log('Creating project:', projectData);
       
+      // Validate client exists before creating project
+      const { data: clientExists } = await supabase
+        .from('clients')
+        .select('client_id')
+        .eq('client_id', projectData.client)
+        .single();
+
+      if (!clientExists) {
+        throw new Error('Selected client does not exist. Please refresh the page and try again.');
+      }
+
+      // Remove project_id from insert data as it's auto-generated
+      const insertData = {
+        project_name: projectData.name,
+        client_id: projectData.client,
+        project_manager: projectData.projectManager,
+        region: projectData.region,
+        status: projectData.status,
+        delivery_status: projectData.deliveryStatus,
+        start_date: projectData.startDate,
+        end_date: projectData.endDate,
+        budget: projectData.budget ? parseFloat(projectData.budget) : null,
+        description: projectData.description,
+        tags: projectData.tags,
+      };
+
       const { data, error } = await supabase
         .from('projects')
-        .insert({
-          project_name: projectData.name,
-          client_id: projectData.client,
-          project_manager: projectData.projectManager,
-          region: projectData.region,
-          status: projectData.status,
-          delivery_status: projectData.deliveryStatus,
-          start_date: projectData.startDate,
-          end_date: projectData.endDate,
-          budget: projectData.budget ? parseFloat(projectData.budget) : null,
-          description: projectData.description,
-          tags: projectData.tags,
-        })
+        .insert(insertData)
         .select()
         .single();
 
       if (error) {
         console.error('Error creating project:', error);
+        if (error.code === '23503') {
+          throw new Error('Foreign key constraint failed. The selected client may not exist.');
+        }
         throw error;
       }
 
@@ -275,19 +295,22 @@ export const usePSAData = () => {
     mutationFn: async (resourceData: any) => {
       console.log('Creating resource:', resourceData);
       
+      // Remove resource_id from insert data as it's auto-generated
+      const insertData = {
+        full_name: resourceData.fullName,
+        email_address: resourceData.email,
+        phone_number: resourceData.phone,
+        department: resourceData.department,
+        role: resourceData.role,
+        join_date: resourceData.joinDate,
+        skills: resourceData.skills,
+        availability: resourceData.availability?.[0] || 100,
+        active_status: resourceData.status,
+      };
+
       const { data, error } = await supabase
         .from('resources')
-        .insert({
-          full_name: resourceData.fullName,
-          email_address: resourceData.email,
-          phone_number: resourceData.phone,
-          department: resourceData.department,
-          role: resourceData.role,
-          join_date: resourceData.joinDate,
-          skills: resourceData.skills,
-          availability: resourceData.availability?.[0] || 100,
-          active_status: resourceData.status,
-        })
+        .insert(insertData)
         .select()
         .single();
 
@@ -322,17 +345,20 @@ export const usePSAData = () => {
     mutationFn: async (timesheetData: any) => {
       console.log('Creating timesheet:', timesheetData);
       
+      // Remove timesheet_id from insert data as it's auto-generated
+      const insertData = {
+        project_id: timesheetData.project,
+        task: timesheetData.task,
+        date: timesheetData.date,
+        start_time: timesheetData.startTime,
+        end_time: timesheetData.endTime,
+        billable: timesheetData.billable,
+        notes: timesheetData.notes,
+      };
+
       const { data, error } = await supabase
         .from('timesheets')
-        .insert({
-          project_id: timesheetData.project,
-          task: timesheetData.task,
-          date: timesheetData.date,
-          start_time: timesheetData.startTime,
-          end_time: timesheetData.endTime,
-          billable: timesheetData.billable,
-          notes: timesheetData.notes,
-        })
+        .insert(insertData)
         .select()
         .single();
 
@@ -367,19 +393,22 @@ export const usePSAData = () => {
     mutationFn: async (vendorData: any) => {
       console.log('Creating vendor:', vendorData);
       
+      // Remove vendor_id from insert data as it's auto-generated
+      const insertData = {
+        vendor_name: vendorData.vendorName,
+        contact_person: vendorData.contactPerson,
+        contact_email: vendorData.contactEmail,
+        phone_number: vendorData.phoneNumber,
+        services_offered: vendorData.servicesOffered,
+        status: vendorData.status,
+        contract_start_date: vendorData.contractStart,
+        contract_end_date: vendorData.contractEnd,
+        notes: vendorData.notes,
+      };
+
       const { data, error } = await supabase
         .from('vendors')
-        .insert({
-          vendor_name: vendorData.vendorName,
-          contact_person: vendorData.contactPerson,
-          contact_email: vendorData.contactEmail,
-          phone_number: vendorData.phoneNumber,
-          services_offered: vendorData.servicesOffered,
-          status: vendorData.status,
-          contract_start_date: vendorData.contractStart,
-          contract_end_date: vendorData.contractEnd,
-          notes: vendorData.notes,
-        })
+        .insert(insertData)
         .select()
         .single();
 
