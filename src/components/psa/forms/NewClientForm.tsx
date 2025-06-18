@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,9 +11,10 @@ import { DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog
 interface NewClientFormProps {
   onSubmit: (data: any) => void;
   onCancel: () => void;
+  isLoading?: boolean;
 }
 
-const NewClientForm = ({ onSubmit, onCancel }: NewClientFormProps) => {
+const NewClientForm = ({ onSubmit, onCancel, isLoading }: NewClientFormProps) => {
   const [formData, setFormData] = React.useState({
     clientName: '',
     companyName: '',
@@ -188,11 +188,21 @@ const NewClientForm = ({ onSubmit, onCancel }: NewClientFormProps) => {
         </div>
 
         <div className="flex justify-end space-x-4 pt-6">
-          <Button type="button" variant="outline" onClick={onCancel} className="border-gray-600 text-gray-300">
+          <Button 
+            type="button" 
+            variant="outline" 
+            onClick={onCancel} 
+            className="border-gray-600 text-gray-300"
+            disabled={isLoading}
+          >
             Cancel
           </Button>
-          <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
-            Add Client
+          <Button 
+            type="submit" 
+            className="bg-blue-600 hover:bg-blue-700"
+            disabled={isLoading}
+          >
+            {isLoading ? 'Creating...' : 'Add Client'}
           </Button>
         </div>
       </form>
