@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,7 +11,7 @@ import { DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/compon
 import { CalendarIcon, Clock } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { usePSAData } from '@/hooks/usePSAData';
+import { useProjects } from '@/hooks/usePSAData';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface TimesheetEntryFormProps {
@@ -21,7 +20,6 @@ interface TimesheetEntryFormProps {
 }
 
 const TimesheetEntryForm = ({ onSubmit, onCancel }: TimesheetEntryFormProps) => {
-  const { useProjects } = usePSAData();
   const { data: projects, isLoading: projectsLoading } = useProjects();
   
   const [selectedProject, setSelectedProject] = useState('');

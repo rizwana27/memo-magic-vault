@@ -9,6 +9,8 @@ export type Client = Tables<'clients'>;
 export type Resource = Tables<'resources'>;
 export type Timesheet = Tables<'timesheets'>;
 export type Invoice = Tables<'invoices'>;
+export type Vendor = Tables<'vendors'>;
+export type PurchaseOrder = Tables<'purchase_orders'>;
 
 // Initial hooks for fetching data
 export const useProjects = () => {
@@ -18,7 +20,10 @@ export const useProjects = () => {
       console.log('Fetching projects...');
       const { data, error } = await supabase
         .from('projects')
-        .select('*')
+        .select(`
+          *,
+          client:clients(*)
+        `)
         .order('created_at', { ascending: false });
       
       if (error) {
@@ -81,7 +86,10 @@ export const useTimesheets = () => {
       console.log('Fetching timesheets...');
       const { data, error } = await supabase
         .from('timesheets')
-        .select('*')
+        .select(`
+          *,
+          project:projects(*)
+        `)
         .order('date', { ascending: false });
       
       if (error) {
@@ -102,7 +110,11 @@ export const useInvoices = () => {
       console.log('Fetching invoices...');
       const { data, error } = await supabase
         .from('invoices')
-        .select('*')
+        .select(`
+          *,
+          client:clients(*),
+          project:projects(*)
+        `)
         .order('invoice_date', { ascending: false });
       
       if (error) {
@@ -111,6 +123,52 @@ export const useInvoices = () => {
       }
       
       console.log('Invoices fetched:', data);
+      return data || [];
+    },
+  });
+};
+
+export const useVendors = () => {
+  return useQuery({
+    queryKey: ['vendors'],
+    queryFn: async () => {
+      console.log('Fetching vendors...');
+      const { data, error } = await supabase
+        .from('vendors')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        console.error('Error fetching vendors:', error);
+        throw error;
+      }
+      
+      console.log('Vendors fetched:', data);
+      return data || [];
+    },
+  });
+};
+
+export const usePurchaseOrders = () => {
+  return useQuery({
+    queryKey: ['purchase-orders'],
+    queryFn: async () => {
+      console.log('Fetching purchase orders...');
+      const { data, error } = await supabase
+        .from('purchase_orders')
+        .select(`
+          *,
+          vendor:vendors(*),
+          project:projects(*)
+        `)
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        console.error('Error fetching purchase orders:', error);
+        throw error;
+      }
+      
+      console.log('Purchase orders fetched:', data);
       return data || [];
     },
   });
@@ -295,6 +353,53 @@ export const useCreateProject = () => {
   });
 };
 
+export const useCreateClient = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (clientData: any) => {
+      console.log('Creating client:', clientData);
+      
+      const { data, error } = await supabase
+        .from('clients')
+        .insert([clientData])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating client:', error);
+        throw error;
+      }
+
+      // Create a notification
+      await supabase.rpc('create_notification', {
+        p_message: `New client "${clientData.client_name}" was added`,
+        p_type: 'client',
+        p_related_id: data.client_id
+      });
+
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['clients'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      toast({
+        title: "Success",
+        description: `Client "${data.client_name}" added successfully`,
+      });
+    },
+    onError: (error) => {
+      console.error('Failed to create client:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add client",
+        variant: "destructive",
+      });
+    },
+  });
+};
+
 export const useCreateResource = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -336,6 +441,194 @@ export const useCreateResource = () => {
       toast({
         title: "Error",
         description: "Failed to add resource",
+        variant: "destructive",
+      });
+    },
+  });
+};
+
+export const useCreateTimesheet = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (timesheetData: any) => {
+      console.log('Creating timesheet:', timesheetData);
+      
+      const { data, error } = await supabase
+        .from('timesheets')
+        .insert([timesheetData])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating timesheet:', error);
+        throw error;
+      }
+
+      // Create a notification
+      await supabase.rpc('create_notification', {
+        p_message: `New timesheet entry created for ${timesheetData.hours} hours`,
+        p_type: 'timesheet',
+        p_related_id: data.timesheet_id
+      });
+
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['timesheets'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      toast({
+        title: "Success",
+        description: "Timesheet entry created successfully",
+      });
+    },
+    onError: (error) => {
+      console.error('Failed to create timesheet:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create timesheet entry",
+        variant: "destructive",
+      });
+    },
+  });
+};
+
+export const useCreateInvoice = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (invoiceData: any) => {
+      console.log('Creating invoice:', invoiceData);
+      
+      const { data, error } = await supabase
+        .from('invoices')
+        .insert([invoiceData])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating invoice:', error);
+        throw error;
+      }
+
+      // Create a notification
+      await supabase.rpc('create_notification', {
+        p_message: `New invoice ${data.invoice_number} created for $${invoiceData.total_amount}`,
+        p_type: 'invoice',
+        p_related_id: data.id
+      });
+
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      toast({
+        title: "Success",
+        description: `Invoice ${data.invoice_number} created successfully`,
+      });
+    },
+    onError: (error) => {
+      console.error('Failed to create invoice:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create invoice",
+        variant: "destructive",
+      });
+    },
+  });
+};
+
+export const useCreateVendor = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (vendorData: any) => {
+      console.log('Creating vendor:', vendorData);
+      
+      const { data, error } = await supabase
+        .from('vendors')
+        .insert([vendorData])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating vendor:', error);
+        throw error;
+      }
+
+      // Create a notification
+      await supabase.rpc('create_notification', {
+        p_message: `New vendor "${vendorData.vendor_name}" was added`,
+        p_type: 'resource',
+        p_related_id: data.vendor_id
+      });
+
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['vendors'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      toast({
+        title: "Success",
+        description: `Vendor "${data.vendor_name}" added successfully`,
+      });
+    },
+    onError: (error) => {
+      console.error('Failed to create vendor:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add vendor",
+        variant: "destructive",
+      });
+    },
+  });
+};
+
+export const useCreatePurchaseOrder = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (poData: any) => {
+      console.log('Creating purchase order:', poData);
+      
+      const { data, error } = await supabase
+        .from('purchase_orders')
+        .insert([poData])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating purchase order:', error);
+        throw error;
+      }
+
+      // Create a notification
+      await supabase.rpc('create_notification', {
+        p_message: `New purchase order ${data.po_number} created`,
+        p_type: 'resource',
+        p_related_id: data.id
+      });
+
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      toast({
+        title: "Success",
+        description: `Purchase order ${data.po_number} created successfully`,
+      });
+    },
+    onError: (error) => {
+      console.error('Failed to create purchase order:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create purchase order",
         variant: "destructive",
       });
     },
