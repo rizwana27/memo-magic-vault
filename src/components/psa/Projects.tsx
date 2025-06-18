@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,7 +11,7 @@ import { usePSAData } from '@/hooks/usePSAData';
 import NewProjectForm from './forms/NewProjectForm';
 
 const Projects = () => {
-  const { useProjects } = usePSAData();
+  const { useProjects, createProject } = usePSAData();
   const { data: projects, isLoading } = useProjects();
   const [searchTerm, setSearchTerm] = useState('');
   const [showNewProjectModal, setShowNewProjectModal] = useState(false);
@@ -27,14 +28,18 @@ const Projects = () => {
   };
 
   const filteredProjects = projects?.filter(project =>
-    project?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    project?.client?.name?.toLowerCase().includes(searchTerm.toLowerCase())
+    project?.project_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    project?.client?.client_name?.toLowerCase().includes(searchTerm.toLowerCase())
   ) || [];
 
-  const handleNewProject = (data: any) => {
+  const handleNewProject = async (data: any) => {
     console.log('Creating new project:', data);
-    setShowNewProjectModal(false);
-    // Here you would typically call an API to create the project
+    try {
+      await createProject.mutateAsync(data);
+      setShowNewProjectModal(false);
+    } catch (error) {
+      console.error('Error creating project:', error);
+    }
   };
 
   return (
@@ -48,9 +53,10 @@ const Projects = () => {
         <Button 
           className="bg-blue-600 hover:bg-blue-700"
           onClick={() => setShowNewProjectModal(true)}
+          disabled={createProject.isPending}
         >
           <Plus className="w-4 h-4 mr-2" />
-          New Project
+          {createProject.isPending ? 'Creating...' : 'New Project'}
         </Button>
       </div>
 
@@ -101,16 +107,16 @@ const Projects = () => {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredProjects.map((project) => (
-                <Card key={project.id} className="bg-gray-800/50 border-gray-700 hover:bg-gray-800/70 transition-colors cursor-pointer">
+                <Card key={project.project_id} className="bg-gray-800/50 border-gray-700 hover:bg-gray-800/70 transition-colors cursor-pointer">
                   <CardHeader>
                     <div className="flex justify-between items-start">
-                      <CardTitle className="text-white text-lg">{project.name}</CardTitle>
+                      <CardTitle className="text-white text-lg">{project.project_name}</CardTitle>
                       <Badge className={`${getStatusColor(project.status)} text-white`}>
                         {project.status?.replace('_', ' ') || 'Unknown'}
                       </Badge>
                     </div>
                     <CardDescription className="text-gray-400">
-                      {project.client?.name || 'No client assigned'}
+                      {project.client?.client_name || 'No client assigned'}
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -144,7 +150,10 @@ const Projects = () => {
                 <p className="text-gray-400 mb-4">
                   {searchTerm ? 'Try adjusting your search terms' : 'Get started by creating your first project'}
                 </p>
-                <Button className="bg-blue-600 hover:bg-blue-700">
+                <Button 
+                  className="bg-blue-600 hover:bg-blue-700"
+                  onClick={() => setShowNewProjectModal(true)}
+                >
                   <Plus className="w-4 h-4 mr-2" />
                   Create Project
                 </Button>
@@ -168,10 +177,10 @@ const Projects = () => {
                       {filteredProjects
                         .filter(p => p.status === column.toLowerCase().replace(' ', '_'))
                         .map((project) => (
-                          <Card key={project.id} className="bg-gray-600/50 border-gray-600">
+                          <Card key={project.project_id} className="bg-gray-600/50 border-gray-600">
                             <CardContent className="p-3">
-                              <h4 className="text-white text-sm font-medium">{project.name}</h4>
-                              <p className="text-gray-400 text-xs mt-1">{project.client?.name}</p>
+                              <h4 className="text-white text-sm font-medium">{project.project_name}</h4>
+                              <p className="text-gray-400 text-xs mt-1">{project.client?.client_name}</p>
                             </CardContent>
                           </Card>
                         ))}

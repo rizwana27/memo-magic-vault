@@ -12,7 +12,7 @@ import { usePSAData } from '@/hooks/usePSAData';
 import TimesheetEntryForm from './forms/TimesheetEntryForm';
 
 const Timesheets = () => {
-  const { useTimesheets } = usePSAData();
+  const { useTimesheets, createTimesheet } = usePSAData();
   const { data: timesheets, isLoading } = useTimesheets();
   const [searchTerm, setSearchTerm] = useState('');
   const [showNewEntryModal, setShowNewEntryModal] = useState(false);
@@ -28,13 +28,18 @@ const Timesheets = () => {
   };
 
   const filteredTimesheets = timesheets?.filter(timesheet =>
-    timesheet.project?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    timesheet.description?.toLowerCase().includes(searchTerm.toLowerCase())
+    timesheet.project?.project_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    timesheet.task?.toLowerCase().includes(searchTerm.toLowerCase())
   ) || [];
 
-  const handleNewTimeEntry = (data: any) => {
+  const handleNewTimeEntry = async (data: any) => {
     console.log('Creating new time entry:', data);
-    setShowNewEntryModal(false);
+    try {
+      await createTimesheet.mutateAsync(data);
+      setShowNewEntryModal(false);
+    } catch (error) {
+      console.error('Error creating timesheet:', error);
+    }
   };
 
   // Mock weekly timesheet data
@@ -61,9 +66,10 @@ const Timesheets = () => {
         <Button 
           className="bg-blue-600 hover:bg-blue-700"
           onClick={() => setShowNewEntryModal(true)}
+          disabled={createTimesheet.isPending}
         >
           <Plus className="w-4 h-4 mr-2" />
-          New Entry
+          {createTimesheet.isPending ? 'Adding...' : 'New Entry'}
         </Button>
       </div>
 
@@ -152,29 +158,29 @@ const Timesheets = () => {
                   <TableRow className="border-gray-700">
                     <TableHead className="text-gray-300">Date</TableHead>
                     <TableHead className="text-gray-300">Project</TableHead>
-                    <TableHead className="text-gray-300">Description</TableHead>
+                    <TableHead className="text-gray-300">Task</TableHead>
                     <TableHead className="text-gray-300">Hours</TableHead>
                     <TableHead className="text-gray-300">Status</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredTimesheets.slice(0, 10).map((timesheet) => (
-                    <TableRow key={timesheet.id} className="border-gray-700">
+                    <TableRow key={timesheet.timesheet_id} className="border-gray-700">
                       <TableCell className="text-gray-300">
                         {new Date(timesheet.date).toLocaleDateString()}
                       </TableCell>
                       <TableCell className="text-white">
-                        {timesheet.project?.name || 'No Project'}
+                        {timesheet.project?.project_name || 'No Project'}
                       </TableCell>
                       <TableCell className="text-gray-300">
-                        {timesheet.description || 'No description'}
+                        {timesheet.task || 'No task'}
                       </TableCell>
                       <TableCell className="text-white font-medium">
                         {timesheet.hours}h
                       </TableCell>
                       <TableCell>
-                        <Badge className={`${getStatusColor(timesheet.status)} text-white`}>
-                          {timesheet.status}
+                        <Badge className="bg-gray-500 text-white">
+                          draft
                         </Badge>
                       </TableCell>
                     </TableRow>

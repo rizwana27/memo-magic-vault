@@ -10,7 +10,7 @@ import { usePSAData } from '@/hooks/usePSAData';
 import NewResourceForm from './forms/NewResourceForm';
 
 const Resources = () => {
-  const { useResources } = usePSAData();
+  const { useResources, createResource } = usePSAData();
   const { data: resources, isLoading } = useResources();
   const [searchTerm, setSearchTerm] = useState('');
   const [showNewResourceModal, setShowNewResourceModal] = useState(false);
@@ -25,14 +25,18 @@ const Resources = () => {
 
   const filteredResources = resources?.filter(resource =>
     resource?.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    resource?.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    resource?.email_address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     resource?.department?.toLowerCase().includes(searchTerm.toLowerCase())
   ) || [];
 
-  const handleNewResource = (data: any) => {
+  const handleNewResource = async (data: any) => {
     console.log('Creating new resource:', data);
-    setShowNewResourceModal(false);
-    // Here you would typically call an API to create the resource
+    try {
+      await createResource.mutateAsync(data);
+      setShowNewResourceModal(false);
+    } catch (error) {
+      console.error('Error creating resource:', error);
+    }
   };
 
   return (
@@ -46,9 +50,10 @@ const Resources = () => {
         <Button 
           className="bg-blue-600 hover:bg-blue-700"
           onClick={() => setShowNewResourceModal(true)}
+          disabled={createResource.isPending}
         >
           <Plus className="w-4 h-4 mr-2" />
-          Add Resource
+          {createResource.isPending ? 'Adding...' : 'Add Resource'}
         </Button>
       </div>
 
@@ -90,12 +95,12 @@ const Resources = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredResources.map((resource) => (
-            <Card key={resource.id} className="bg-gray-800/50 border-gray-700 hover:bg-gray-800/70 transition-colors cursor-pointer">
+            <Card key={resource.resource_id} className="bg-gray-800/50 border-gray-700 hover:bg-gray-800/70 transition-colors cursor-pointer">
               <CardHeader>
                 <div className="flex justify-between items-start">
                   <CardTitle className="text-white text-lg">{resource.full_name}</CardTitle>
-                  <Badge className={`${getStatusColor(resource.status)} text-white`}>
-                    {getStatusText(resource.status)}
+                  <Badge className={`${getStatusColor(resource.active_status)} text-white`}>
+                    {getStatusText(resource.active_status)}
                   </Badge>
                 </div>
                 <CardDescription className="text-gray-400">
@@ -104,17 +109,17 @@ const Resources = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {resource.email && (
+                  {resource.email_address && (
                     <div className="flex items-center text-gray-300 text-sm">
                       <Mail className="w-4 h-4 mr-2 text-gray-400" />
-                      {resource.email}
+                      {resource.email_address}
                     </div>
                   )}
                   
-                  {resource.phone && (
+                  {resource.phone_number && (
                     <div className="flex items-center text-gray-300 text-sm">
                       <Phone className="w-4 h-4 mr-2 text-gray-400" />
-                      {resource.phone}
+                      {resource.phone_number}
                     </div>
                   )}
                   
