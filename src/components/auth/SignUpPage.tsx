@@ -17,7 +17,7 @@ interface FormErrors {
 }
 
 const SignUpPage = () => {
-  const { signUpWithEmail, loading } = useAuth();
+  const { signUpWithEmail, verifyOtp, loading } = useAuth();
   const { toast } = useToast();
   const [step, setStep] = useState<'form' | 'otp'>('form');
   const [formData, setFormData] = useState({
@@ -103,7 +103,7 @@ const SignUpPage = () => {
         setStep('otp');
         toast({
           title: "Check your email",
-          description: "We've sent you a verification link. Please check your email to continue.",
+          description: "We've sent you a 6-digit verification code. Please check your email to continue.",
         });
       }
     } catch (err) {
@@ -126,19 +126,22 @@ const SignUpPage = () => {
     setIsLoading(true);
 
     try {
-      // Note: Supabase email confirmation is typically handled automatically
-      // when user clicks the email link. This OTP step is for demonstration.
-      // In a real implementation, you'd verify the OTP token here.
+      const { error } = await verifyOtp(formData.email, otp);
       
-      toast({
-        title: "🎉 Account created successfully!",
-        description: "Welcome to PSA Portal. You can now sign in to your account.",
-      });
-      
-      // Redirect to login page after successful signup
-      setTimeout(() => {
-        window.location.href = '/';
-      }, 2000);
+      if (error) {
+        toast({
+          title: "Verification failed",
+          description: "Invalid OTP code. Please check your email and try again.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "🎉 Account created successfully!",
+          description: "Welcome to PSA Portal. You are now logged in.",
+        });
+        
+        // User will be automatically redirected by auth state change
+      }
     } catch (err) {
       toast({
         title: "Verification failed",
