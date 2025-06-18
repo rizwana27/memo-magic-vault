@@ -191,7 +191,7 @@ export const usePSAData = () => {
           revenue_tier: clientData.revenueTier,
           tags: clientData.tags,
           notes: clientData.notes,
-        })
+        } as any)
         .select()
         .single();
 
@@ -251,7 +251,7 @@ export const usePSAData = () => {
           budget: projectData.budget ? parseFloat(projectData.budget) : null,
           description: projectData.description,
           tags: projectData.tags,
-        })
+        } as any)
         .select()
         .single();
 
@@ -301,7 +301,7 @@ export const usePSAData = () => {
           skills: resourceData.skills,
           availability: resourceData.availability?.[0] || 100,
           active_status: resourceData.status,
-        })
+        } as any)
         .select()
         .single();
 
@@ -346,7 +346,7 @@ export const usePSAData = () => {
           end_time: timesheetData.endTime,
           billable: timesheetData.billable,
           notes: timesheetData.notes,
-        })
+        } as any)
         .select()
         .single();
 
@@ -393,7 +393,7 @@ export const usePSAData = () => {
           contract_start_date: vendorData.contractStart,
           contract_end_date: vendorData.contractEnd,
           notes: vendorData.notes,
-        })
+        } as any)
         .select()
         .single();
 
