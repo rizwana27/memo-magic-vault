@@ -55,13 +55,9 @@ export const useSupabaseOperations = () => {
     try {
       console.log(`Fetching data from ${table}`);
       
-      let query = supabase.from(table);
-      
-      if (select) {
-        query = query.select(select);
-      } else {
-        query = query.select('*');
-      }
+      const query = select 
+        ? supabase.from(table).select(select)
+        : supabase.from(table).select('*');
       
       const { data, error } = await query;
 

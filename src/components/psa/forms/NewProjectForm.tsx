@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,9 +17,10 @@ import { cn } from '@/lib/utils';
 interface NewProjectFormProps {
   onSubmit: (data: any) => void;
   onCancel: () => void;
+  isLoading?: boolean;
 }
 
-const NewProjectForm = ({ onSubmit, onCancel }: NewProjectFormProps) => {
+const NewProjectForm = ({ onSubmit, onCancel, isLoading }: NewProjectFormProps) => {
   const [formData, setFormData] = React.useState({
     name: '',
     client: '',
@@ -262,11 +262,21 @@ const NewProjectForm = ({ onSubmit, onCancel }: NewProjectFormProps) => {
         </div>
 
         <div className="flex justify-end space-x-4 pt-6">
-          <Button type="button" variant="outline" onClick={onCancel} className="border-gray-600 text-gray-300">
+          <Button 
+            type="button" 
+            variant="outline" 
+            onClick={onCancel} 
+            className="border-gray-600 text-gray-300"
+            disabled={isLoading}
+          >
             Cancel
           </Button>
-          <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
-            Create Project
+          <Button 
+            type="submit" 
+            className="bg-blue-600 hover:bg-blue-700"
+            disabled={isLoading}
+          >
+            {isLoading ? 'Creating...' : 'Create Project'}
           </Button>
         </div>
       </form>
