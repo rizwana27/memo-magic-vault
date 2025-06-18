@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,12 +8,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, Building, FileText, DollarSign, Package, Eye, Edit, Trash2 } from 'lucide-react';
 import NewVendorForm from './forms/NewVendorForm';
 import NewPurchaseOrderForm from './forms/NewPurchaseOrderForm';
-import { usePSAData } from '@/hooks/usePSAData';
+import { useVendors, usePurchaseOrders, useCreateVendor, useCreatePurchaseOrder } from '@/hooks/usePSAData';
 
 const Vendors = () => {
-  const { useVendors, usePurchaseOrders, createVendor, createPurchaseOrder } = usePSAData();
   const { data: vendors, isLoading: vendorsLoading } = useVendors();
   const { data: purchaseOrders, isLoading: poLoading } = usePurchaseOrders();
+  const createVendor = useCreateVendor();
+  const createPurchaseOrder = useCreatePurchaseOrder();
   
   const [showNewVendorForm, setShowNewVendorForm] = useState(false);
   const [showNewPOForm, setShowNewPOForm] = useState(false);

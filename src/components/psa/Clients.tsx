@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,12 +5,12 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Dialog } from '@/components/ui/dialog';
 import { Plus, Search, Filter, Globe, Mail, Phone, Building } from 'lucide-react';
-import { usePSAData } from '@/hooks/usePSAData';
+import { useClients, useCreateClient } from '@/hooks/usePSAData';
 import NewClientForm from './forms/NewClientForm';
 
 const Clients = () => {
-  const { useClients, createClient } = usePSAData();
   const { data: clients, isLoading, error } = useClients();
+  const createClient = useCreateClient();
   const [searchTerm, setSearchTerm] = useState('');
   const [showNewClientModal, setShowNewClientModal] = useState(false);
 

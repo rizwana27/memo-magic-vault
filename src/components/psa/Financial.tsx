@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,12 +7,12 @@ import { Dialog } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, DollarSign, FileText, TrendingUp, Clock, Eye, Edit, Trash2 } from 'lucide-react';
 import NewInvoiceForm from './forms/NewInvoiceForm';
-import { usePSAData } from '@/hooks/usePSAData';
+import { useInvoices, useTimesheets, useCreateInvoice } from '@/hooks/usePSAData';
 
 const Financial = () => {
-  const { useInvoices, useTimesheets, createInvoice } = usePSAData();
   const { data: invoices, isLoading: invoicesLoading } = useInvoices();
   const { data: timesheets, isLoading: timesheetsLoading } = useTimesheets();
+  const createInvoice = useCreateInvoice();
   
   const [showNewInvoiceForm, setShowNewInvoiceForm] = useState(false);
 

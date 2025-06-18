@@ -17,7 +17,7 @@ import {
   CheckCircle,
   XCircle
 } from 'lucide-react';
-import { useProjects, useClients, useResources, useTimesheets, useInvoices } from '@/hooks/usePSAData';
+import { useProjects, useClients, useResources, useTimesheets, useInvoices, useCreateProject, useCreateResource } from '@/hooks/usePSAData';
 import NewProjectForm from './forms/NewProjectForm';
 import NewResourceForm from './forms/NewResourceForm';
 import ClientInviteForm from './forms/ClientInviteForm';
@@ -36,6 +36,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onTabChange }) => {
   const { data: resources = [] } = useResources();
   const { data: timesheets = [] } = useTimesheets();
   const { data: invoices = [] } = useInvoices();
+  
+  const createProject = useCreateProject();
+  const createResource = useCreateResource();
 
   // Calculate KPIs from real data
   const activeProjects = projects.filter(p => p.status === 'active').length;
@@ -58,6 +61,24 @@ const Dashboard: React.FC<DashboardProps> = ({ onTabChange }) => {
       setTimeout(() => setShowResourceForm(true), 100);
     } else {
       setShowResourceForm(true);
+    }
+  };
+
+  const handleCreateProject = async (data: any) => {
+    try {
+      await createProject.mutateAsync(data);
+      setShowProjectForm(false);
+    } catch (error) {
+      console.error('Error creating project:', error);
+    }
+  };
+
+  const handleCreateResource = async (data: any) => {
+    try {
+      await createResource.mutateAsync(data);
+      setShowResourceForm(false);
+    } catch (error) {
+      console.error('Error creating resource:', error);
     }
   };
 
@@ -228,9 +249,21 @@ const Dashboard: React.FC<DashboardProps> = ({ onTabChange }) => {
         </Card>
       </div>
 
-      {/* Modal Forms */}
-      <NewProjectForm open={showProjectForm} onOpenChange={setShowProjectForm} />
-      <NewResourceForm open={showResourceForm} onOpenChange={setShowResourceForm} />
+      {/* Modal Forms - Fixed props */}
+      {showProjectForm && (
+        <NewProjectForm
+          onSubmit={handleCreateProject}
+          onCancel={() => setShowProjectForm(false)}
+        />
+      )}
+      
+      {showResourceForm && (
+        <NewResourceForm
+          onSubmit={handleCreateResource}
+          onCancel={() => setShowResourceForm(false)}
+        />
+      )}
+      
       <ClientInviteForm open={showClientInviteForm} onOpenChange={setShowClientInviteForm} />
     </div>
   );

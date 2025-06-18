@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,12 +5,12 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Dialog } from '@/components/ui/dialog';
 import { Plus, Search, Filter, User, Mail, Phone, Calendar } from 'lucide-react';
-import { usePSAData } from '@/hooks/usePSAData';
+import { useResources, useCreateResource } from '@/hooks/usePSAData';
 import NewResourceForm from './forms/NewResourceForm';
 
 const Resources = () => {
-  const { useResources, createResource } = usePSAData();
   const { data: resources, isLoading } = useResources();
+  const createResource = useCreateResource();
   const [searchTerm, setSearchTerm] = useState('');
   const [showNewResourceModal, setShowNewResourceModal] = useState(false);
 

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,12 +6,12 @@ import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog } from '@/components/ui/dialog';
 import { Plus, Search, Filter, Calendar, Users, DollarSign } from 'lucide-react';
-import { usePSAData } from '@/hooks/usePSAData';
+import { useProjects, useCreateProject } from '@/hooks/usePSAData';
 import NewProjectForm from './forms/NewProjectForm';
 
 const Projects = () => {
-  const { useProjects, createProject } = usePSAData();
   const { data: projects, isLoading } = useProjects();
+  const createProject = useCreateProject();
   const [searchTerm, setSearchTerm] = useState('');
   const [showNewProjectModal, setShowNewProjectModal] = useState(false);
 
