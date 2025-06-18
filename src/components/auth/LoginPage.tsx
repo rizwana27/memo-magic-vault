@@ -17,6 +17,7 @@ const LoginPage = () => {
     password: ''
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [isMicrosoftLoading, setIsMicrosoftLoading] = useState(false);
   const [error, setError] = useState('');
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -26,7 +27,8 @@ const LoginPage = () => {
   };
 
   const handleEmailLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
+    e.preventDefault(); // Prevent form submission and page refresh
+    
     if (!formData.email || !formData.password) {
       setError('Please fill in all fields');
       return;
@@ -39,36 +41,62 @@ const LoginPage = () => {
       const { error } = await signInWithEmail(formData.email, formData.password);
       
       if (error) {
+        console.error('Login error:', error);
+        let errorMessage = 'Incorrect email or password. Please try again.';
+        
         if (error.message.includes('Invalid login credentials') || 
             error.message.includes('Email not confirmed') ||
-            error.message.includes('Invalid email or password')) {
-          setError('Incorrect email or password. Please try again.');
-        } else {
-          setError(error.message);
+            error.message.includes('Invalid email or password') ||
+            error.message.includes('invalid_credentials')) {
+          errorMessage = 'Incorrect email or password. Please try again.';
+        } else if (error.message.includes('Email not confirmed')) {
+          errorMessage = 'Please check your email and click the confirmation link first.';
         }
+        
+        setError(errorMessage);
+        toast({
+          title: "Login Failed",
+          description: `❌ ${errorMessage}`,
+          variant: "destructive",
+        });
       } else {
         toast({
           title: "Welcome back!",
-          description: "You have been successfully logged in.",
+          description: "✅ You have been successfully logged in.",
         });
       }
     } catch (err) {
-      setError('An unexpected error occurred. Please try again.');
+      console.error('Unexpected login error:', err);
+      const errorMessage = 'An unexpected error occurred. Please try again.';
+      setError(errorMessage);
+      toast({
+        title: "Login Error",
+        description: `❌ ${errorMessage}`,
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleMicrosoftLogin = async () => {
+    setIsMicrosoftLoading(true);
+    
     try {
       await signInWithMicrosoft();
-    } catch (error) {
+      toast({
+        title: "Microsoft Sign In",
+        description: "✅ Signed in with Microsoft successfully!",
+      });
+    } catch (error: any) {
       console.error('Microsoft login error:', error);
       toast({
-        title: "Login Error",
-        description: "Failed to sign in with Microsoft. Please try again.",
+        title: "Microsoft Sign In Failed",
+        description: "❌ Microsoft sign-in failed. Please try again or use email login.",
         variant: "destructive",
       });
+    } finally {
+      setIsMicrosoftLoading(false);
     }
   };
 
@@ -148,18 +176,34 @@ const LoginPage = () => {
 
       <Button
         onClick={handleMicrosoftLogin}
-        disabled={loading || isLoading}
+        disabled={loading || isLoading || isMicrosoftLoading}
         variant="outline"
         className="w-full border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white"
       >
-        <svg className="w-5 h-5 mr-3" viewBox="0 0 21 21">
-          <rect x="1" y="1" width="9" height="9" fill="#f25022"/>
-          <rect x="12" y="1" width="9" height="9" fill="#00a4ef"/>
-          <rect x="1" y="12" width="9" height="9" fill="#ffb900"/>
-          <rect x="12" y="12" width="9" height="9" fill="#7fba00"/>
-        </svg>
-        Continue with Microsoft
+        {isMicrosoftLoading ? (
+          <>
+            <Loader2 className="w-5 h-5 mr-3 animate-spin" />
+            Connecting to Microsoft...
+          </>
+        ) : (
+          <>
+            <svg className="w-5 h-5 mr-3" viewBox="0 0 21 21">
+              <rect x="1" y="1" width="9" height="9" fill="#f25022"/>
+              <rect x="12" y="1" width="9" height="9" fill="#00a4ef"/>
+              <rect x="1" y="12" width="9" height="9" fill="#ffb900"/>
+              <rect x="12" y="12" width="9" height="9" fill="#7fba00"/>
+            </svg>
+            Continue with Microsoft
+          </>
+        )}
       </Button>
+
+      {/* Popup blocker notice */}
+      <div className="text-center">
+        <p className="text-xs text-gray-500">
+          💡 If Microsoft login doesn't work, please allow pop-ups for this site
+        </p>
+      </div>
 
       <div className="text-center">
         <p className="text-sm text-gray-400">

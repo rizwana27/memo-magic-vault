@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -40,6 +41,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (session?.user) {
           console.log('User authenticated:', session.user.email);
           console.log('User metadata:', session.user.user_metadata);
+          
+          // Handle email confirmation
+          if (event === 'SIGNED_IN' && session.user.email_confirmed_at) {
+            console.log('User email confirmed, redirecting to dashboard');
+          }
         }
       }
     );
@@ -70,6 +76,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return { error };
       }
       
+      console.log('Email sign in successful');
       return {};
     } catch (error) {
       console.error('Error signing in with email:', error);
@@ -97,6 +104,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return { error };
       }
       
+      console.log('Email sign up successful - confirmation email sent');
       return {};
     } catch (error) {
       console.error('Error signing up with email:', error);
@@ -129,6 +137,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.error('Microsoft sign in error:', error);
         throw error;
       }
+      
+      console.log('Microsoft OAuth redirect initiated');
     } catch (error) {
       console.error('Error signing in with Microsoft:', error);
       setLoading(false);
@@ -141,6 +151,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log('Signing out...');
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
+      console.log('Sign out successful');
     } catch (error) {
       console.error('Error signing out:', error);
     }
