@@ -9,9 +9,10 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { CalendarIcon, Plus, Trash2 } from 'lucide-react';
+import { CalendarIcon, Plus, Trash2, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { usePSAData } from '@/hooks/usePSAData';
 
 interface LineItem {
   id: string;
@@ -27,9 +28,14 @@ interface NewPurchaseOrderFormProps {
 }
 
 const NewPurchaseOrderForm = ({ onSubmit, onCancel }: NewPurchaseOrderFormProps) => {
+  const { useVendors, useProjects } = usePSAData();
+  const { data: vendors, isLoading: vendorsLoading } = useVendors();
+  const { data: projects, isLoading: projectsLoading } = useProjects();
+  
   const [formData, setFormData] = useState({
     poNumber: '',
     vendor: '',
+    project: '',
     status: 'open',
     notes: '',
   });
@@ -38,13 +44,8 @@ const NewPurchaseOrderForm = ({ onSubmit, onCancel }: NewPurchaseOrderFormProps)
   const [lineItems, setLineItems] = useState<LineItem[]>([
     { id: '1', itemName: '', quantity: 1, unitPrice: 0, total: 0 }
   ]);
-
-  // Mock vendor data
-  const vendors = [
-    { id: '1', name: 'ABC Software Solutions' },
-    { id: '2', name: 'Tech Hardware Co.' },
-    { id: '3', name: 'Cloud Services Inc.' },
-  ];
+  const [error, setError] = useState<string>('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const generatePONumber = () => {
     const year = new Date().getFullYear();
@@ -54,6 +55,7 @@ const NewPurchaseOrderForm = ({ onSubmit, onCancel }: NewPurchaseOrderFormProps)
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+    if (error) setError('');
   };
 
   const updateLineItem = (id: string, field: keyof LineItem, value: string | number) => {
@@ -84,17 +86,62 @@ const NewPurchaseOrderForm = ({ onSubmit, onCancel }: NewPurchaseOrderFormProps)
     return lineItems.reduce((sum, item) => sum + item.total, 0);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const validateForm = () => {
+    if (!formData.vendor) {
+      setError('Please select a vendor');
+      return false;
+    }
+
+    if (lineItems.some(item => !item.itemName.trim())) {
+      setError('All line items must have a name');
+      return false;
+    }
+
+    // Validate that selected vendor exists in our data
+    const selectedVendor = vendors?.find(vendor => vendor.vendor_id === formData.vendor);
+    if (!selectedVendor) {
+      setError('Selected vendor is invalid. Please choose a valid vendor from the dropdown.');
+      return false;
+    }
+
+    // Validate that selected project exists if one is selected
+    if (formData.project) {
+      const selectedProject = projects?.find(project => project.project_id === formData.project);
+      if (!selectedProject) {
+        setError('Selected project is invalid. Please choose a valid project from the dropdown.');
+        return false;
+      }
+    }
+
+    return true;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const poNumber = formData.poNumber || generatePONumber();
-    onSubmit({
-      ...formData,
-      poNumber,
-      orderDate: orderDate.toISOString(),
-      deliveryDate: deliveryDate?.toISOString(),
-      lineItems,
-      totalAmount: getTotalAmount(),
-    });
+    setError('');
+
+    if (!validateForm()) {
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const poNumber = formData.poNumber || generatePONumber();
+      await onSubmit({
+        ...formData,
+        poNumber,
+        orderDate: orderDate.toISOString().split('T')[0],
+        deliveryDate: deliveryDate?.toISOString().split('T')[0],
+        lineItems,
+        totalAmount: getTotalAmount(),
+      });
+    } catch (error: any) {
+      console.error('Form submission error:', error);
+      setError(error.message || 'Failed to create purchase order. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -102,6 +149,13 @@ const NewPurchaseOrderForm = ({ onSubmit, onCancel }: NewPurchaseOrderFormProps)
       <DialogHeader>
         <DialogTitle className="text-white text-xl">Create Purchase Order</DialogTitle>
       </DialogHeader>
+      
+      {error && (
+        <div className="flex items-center gap-2 p-3 bg-red-900/20 border border-red-700 rounded-md">
+          <AlertCircle className="w-4 h-4 text-red-400" />
+          <p className="text-red-400 text-sm">{error}</p>
+        </div>
+      )}
       
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -123,16 +177,58 @@ const NewPurchaseOrderForm = ({ onSubmit, onCancel }: NewPurchaseOrderFormProps)
           {/* Vendor */}
           <div className="space-y-2">
             <Label className="text-gray-200">Vendor *</Label>
-            <Select value={formData.vendor} onValueChange={(value) => handleInputChange('vendor', value)}>
+            <Select 
+              value={formData.vendor} 
+              onValueChange={(value) => handleInputChange('vendor', value)}
+              disabled={vendorsLoading}
+            >
               <SelectTrigger className="bg-white/10 border-white/20 text-white">
-                <SelectValue placeholder="Select a vendor" />
+                <SelectValue placeholder={vendorsLoading ? "Loading vendors..." : "Select a vendor"} />
               </SelectTrigger>
               <SelectContent className="bg-gray-800 border-gray-600">
-                {vendors.map((vendor) => (
-                  <SelectItem key={vendor.id} value={vendor.id} className="text-white hover:bg-gray-700">
-                    {vendor.name}
+                {vendors?.map((vendor) => (
+                  <SelectItem key={vendor.vendor_id} value={vendor.vendor_id} className="text-white hover:bg-gray-700">
+                    {vendor.vendor_name}
                   </SelectItem>
                 ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Project */}
+          <div className="space-y-2">
+            <Label className="text-gray-200">Project (Optional)</Label>
+            <Select 
+              value={formData.project} 
+              onValueChange={(value) => handleInputChange('project', value)}
+              disabled={projectsLoading}
+            >
+              <SelectTrigger className="bg-white/10 border-white/20 text-white">
+                <SelectValue placeholder={projectsLoading ? "Loading projects..." : "Select a project"} />
+              </SelectTrigger>
+              <SelectContent className="bg-gray-800 border-gray-600">
+                {projects?.map((project) => (
+                  <SelectItem key={project.project_id} value={project.project_id} className="text-white hover:bg-gray-700">
+                    {project.project_name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Status */}
+          <div className="space-y-2">
+            <Label className="text-gray-200">Status *</Label>
+            <Select value={formData.status} onValueChange={(value) => handleInputChange('status', value)}>
+              <SelectTrigger className="bg-white/10 border-white/20 text-white">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-gray-800 border-gray-600">
+                <SelectItem value="open" className="text-white hover:bg-gray-700">Open</SelectItem>
+                <SelectItem value="in-progress" className="text-white hover:bg-gray-700">In Progress</SelectItem>
+                <SelectItem value="closed" className="text-white hover:bg-gray-700">Closed</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -192,21 +288,6 @@ const NewPurchaseOrderForm = ({ onSubmit, onCancel }: NewPurchaseOrderFormProps)
               </PopoverContent>
             </Popover>
           </div>
-        </div>
-
-        {/* Status */}
-        <div className="space-y-2">
-          <Label className="text-gray-200">Status *</Label>
-          <Select value={formData.status} onValueChange={(value) => handleInputChange('status', value)}>
-            <SelectTrigger className="bg-white/10 border-white/20 text-white">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent className="bg-gray-800 border-gray-600">
-              <SelectItem value="open" className="text-white hover:bg-gray-700">Open</SelectItem>
-              <SelectItem value="in-progress" className="text-white hover:bg-gray-700">In Progress</SelectItem>
-              <SelectItem value="closed" className="text-white hover:bg-gray-700">Closed</SelectItem>
-            </SelectContent>
-          </Select>
         </div>
 
         {/* Line Items */}
@@ -323,9 +404,9 @@ const NewPurchaseOrderForm = ({ onSubmit, onCancel }: NewPurchaseOrderFormProps)
         <Button
           onClick={handleSubmit}
           className="bg-blue-600 hover:bg-blue-700 text-white"
-          disabled={!formData.vendor || lineItems.some(item => !item.itemName)}
+          disabled={!formData.vendor || lineItems.some(item => !item.itemName) || isSubmitting}
         >
-          Create Purchase Order
+          {isSubmitting ? 'Creating...' : 'Create Purchase Order'}
         </Button>
       </DialogFooter>
     </DialogContent>

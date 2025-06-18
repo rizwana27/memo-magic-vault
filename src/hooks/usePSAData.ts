@@ -123,20 +123,62 @@ export const usePSAData = () => {
     });
   };
 
-  // Tasks (placeholder for now)
-  const useTasks = () => {
+  // Purchase Orders
+  const usePurchaseOrders = () => {
     return useQuery({
-      queryKey: ['tasks'],
+      queryKey: ['purchase_orders'],
       queryFn: async () => {
-        return [];
+        console.log('Fetching purchase orders from database...');
+        const { data, error } = await supabase
+          .from('purchase_orders')
+          .select(`
+            *,
+            vendor:vendors(vendor_name),
+            project:projects(project_name, client_id)
+          `)
+          .order('created_at', { ascending: false });
+        
+        if (error) {
+          console.error('Error fetching purchase orders:', error);
+          throw error;
+        }
+        
+        console.log('Purchase orders fetched:', data);
+        return data || [];
       },
     });
   };
 
-  // Invoices (placeholder for now)
+  // Invoices
   const useInvoices = () => {
     return useQuery({
       queryKey: ['invoices'],
+      queryFn: async () => {
+        console.log('Fetching invoices from database...');
+        const { data, error } = await supabase
+          .from('invoices')
+          .select(`
+            *,
+            project:projects(project_name, client_id),
+            client:clients(client_name, company_name)
+          `)
+          .order('created_at', { ascending: false });
+        
+        if (error) {
+          console.error('Error fetching invoices:', error);
+          throw error;
+        }
+        
+        console.log('Invoices fetched:', data);
+        return data || [];
+      },
+    });
+  };
+
+  // Tasks (placeholder for now)
+  const useTasks = () => {
+    return useQuery({
+      queryKey: ['tasks'],
       queryFn: async () => {
         return [];
       },
@@ -157,16 +199,6 @@ export const usePSAData = () => {
   const useOpportunities = () => {
     return useQuery({
       queryKey: ['opportunities'],
-      queryFn: async () => {
-        return [];
-      },
-    });
-  };
-
-  // Purchase Orders (placeholder for now)
-  const usePurchaseOrders = () => {
-    return useQuery({
-      queryKey: ['purchase_orders'],
       queryFn: async () => {
         return [];
       },
@@ -423,16 +455,156 @@ export const usePSAData = () => {
     },
   });
 
-  // Placeholder mutations for other entities
-  const createInvoice = useMutation({
-    mutationFn: async (invoice: any) => {
-      return { ...invoice, id: Date.now().toString() };
+  // Create Purchase Order Mutation
+  const createPurchaseOrder = useMutation({
+    mutationFn: async (poData: any) => {
+      console.log('Creating purchase order:', poData);
+      
+      // Validate vendor and project exist
+      if (poData.vendor) {
+        const { data: vendorExists } = await supabase
+          .from('vendors')
+          .select('vendor_id')
+          .eq('vendor_id', poData.vendor)
+          .single();
+
+        if (!vendorExists) {
+          throw new Error('Selected vendor does not exist. Please refresh the page and try again.');
+        }
+      }
+
+      if (poData.project) {
+        const { data: projectExists } = await supabase
+          .from('projects')
+          .select('project_id')
+          .eq('project_id', poData.project)
+          .single();
+
+        if (!projectExists) {
+          throw new Error('Selected project does not exist. Please refresh the page and try again.');
+        }
+      }
+
+      const { data, error } = await supabase
+        .from('purchase_orders')
+        .insert({
+          po_number: poData.poNumber || undefined,
+          vendor_id: poData.vendor,
+          project_id: poData.project,
+          order_date: poData.orderDate,
+          delivery_date: poData.deliveryDate,
+          status: poData.status,
+          total_amount: poData.totalAmount,
+          line_items: poData.lineItems,
+          notes: poData.notes,
+        } as any)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating purchase order:', error);
+        throw error;
+      }
+
+      console.log('Purchase order created successfully:', data);
+      return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['purchase_orders'] });
+      toast({
+        title: "Success!",
+        description: "Purchase order created successfully.",
+        variant: "default",
+      });
+    },
+    onError: (error: any) => {
+      console.error('Failed to create purchase order:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create purchase order. Please try again.",
+        variant: "destructive",
+      });
     },
   });
 
+  // Create Invoice Mutation
+  const createInvoice = useMutation({
+    mutationFn: async (invoiceData: any) => {
+      console.log('Creating invoice:', invoiceData);
+      
+      // Validate project and client exist
+      if (invoiceData.project) {
+        const { data: projectExists } = await supabase
+          .from('projects')
+          .select('project_id')
+          .eq('project_id', invoiceData.project)
+          .single();
+
+        if (!projectExists) {
+          throw new Error('Selected project does not exist. Please refresh the page and try again.');
+        }
+      }
+
+      if (invoiceData.client) {
+        const { data: clientExists } = await supabase
+          .from('clients')
+          .select('client_id')
+          .eq('client_id', invoiceData.client)
+          .single();
+
+        if (!clientExists) {
+          throw new Error('Selected client does not exist. Please refresh the page and try again.');
+        }
+      }
+
+      const { data, error } = await supabase
+        .from('invoices')
+        .insert({
+          invoice_number: undefined, // Let trigger generate it
+          project_id: invoiceData.project,
+          client_id: invoiceData.client,
+          invoice_date: invoiceData.invoiceDate,
+          due_date: invoiceData.dueDate,
+          billing_type: invoiceData.billingType,
+          subtotal: invoiceData.subtotal,
+          tax_rate: invoiceData.tax,
+          tax_amount: invoiceData.taxAmount,
+          discount_rate: invoiceData.discount,
+          discount_amount: invoiceData.discountAmount,
+          total_amount: invoiceData.total,
+          items: invoiceData.items,
+          attachments: invoiceData.attachments ? Array.from(invoiceData.attachments).map((file: any) => file.name) : null,
+        } as any)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating invoice:', error);
+        throw error;
+      }
+
+      console.log('Invoice created successfully:', data);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      toast({
+        title: "Success!",
+        description: "Invoice created successfully.",
+        variant: "default",
+      });
+    },
+    onError: (error: any) => {
+      console.error('Failed to create invoice:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create invoice. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Create Expense Mutation (placeholder)
   const createExpense = useMutation({
     mutationFn: async (expense: any) => {
       return { ...expense, id: Date.now().toString() };
@@ -458,6 +630,7 @@ export const usePSAData = () => {
     createResource,
     createTimesheet,
     createVendor,
+    createPurchaseOrder,
     createInvoice,
     createExpense,
   };

@@ -60,6 +60,90 @@ export type Database = {
         }
         Relationships: []
       }
+      invoices: {
+        Row: {
+          attachments: string[] | null
+          billing_type: string
+          client_id: string | null
+          created_at: string
+          created_by: string | null
+          discount_amount: number | null
+          discount_rate: number | null
+          due_date: string
+          id: string
+          invoice_date: string
+          invoice_number: string
+          items: Json | null
+          notes: string | null
+          project_id: string | null
+          status: string
+          subtotal: number
+          tax_amount: number | null
+          tax_rate: number | null
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          attachments?: string[] | null
+          billing_type: string
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          discount_amount?: number | null
+          discount_rate?: number | null
+          due_date: string
+          id?: string
+          invoice_date?: string
+          invoice_number: string
+          items?: Json | null
+          notes?: string | null
+          project_id?: string | null
+          status?: string
+          subtotal?: number
+          tax_amount?: number | null
+          tax_rate?: number | null
+          total_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          attachments?: string[] | null
+          billing_type?: string
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          discount_amount?: number | null
+          discount_rate?: number | null
+          due_date?: string
+          id?: string
+          invoice_date?: string
+          invoice_number?: string
+          items?: Json | null
+          notes?: string | null
+          project_id?: string | null
+          status?: string
+          subtotal?: number
+          tax_amount?: number | null
+          tax_rate?: number | null
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["client_id"]
+          },
+          {
+            foreignKeyName: "invoices_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["project_id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -170,6 +254,69 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "clients"
             referencedColumns: ["client_id"]
+          },
+        ]
+      }
+      purchase_orders: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          delivery_date: string | null
+          id: string
+          line_items: Json | null
+          notes: string | null
+          order_date: string
+          po_number: string
+          project_id: string | null
+          status: string
+          total_amount: number | null
+          updated_at: string
+          vendor_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          delivery_date?: string | null
+          id?: string
+          line_items?: Json | null
+          notes?: string | null
+          order_date?: string
+          po_number: string
+          project_id?: string | null
+          status?: string
+          total_amount?: number | null
+          updated_at?: string
+          vendor_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          delivery_date?: string | null
+          id?: string
+          line_items?: Json | null
+          notes?: string | null
+          order_date?: string
+          po_number?: string
+          project_id?: string | null
+          status?: string
+          total_amount?: number | null
+          updated_at?: string
+          vendor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_orders_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["project_id"]
+          },
+          {
+            foreignKeyName: "purchase_orders_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["vendor_id"]
           },
         ]
       }
@@ -337,7 +484,15 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      generate_invoice_id: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       generate_project_id: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      generate_purchase_order_id: {
         Args: Record<PropertyKey, never>
         Returns: string
       }

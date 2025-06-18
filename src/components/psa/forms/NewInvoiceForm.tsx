@@ -10,9 +10,10 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CalendarIcon, Plus, Trash2, Upload } from 'lucide-react';
+import { CalendarIcon, Plus, Trash2, Upload, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { usePSAData } from '@/hooks/usePSAData';
 
 interface InvoiceItem {
   id: string;
@@ -34,6 +35,10 @@ interface NewInvoiceFormProps {
 }
 
 const NewInvoiceForm = ({ onSubmit, onCancel }: NewInvoiceFormProps) => {
+  const { useProjects, useClients } = usePSAData();
+  const { data: projects, isLoading: projectsLoading } = useProjects();
+  const { data: clients, isLoading: clientsLoading } = useClients();
+  
   const [billingType, setBillingType] = useState<'milestone' | 'time-material'>('milestone');
   const [formData, setFormData] = useState({
     project: '',
@@ -50,22 +55,12 @@ const NewInvoiceForm = ({ onSubmit, onCancel }: NewInvoiceFormProps) => {
     { id: '1', description: '', hours: 0, rate: 0, total: 0 }
   ]);
   const [attachments, setAttachments] = useState<FileList | null>(null);
-
-  // Mock data
-  const projects = [
-    { id: '1', name: 'Project Alpha' },
-    { id: '2', name: 'Project Beta' },
-    { id: '3', name: 'Project Gamma' },
-  ];
-
-  const clients = [
-    { id: '1', name: 'Acme Corporation' },
-    { id: '2', name: 'Tech Solutions Inc' },
-    { id: '3', name: 'Startup Co' },
-  ];
+  const [error, setError] = useState<string>('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleInputChange = (field: string, value: string | number) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+    if (error) setError('');
   };
 
   const updateMilestoneItem = (id: string, field: keyof InvoiceItem, value: string | number) => {
@@ -129,20 +124,78 @@ const NewInvoiceForm = ({ onSubmit, onCancel }: NewInvoiceFormProps) => {
     return getSubtotal() + getTaxAmount() - getDiscountAmount();
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const validateForm = () => {
+    if (!formData.project) {
+      setError('Please select a project');
+      return false;
+    }
+
+    if (!formData.client) {
+      setError('Please select a client');
+      return false;
+    }
+
+    if (!dueDate) {
+      setError('Please select a due date');
+      return false;
+    }
+
+    // Validate that selected project exists
+    const selectedProject = projects?.find(project => project.project_id === formData.project);
+    if (!selectedProject) {
+      setError('Selected project is invalid. Please choose a valid project from the dropdown.');
+      return false;
+    }
+
+    // Validate that selected client exists
+    const selectedClient = clients?.find(client => client.client_id === formData.client);
+    if (!selectedClient) {
+      setError('Selected client is invalid. Please choose a valid client from the dropdown.');
+      return false;
+    }
+
+    if (billingType === 'milestone' && milestoneItems.some(item => !item.description.trim())) {
+      setError('All milestone items must have a description');
+      return false;
+    }
+
+    if (billingType === 'time-material' && timeEntries.some(entry => !entry.description.trim())) {
+      setError('All time entries must have a description');
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit({
-      ...formData,
-      billingType,
-      invoiceDate: invoiceDate.toISOString(),
-      dueDate: dueDate?.toISOString(),
-      items: billingType === 'milestone' ? milestoneItems : timeEntries,
-      subtotal: getSubtotal(),
-      taxAmount: getTaxAmount(),
-      discountAmount: getDiscountAmount(),
-      total: getTotal(),
-      attachments,
-    });
+    setError('');
+
+    if (!validateForm()) {
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      await onSubmit({
+        ...formData,
+        billingType,
+        invoiceDate: invoiceDate.toISOString().split('T')[0],
+        dueDate: dueDate?.toISOString().split('T')[0],
+        items: billingType === 'milestone' ? milestoneItems : timeEntries,
+        subtotal: getSubtotal(),
+        taxAmount: getTaxAmount(),
+        discountAmount: getDiscountAmount(),
+        total: getTotal(),
+        attachments,
+      });
+    } catch (error: any) {
+      console.error('Form submission error:', error);
+      setError(error.message || 'Failed to create invoice. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -150,6 +203,13 @@ const NewInvoiceForm = ({ onSubmit, onCancel }: NewInvoiceFormProps) => {
       <DialogHeader>
         <DialogTitle className="text-white text-xl">Create New Invoice</DialogTitle>
       </DialogHeader>
+      
+      {error && (
+        <div className="flex items-center gap-2 p-3 bg-red-900/20 border border-red-700 rounded-md">
+          <AlertCircle className="w-4 h-4 text-red-400" />
+          <p className="text-red-400 text-sm">{error}</p>
+        </div>
+      )}
       
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Billing Type Selection */}
@@ -171,14 +231,18 @@ const NewInvoiceForm = ({ onSubmit, onCancel }: NewInvoiceFormProps) => {
           {/* Project */}
           <div className="space-y-2">
             <Label className="text-gray-200">Project *</Label>
-            <Select value={formData.project} onValueChange={(value) => handleInputChange('project', value)}>
+            <Select 
+              value={formData.project} 
+              onValueChange={(value) => handleInputChange('project', value)}
+              disabled={projectsLoading}
+            >
               <SelectTrigger className="bg-white/10 border-white/20 text-white">
-                <SelectValue placeholder="Select a project" />
+                <SelectValue placeholder={projectsLoading ? "Loading projects..." : "Select a project"} />
               </SelectTrigger>
               <SelectContent className="bg-gray-800 border-gray-600">
-                {projects.map((project) => (
-                  <SelectItem key={project.id} value={project.id} className="text-white hover:bg-gray-700">
-                    {project.name}
+                {projects?.map((project) => (
+                  <SelectItem key={project.project_id} value={project.project_id} className="text-white hover:bg-gray-700">
+                    {project.project_name}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -188,14 +252,18 @@ const NewInvoiceForm = ({ onSubmit, onCancel }: NewInvoiceFormProps) => {
           {/* Client */}
           <div className="space-y-2">
             <Label className="text-gray-200">Client *</Label>
-            <Select value={formData.client} onValueChange={(value) => handleInputChange('client', value)}>
+            <Select 
+              value={formData.client} 
+              onValueChange={(value) => handleInputChange('client', value)}
+              disabled={clientsLoading}
+            >
               <SelectTrigger className="bg-white/10 border-white/20 text-white">
-                <SelectValue placeholder="Select a client" />
+                <SelectValue placeholder={clientsLoading ? "Loading clients..." : "Select a client"} />
               </SelectTrigger>
               <SelectContent className="bg-gray-800 border-gray-600">
-                {clients.map((client) => (
-                  <SelectItem key={client.id} value={client.id} className="text-white hover:bg-gray-700">
-                    {client.name}
+                {clients?.map((client) => (
+                  <SelectItem key={client.client_id} value={client.client_id} className="text-white hover:bg-gray-700">
+                    {client.client_name} - {client.company_name}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -494,9 +562,9 @@ const NewInvoiceForm = ({ onSubmit, onCancel }: NewInvoiceFormProps) => {
         <Button
           onClick={handleSubmit}
           className="bg-blue-600 hover:bg-blue-700 text-white"
-          disabled={!formData.project || !formData.client || !dueDate}
+          disabled={!formData.project || !formData.client || !dueDate || isSubmitting}
         >
-          Create Invoice
+          {isSubmitting ? 'Creating...' : 'Create Invoice'}
         </Button>
       </DialogFooter>
     </DialogContent>

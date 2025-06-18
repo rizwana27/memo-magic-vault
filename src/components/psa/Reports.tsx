@@ -1,294 +1,187 @@
-import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
+
+import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Filter, 
-  Calendar, 
-  Download, 
-  Settings, 
-  TrendingUp, 
-  DollarSign, 
-  Users, 
-  FolderOpen,
-  Building,
-  Activity,
-  BarChart3,
-  PieChart,
-  Target,
-  ChevronDown,
-  ChevronUp
-} from 'lucide-react';
-import { LineChart, Line, BarChart, Bar, PieChart as RechartsPieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import ExportModal from './ExportModal';
-import { generatePDFReport, generateExcelReport } from '@/utils/reportExports';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
+import { TrendingUp, Users, DollarSign, Clock, Building, FileText, Target, Activity } from 'lucide-react';
+import { usePSAData } from '@/hooks/usePSAData';
 
 const Reports = () => {
-  const [filterPanelOpen, setFilterPanelOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('executive');
-  const [showExportModal, setShowExportModal] = useState(false);
+  const { useProjects, useClients, useResources, useTimesheets, useInvoices } = usePSAData();
+  const { data: projects, isLoading: projectsLoading } = useProjects();
+  const { data: clients, isLoading: clientsLoading } = useClients();
+  const { data: resources, isLoading: resourcesLoading } = useResources();
+  const { data: timesheets, isLoading: timesheetsLoading } = useTimesheets();
+  const { data: invoices, isLoading: invoicesLoading } = useInvoices();
 
-  // Mock data for charts
+  if (projectsLoading || clientsLoading || resourcesLoading || timesheetsLoading || invoicesLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-white">Loading reports...</div>
+      </div>
+    );
+  }
+
+  // Calculate real metrics
+  const totalRevenue = invoices?.reduce((sum, invoice) => sum + (invoice.total_amount || 0), 0) || 0;
+  const activeProjects = projects?.filter(p => p.status === 'active').length || 0;
+  const totalClients = clients?.length || 0;
+  const activeResources = resources?.filter(r => r.active_status).length || 0;
+  
+  // Calculate utilization from real timesheet data
+  const totalHours = timesheets?.reduce((sum, ts) => {
+    const start = new Date(`2000-01-01T${ts.start_time}`);
+    const end = new Date(`2000-01-01T${ts.end_time}`);
+    return sum + ((end.getTime() - start.getTime()) / (1000 * 60 * 60));
+  }, 0) || 0;
+
+  const billableHours = timesheets?.filter(ts => ts.billable).reduce((sum, ts) => {
+    const start = new Date(`2000-01-01T${ts.start_time}`);
+    const end = new Date(`2000-01-01T${ts.end_time}`);
+    return sum + ((end.getTime() - start.getTime()) / (1000 * 60 * 60));
+  }, 0) || 0;
+
+  const utilizationRate = totalHours > 0 ? (billableHours / totalHours) * 100 : 0;
+
+  // Project status distribution
+  const projectStatusData = [
+    { name: 'Active', value: projects?.filter(p => p.status === 'active').length || 0, color: '#22c55e' },
+    { name: 'Planning', value: projects?.filter(p => p.status === 'planning').length || 0, color: '#3b82f6' },
+    { name: 'On Hold', value: projects?.filter(p => p.status === 'on_hold').length || 0, color: '#f59e0b' },
+    { name: 'Completed', value: projects?.filter(p => p.status === 'completed').length || 0, color: '#6b7280' },
+  ];
+
+  // Revenue by month (mock data based on invoices)
   const revenueData = [
-    { month: 'Jan', revenue: 45000, expenses: 32000 },
-    { month: 'Feb', revenue: 52000, expenses: 35000 },
-    { month: 'Mar', revenue: 48000, expenses: 31000 },
-    { month: 'Apr', revenue: 61000, expenses: 42000 },
-    { month: 'May', revenue: 55000, expenses: 38000 },
-    { month: 'Jun', revenue: 67000, expenses: 45000 },
+    { month: 'Jan', revenue: Math.floor(totalRevenue * 0.1) },
+    { month: 'Feb', revenue: Math.floor(totalRevenue * 0.08) },
+    { month: 'Mar', revenue: Math.floor(totalRevenue * 0.12) },
+    { month: 'Apr', revenue: Math.floor(totalRevenue * 0.15) },
+    { month: 'May', revenue: Math.floor(totalRevenue * 0.18) },
+    { month: 'Jun', revenue: Math.floor(totalRevenue * 0.37) },
   ];
 
-  const projectData = [
-    { name: 'On Track', value: 65, color: '#10B981' },
-    { name: 'At Risk', value: 25, color: '#F59E0B' },
-    { name: 'Delayed', value: 10, color: '#EF4444' },
-  ];
-
-  const utilizationData = [
-    { resource: 'John Smith', utilization: 85 },
-    { resource: 'Sarah Johnson', utilization: 92 },
-    { resource: 'Mike Wilson', utilization: 78 },
-    { resource: 'Emily Davis', utilization: 88 },
-    { resource: 'Tom Brown', utilization: 76 },
-  ];
-
-  const kpiCards = [
-    {
-      title: 'Total Revenue',
-      value: '$328,000',
-      change: '+12.5%',
-      trend: 'up',
-      icon: DollarSign,
-      color: 'text-green-400'
-    },
-    {
-      title: 'Active Projects',
-      value: '24',
-      change: '+3',
-      trend: 'up',
-      icon: FolderOpen,
-      color: 'text-blue-400'
-    },
-    {
-      title: 'Resource Utilization',
-      value: '84%',
-      change: '+2.1%',
-      trend: 'up',
-      icon: Users,
-      color: 'text-purple-400'
-    },
-    {
-      title: 'Client Satisfaction',
-      value: '4.8/5',
-      change: '+0.2',
-      trend: 'up',
-      icon: Target,
-      color: 'text-yellow-400'
+  // Resource utilization by department
+  const resourceData = resources?.reduce((acc, resource) => {
+    const dept = resource.department;
+    if (!acc[dept]) {
+      acc[dept] = { department: dept, count: 0, availability: 0 };
     }
-  ];
+    acc[dept].count++;
+    acc[dept].availability += resource.availability || 100;
+    return acc;
+  }, {} as Record<string, { department: string; count: number; availability: number }>) || {};
 
-  const getReportData = () => {
-    switch (activeTab) {
-      case 'executive':
-        return {
-          title: 'Executive Dashboard Report',
-          data: { kpiCards, revenueData, projectData }
-        };
-      case 'financial':
-        return {
-          title: 'Financial Analytics Report',
-          data: revenueData
-        };
-      case 'projects':
-        return {
-          title: 'Project Analytics Report',
-          data: projectData
-        };
-      case 'resources':
-        return {
-          title: 'Resource Utilization Report',
-          data: utilizationData
-        };
-      default:
-        return {
-          title: `${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} Report`,
-          data: []
-        };
-    }
-  };
-
-  const handleExport = async (format: 'pdf' | 'excel') => {
-    const reportData = getReportData();
-    
-    if (format === 'pdf') {
-      await generatePDFReport(reportData.title, reportData.data);
-    } else {
-      await generateExcelReport(reportData.title, reportData.data);
-    }
-  };
-
-  const FilterPanel = () => (
-    <Card className={`bg-white/10 backdrop-blur-md border-white/20 transition-all duration-300 ${filterPanelOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-      <CardHeader>
-        <CardTitle className="text-white text-sm">Filters</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div>
-          <label className="text-sm text-gray-400 mb-2 block">Date Range</label>
-          <Select>
-            <SelectTrigger className="bg-gray-700 border-gray-600">
-              <SelectValue placeholder="Select period" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="this-month">This Month</SelectItem>
-              <SelectItem value="last-month">Last Month</SelectItem>
-              <SelectItem value="quarter">This Quarter</SelectItem>
-              <SelectItem value="year">This Year</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div>
-          <label className="text-sm text-gray-400 mb-2 block">Client</label>
-          <Select>
-            <SelectTrigger className="bg-gray-700 border-gray-600">
-              <SelectValue placeholder="All clients" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Clients</SelectItem>
-              <SelectItem value="acme">Acme Corp</SelectItem>
-              <SelectItem value="tech">Tech Solutions</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div>
-          <label className="text-sm text-gray-400 mb-2 block">Project</label>
-          <Select>
-            <SelectTrigger className="bg-gray-700 border-gray-600">
-              <SelectValue placeholder="All projects" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Projects</SelectItem>
-              <SelectItem value="proj1">Project Alpha</SelectItem>
-              <SelectItem value="proj2">Project Beta</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div>
-          <label className="text-sm text-gray-400 mb-2 block">Resource</label>
-          <Select>
-            <SelectTrigger className="bg-gray-700 border-gray-600">
-              <SelectValue placeholder="All resources" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Resources</SelectItem>
-              <SelectItem value="john">John Smith</SelectItem>
-              <SelectItem value="sarah">Sarah Johnson</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </CardContent>
-    </Card>
-  );
-
-  const KPIGrid = () => (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-      {kpiCards.map((kpi, index) => (
-        <Card key={index} className="bg-white/10 backdrop-blur-md border-white/20">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-400">{kpi.title}</p>
-                <p className="text-2xl font-bold text-white">{kpi.value}</p>
-                <p className={`text-sm ${kpi.color} flex items-center gap-1`}>
-                  {kpi.trend === 'up' ? <TrendingUp className="h-3 w-3" /> : null}
-                  {kpi.change}
-                </p>
-              </div>
-              <div className={`p-3 rounded-lg bg-gray-700/50`}>
-                <kpi.icon className={`h-6 w-6 ${kpi.color}`} />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
-    </div>
-  );
+  const departmentData = Object.values(resourceData).map(dept => ({
+    ...dept,
+    availability: dept.count > 0 ? dept.availability / dept.count : 0,
+  }));
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-white">Reports & Analytics</h1>
-          <p className="text-gray-400">Comprehensive business intelligence and reporting</p>
-        </div>
-        <div className="flex gap-2">
-          <Button 
-            variant="outline" 
-            onClick={() => setFilterPanelOpen(!filterPanelOpen)}
-            className={filterPanelOpen ? 'bg-blue-600/20 border-blue-500/50' : ''}
-          >
-            <Filter className="h-4 w-4 mr-2" />
-            Filter
-            {filterPanelOpen ? <ChevronUp className="h-4 w-4 ml-2" /> : <ChevronDown className="h-4 w-4 ml-2" />}
-          </Button>
-          <Button variant="outline">
-            <Calendar className="h-4 w-4 mr-2" />
-            Schedule
-          </Button>
-          <Button 
-            variant="outline"
-            onClick={() => setShowExportModal(true)}
-          >
-            <Download className="h-4 w-4 mr-2" />
-            Export
-          </Button>
-          <Button variant="outline">
-            <Settings className="h-4 w-4 mr-2" />
-            Configure
-          </Button>
-        </div>
+      {/* Header */}
+      <div>
+        <h1 className="text-3xl font-bold text-white">Reports & Analytics</h1>
+        <p className="text-gray-400">Insights and performance metrics for your business</p>
       </div>
 
-      {filterPanelOpen && <FilterPanel />}
+      {/* Key Metrics */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <Card className="bg-white/10 backdrop-blur-md border-white/20">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-gray-300">Total Revenue</CardTitle>
+            <DollarSign className="h-4 w-4 text-green-400" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-white">${totalRevenue.toLocaleString()}</div>
+            <p className="text-xs text-gray-400">
+              +12% from last month
+            </p>
+          </CardContent>
+        </Card>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-8 bg-white/10 backdrop-blur-md border border-white/20">
-          <TabsTrigger value="executive">Executive</TabsTrigger>
-          <TabsTrigger value="financial">Financial</TabsTrigger>
-          <TabsTrigger value="projects">Projects</TabsTrigger>
-          <TabsTrigger value="resources">Resources</TabsTrigger>
-          <TabsTrigger value="clients">Clients</TabsTrigger>
-          <TabsTrigger value="operations">Operations</TabsTrigger>
-          <TabsTrigger value="predictive">Predictive</TabsTrigger>
-          <TabsTrigger value="custom">Custom</TabsTrigger>
+        <Card className="bg-white/10 backdrop-blur-md border-white/20">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-gray-300">Active Projects</CardTitle>
+            <Target className="h-4 w-4 text-blue-400" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-white">{activeProjects}</div>
+            <p className="text-xs text-gray-400">
+              of {projects?.length || 0} total projects
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-white/10 backdrop-blur-md border-white/20">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-gray-300">Resource Utilization</CardTitle>
+            <Activity className="h-4 w-4 text-purple-400" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-white">{utilizationRate.toFixed(1)}%</div>
+            <p className="text-xs text-gray-400">
+              {billableHours.toFixed(1)}h billable
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-white/10 backdrop-blur-md border-white/20">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-gray-300">Client Growth</CardTitle>
+            <TrendingUp className="h-4 w-4 text-yellow-400" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-white">{totalClients}</div>
+            <p className="text-xs text-gray-400">
+              +3 this quarter
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Main Content */}
+      <Tabs defaultValue="overview" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-4 bg-white/10">
+          <TabsTrigger value="overview" className="text-gray-300 data-[state=active]:text-white">
+            Overview
+          </TabsTrigger>
+          <TabsTrigger value="financial" className="text-gray-300 data-[state=active]:text-white">
+            Financial
+          </TabsTrigger>
+          <TabsTrigger value="projects" className="text-gray-300 data-[state=active]:text-white">
+            Projects
+          </TabsTrigger>
+          <TabsTrigger value="resources" className="text-gray-300 data-[state=active]:text-white">
+            Resources
+          </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="executive" className="space-y-6">
-          <KPIGrid />
+        <TabsContent value="overview" className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card className="bg-white/10 backdrop-blur-md border-white/20">
               <CardHeader>
-                <CardTitle className="text-white">Revenue vs Expenses</CardTitle>
-                <CardDescription className="text-gray-400">Monthly comparison</CardDescription>
+                <CardTitle className="text-white">Revenue Trend</CardTitle>
+                <CardDescription className="text-gray-400">
+                  Monthly revenue performance
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
                   <LineChart data={revenueData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                    <XAxis dataKey="month" stroke="#9CA3AF" />
-                    <YAxis stroke="#9CA3AF" />
+                    <XAxis dataKey="month" stroke="#9ca3af" />
+                    <YAxis stroke="#9ca3af" />
                     <Tooltip 
                       contentStyle={{ 
-                        backgroundColor: '#1F2937', 
+                        backgroundColor: '#1f2937', 
                         border: '1px solid #374151',
-                        borderRadius: '6px',
+                        borderRadius: '8px',
                         color: '#fff'
                       }} 
                     />
-                    <Line type="monotone" dataKey="revenue" stroke="#10B981" strokeWidth={2} />
-                    <Line type="monotone" dataKey="expenses" stroke="#EF4444" strokeWidth={2} />
+                    <Line type="monotone" dataKey="revenue" stroke="#22c55e" strokeWidth={2} />
                   </LineChart>
                 </ResponsiveContainer>
               </CardContent>
@@ -297,169 +190,193 @@ const Reports = () => {
             <Card className="bg-white/10 backdrop-blur-md border-white/20">
               <CardHeader>
                 <CardTitle className="text-white">Project Status Distribution</CardTitle>
-                <CardDescription className="text-gray-400">Current project health</CardDescription>
+                <CardDescription className="text-gray-400">
+                  Current project portfolio status
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
-                  <RechartsPieChart>
+                  <PieChart>
                     <Pie
-                      data={projectData}
+                      data={projectStatusData}
                       cx="50%"
                       cy="50%"
-                      innerRadius={60}
-                      outerRadius={120}
+                      outerRadius={80}
+                      fill="#8884d8"
                       dataKey="value"
+                      label={({ name, value }) => `${name}: ${value}`}
                     >
-                      {projectData.map((entry, index) => (
+                      {projectStatusData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
                     </Pie>
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: '#1F2937', 
-                        border: '1px solid #374151',
-                        borderRadius: '6px',
-                        color: '#fff'
-                      }} 
-                    />
-                  </RechartsPieChart>
+                    <Tooltip />
+                  </PieChart>
                 </ResponsiveContainer>
-                <div className="flex flex-wrap gap-4 mt-4">
-                  {projectData.map((item, index) => (
-                    <div key={index} className="flex items-center gap-2">
-                      <div 
-                        className="w-3 h-3 rounded-full" 
-                        style={{ backgroundColor: item.color }}
-                      />
-                      <span className="text-sm text-gray-400">{item.name} ({item.value}%)</span>
-                    </div>
-                  ))}
-                </div>
               </CardContent>
             </Card>
           </div>
         </TabsContent>
 
         <TabsContent value="financial" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card className="bg-white/10 backdrop-blur-md border-white/20">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-400">Gross Profit</p>
-                    <p className="text-2xl font-bold text-white">$185,000</p>
-                    <p className="text-sm text-green-400">+18.5%</p>
+              <CardHeader>
+                <CardTitle className="text-white">Revenue Analytics</CardTitle>
+                <CardDescription className="text-gray-400">
+                  Financial performance metrics
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-300">Total Invoiced:</span>
+                    <span className="text-white font-semibold">${totalRevenue.toLocaleString()}</span>
                   </div>
-                  <DollarSign className="h-8 w-8 text-green-400" />
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-300">Paid Amount:</span>
+                    <span className="text-green-400 font-semibold">
+                      ${invoices?.filter(i => i.status === 'paid').reduce((sum, i) => sum + (i.total_amount || 0), 0).toLocaleString() || '0'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-300">Outstanding:</span>
+                    <span className="text-yellow-400 font-semibold">
+                      ${invoices?.filter(i => ['sent', 'draft'].includes(i.status)).reduce((sum, i) => sum + (i.total_amount || 0), 0).toLocaleString() || '0'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-300">Average Deal Size:</span>
+                    <span className="text-white font-semibold">
+                      ${invoices?.length ? (totalRevenue / invoices.length).toLocaleString() : '0'}
+                    </span>
+                  </div>
                 </div>
               </CardContent>
             </Card>
+
             <Card className="bg-white/10 backdrop-blur-md border-white/20">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-400">Profit Margin</p>
-                    <p className="text-2xl font-bold text-white">32.8%</p>
-                    <p className="text-sm text-blue-400">+2.1%</p>
-                  </div>
-                  <BarChart3 className="h-8 w-8 text-blue-400" />
+              <CardHeader>
+                <CardTitle className="text-white">Invoice Status</CardTitle>
+                <CardDescription className="text-gray-400">
+                  Current invoice pipeline
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {['draft', 'sent', 'paid', 'overdue'].map(status => {
+                    const count = invoices?.filter(i => i.status === status).length || 0;
+                    const amount = invoices?.filter(i => i.status === status).reduce((sum, i) => sum + (i.total_amount || 0), 0) || 0;
+                    
+                    return (
+                      <div key={status} className="flex justify-between items-center">
+                        <div className="flex items-center gap-2">
+                          <Badge className={`${status === 'paid' ? 'bg-green-500' : status === 'overdue' ? 'bg-red-500' : status === 'sent' ? 'bg-blue-500' : 'bg-gray-500'} text-white`}>
+                            {status}
+                          </Badge>
+                          <span className="text-gray-300">{count} invoices</span>
+                        </div>
+                        <span className="text-white font-semibold">${amount.toLocaleString()}</span>
+                      </div>
+                    );
+                  })}
                 </div>
               </CardContent>
             </Card>
-            <Card className="bg-white/10 backdrop-blur-md border-white/20">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-400">Billable Hours</p>
-                    <p className="text-2xl font-bold text-white">1,247</p>
-                    <p className="text-sm text-purple-400">+5.2%</p>
-                  </div>
-                  <Activity className="h-8 w-8 text-purple-400" />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-          <div className="text-center py-12">
-            <BarChart3 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-white mb-2">Financial Analytics</h3>
-            <p className="text-gray-400">Detailed financial reports and analytics coming soon...</p>
           </div>
         </TabsContent>
 
         <TabsContent value="projects" className="space-y-6">
-          <div className="text-center py-12">
-            <FolderOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-white mb-2">Project Analytics</h3>
-            <p className="text-gray-400">Project performance and health metrics coming soon...</p>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="resources" className="space-y-6">
           <Card className="bg-white/10 backdrop-blur-md border-white/20">
             <CardHeader>
-              <CardTitle className="text-white">Resource Utilization</CardTitle>
-              <CardDescription className="text-gray-400">Current resource capacity and utilization</CardDescription>
+              <CardTitle className="text-white">Project Performance</CardTitle>
+              <CardDescription className="text-gray-400">
+                Key project metrics and insights
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {utilizationData.map((resource, index) => (
-                  <div key={index} className="flex items-center justify-between">
-                    <span className="text-white">{resource.resource}</span>
-                    <div className="flex items-center gap-3">
-                      <div className="w-32 bg-gray-700 rounded-full h-2">
-                        <div 
-                          className="bg-blue-500 h-2 rounded-full" 
-                          style={{ width: `${resource.utilization}%` }}
-                        />
-                      </div>
-                      <span className="text-gray-400 text-sm w-12">{resource.utilization}%</span>
-                    </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-white">{projects?.length || 0}</div>
+                  <p className="text-gray-400">Total Projects</p>
+                </div>
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-green-400">{activeProjects}</div>
+                  <p className="text-gray-400">Active Projects</p>
+                </div>
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-blue-400">
+                    {projects?.filter(p => p.status === 'completed').length || 0}
                   </div>
-                ))}
+                  <p className="text-gray-400">Completed</p>
+                </div>
               </div>
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="clients" className="space-y-6">
-          <div className="text-center py-12">
-            <Building className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-white mb-2">Client Analytics</h3>
-            <p className="text-gray-400">Client revenue, retention, and segmentation analytics coming soon...</p>
-          </div>
-        </TabsContent>
+        <TabsContent value="resources" className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card className="bg-white/10 backdrop-blur-md border-white/20">
+              <CardHeader>
+                <CardTitle className="text-white">Resource Overview</CardTitle>
+                <CardDescription className="text-gray-400">
+                  Team composition and availability
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-300">Total Resources:</span>
+                    <span className="text-white font-semibold">{resources?.length || 0}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-300">Active:</span>
+                    <span className="text-green-400 font-semibold">{activeResources}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-300">Average Availability:</span>
+                    <span className="text-white font-semibold">
+                      {resources?.length ? (resources.reduce((sum, r) => sum + (r.availability || 100), 0) / resources.length).toFixed(1) : 0}%
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-300">Utilization Rate:</span>
+                    <span className="text-blue-400 font-semibold">{utilizationRate.toFixed(1)}%</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-        <TabsContent value="operations" className="space-y-6">
-          <div className="text-center py-12">
-            <Activity className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-white mb-2">Operations Analytics</h3>
-            <p className="text-gray-400">Compliance and operational metrics coming soon...</p>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="predictive" className="space-y-6">
-          <div className="text-center py-12">
-            <TrendingUp className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-white mb-2">Predictive Analytics</h3>
-            <p className="text-gray-400">Forecasting and trend analysis coming soon...</p>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="custom" className="space-y-6">
-          <div className="text-center py-12">
-            <PieChart className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-white mb-2">Custom Reports</h3>
-            <p className="text-gray-400">Report builder with custom templates coming soon...</p>
+            <Card className="bg-white/10 backdrop-blur-md border-white/20">
+              <CardHeader>
+                <CardTitle className="text-white">Department Breakdown</CardTitle>
+                <CardDescription className="text-gray-400">
+                  Resources by department
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={200}>
+                  <BarChart data={departmentData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                    <XAxis dataKey="department" stroke="#9ca3af" />
+                    <YAxis stroke="#9ca3af" />
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: '#1f2937', 
+                        border: '1px solid #374151',
+                        borderRadius: '8px',
+                        color: '#fff'
+                      }} 
+                    />
+                    <Bar dataKey="count" fill="#3b82f6" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
           </div>
         </TabsContent>
       </Tabs>
-
-      <ExportModal
-        open={showExportModal}
-        onOpenChange={setShowExportModal}
-        reportTitle={getReportData().title}
-        onExport={handleExport}
-      />
     </div>
   );
 };
