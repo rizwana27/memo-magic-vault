@@ -1,8 +1,9 @@
 
 import React from 'react';
-import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
-import { Clock, Calendar, FileText, BarChart3, LogOut, User } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { LogOut } from 'lucide-react';
+import Timesheets from '@/components/psa/Timesheets';
 
 const EmployeeDashboard: React.FC = () => {
   const { user, signOut } = useAuth();
@@ -18,122 +19,33 @@ const EmployeeDashboard: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-gray-900 to-black">
       {/* Header */}
-      <header className="bg-gray-800/95 backdrop-blur-sm border-b border-gray-700/50 shadow-xl">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg flex items-center justify-center">
-                <Clock className="h-4 w-4 text-white" />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-white">Employee Portal</h1>
-                <p className="text-xs text-emerald-400">Time & Task Management</p>
-              </div>
+      <div className="bg-black/30 backdrop-blur-sm border-b border-white/10 px-6 py-4">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-2xl font-bold text-white">Employee Portal</h1>
+            <p className="text-gray-400">Welcome back, {user?.email}</p>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="text-right">
+              <p className="text-sm text-gray-400">Role: Employee</p>
             </div>
-
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-emerald-600 rounded-full flex items-center justify-center">
-                  <User className="h-4 w-4 text-white" />
-                </div>
-                <div className="hidden sm:block">
-                  <p className="text-sm text-white">{user?.email}</p>
-                </div>
-              </div>
-              
-              <Button
-                onClick={handleSignOut}
-                variant="outline"
-                size="sm"
-                className="border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white"
-              >
-                <LogOut className="h-4 w-4 mr-2" />
-                Sign Out
-              </Button>
-            </div>
+            <Button
+              onClick={handleSignOut}
+              variant="outline"
+              size="sm"
+              className="border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white"
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Sign Out
+            </Button>
           </div>
         </div>
-      </header>
+      </div>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="space-y-8">
-          {/* Welcome Section */}
-          <div className="text-center space-y-4">
-            <h2 className="text-3xl font-bold text-white">Welcome to Your Workspace</h2>
-            <p className="text-gray-300 max-w-2xl mx-auto">
-              Track your time, manage tasks, and stay productive with our timesheet and project management tools.
-            </p>
-          </div>
-
-          {/* Quick Actions Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6 hover:bg-gray-700/50 transition-all duration-300 hover:scale-105">
-              <div className="flex items-center space-x-4">
-                <div className="bg-green-500/20 p-3 rounded-lg">
-                  <Clock className="h-6 w-6 text-green-400" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-white">Timesheet Entry</h3>
-                  <p className="text-gray-400 text-sm">Log your work hours</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6 hover:bg-gray-700/50 transition-all duration-300 hover:scale-105">
-              <div className="flex items-center space-x-4">
-                <div className="bg-blue-500/20 p-3 rounded-lg">
-                  <Calendar className="h-6 w-6 text-blue-400" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-white">Schedule</h3>
-                  <p className="text-gray-400 text-sm">View your calendar</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6 hover:bg-gray-700/50 transition-all duration-300 hover:scale-105">
-              <div className="flex items-center space-x-4">
-                <div className="bg-purple-500/20 p-3 rounded-lg">
-                  <FileText className="h-6 w-6 text-purple-400" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-white">Projects</h3>
-                  <p className="text-gray-400 text-sm">View assigned projects</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6 hover:bg-gray-700/50 transition-all duration-300 hover:scale-105">
-              <div className="flex items-center space-x-4">
-                <div className="bg-yellow-500/20 p-3 rounded-lg">
-                  <BarChart3 className="h-6 w-6 text-yellow-400" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-white">Reports</h3>
-                  <p className="text-gray-400 text-sm">Time tracking reports</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Timesheet Entry Section */}
-          <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-8">
-            <div className="text-center space-y-4">
-              <Clock className="h-16 w-16 text-gray-400 mx-auto" />
-              <h3 className="text-xl font-semibold text-white">Timesheet Entry</h3>
-              <p className="text-gray-400 max-w-2xl mx-auto">
-                This is your timesheet entry page. Here you can log your daily work hours, 
-                track time spent on different projects and tasks, and submit your timesheets 
-                for approval. The timesheet module from the main platform will be integrated here.
-              </p>
-              <Button className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-medium">
-                Start Time Tracking
-              </Button>
-            </div>
-          </div>
-        </div>
-      </main>
+      <div className="p-6">
+        <Timesheets />
+      </div>
     </div>
   );
 };
