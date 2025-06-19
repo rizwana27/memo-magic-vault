@@ -10,6 +10,7 @@ export const useUserRole = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
 
+      // Use the existing profiles table instead of user_profiles
       const { data, error } = await supabase
         .from('profiles')
         .select('role, full_name')
