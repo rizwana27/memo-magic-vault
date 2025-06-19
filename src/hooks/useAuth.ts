@@ -11,9 +11,9 @@ export const useUserRole = () => {
       if (!user) return null;
 
       const { data, error } = await supabase
-        .from('user_profiles')
+        .from('profiles')
         .select('role, full_name')
-        .eq('user_id', user.id)
+        .eq('id', user.id)
         .single();
 
       if (error) {
@@ -33,13 +33,13 @@ export const useCreateUserProfile = () => {
 
   return useMutation({
     mutationFn: async (profileData: {
-      user_id: string;
+      id: string;
       email: string;
       full_name: string;
       role: 'admin' | 'employee' | 'vendor' | 'client';
     }) => {
       const { data, error } = await supabase
-        .from('user_profiles')
+        .from('profiles')
         .insert([profileData])
         .select()
         .single();
@@ -48,7 +48,6 @@ export const useCreateUserProfile = () => {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['user-profiles'] });
       queryClient.invalidateQueries({ queryKey: ['user-role'] });
       toast({
         title: "Success",

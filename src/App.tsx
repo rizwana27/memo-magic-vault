@@ -9,8 +9,8 @@ import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import AuthCallback from "./components/auth/AuthCallback";
 import SignUpPage from "./components/auth/SignUpPage";
-import EmployeeLoginPage from "./components/auth/EmployeeLoginPage";
-import EmployeePortal from "./components/employee/EmployeePortal";
+import EmployeeLogin from "./components/auth/EmployeeLogin";
+import EmployeeDashboard from "./components/employee/EmployeeDashboard";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 
@@ -26,12 +26,12 @@ const App = () => (
           <Routes>
             <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="/signup" element={<SignUpPage />} />
-            <Route path="/employee-login" element={<EmployeeLoginPage />} />
+            <Route path="/login/employee" element={<EmployeeLogin />} />
             <Route 
-              path="/employee-portal" 
+              path="/employee-dashboard" 
               element={
                 <ProtectedRoute>
-                  <EmployeePortal />
+                  <EmployeeDashboard />
                 </ProtectedRoute>
               } 
             />

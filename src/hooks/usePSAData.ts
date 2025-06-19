@@ -1,36 +1,51 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Tables } from '@/integrations/supabase/types';
 
-// Define types for the data we're fetching
-export type Project = Tables<'projects'>;
-export type Client = Tables<'clients'>;
-export type Resource = Tables<'resources'>;
-export type Timesheet = Tables<'timesheets'>;
-export type Invoice = Tables<'invoices'>;
-export type Vendor = Tables<'vendors'>;
-export type PurchaseOrder = Tables<'purchase_orders'>;
-export type UserProfile = Tables<'user_profiles'>;
-
-// Add hook for user profiles
+// User Profiles
 export const useUserProfiles = () => {
   return useQuery({
-    queryKey: ['user-profiles'],
+    queryKey: ['profiles'],
     queryFn: async () => {
-      console.log('Fetching user profiles...');
       const { data, error } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .order('created_at', { ascending: false });
+        .from('profiles')
+        .select('*');
       
-      if (error) {
-        console.error('Error fetching user profiles:', error);
-        throw error;
-      }
-      
-      console.log('User profiles fetched:', data);
-      return data || [];
+      if (error) throw error;
+      return data;
+    },
+  });
+};
+
+export const useCreateUserProfile = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (profileData: any) => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .insert([profileData])
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['profiles'] });
+      toast({
+        title: "Success",
+        description: "Profile created successfully",
+      });
+    },
+    onError: (error: any) => {
+      console.error('Failed to create profile:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create profile",
+        variant: "destructive",
+      });
     },
   });
 };
