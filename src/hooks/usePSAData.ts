@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -186,9 +187,10 @@ export const useCreateTimesheet = () => {
       notes?: string;
     }) => {
       // Insert the timesheet data without timesheet_id (it will be auto-generated)
+      // Use type assertion to bypass TypeScript's strict typing for auto-generated fields
       const { data, error } = await supabase
         .from('timesheets')
-        .insert([timesheetData])
+        .insert([timesheetData as any])
         .select()
         .single();
 
