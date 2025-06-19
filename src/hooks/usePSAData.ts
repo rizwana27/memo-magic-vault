@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -186,9 +185,10 @@ export const useCreateTimesheet = () => {
       billable: boolean;
       notes?: string;
     }) => {
+      // Insert the timesheet data without timesheet_id (it will be auto-generated)
       const { data, error } = await supabase
         .from('timesheets')
-        .insert(timesheetData)
+        .insert([timesheetData])
         .select()
         .single();
 
