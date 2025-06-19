@@ -1,25 +1,39 @@
-import { useLocation } from "react-router-dom";
-import { useEffect } from "react";
+
+import React from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useNavigate } from 'react-router-dom';
+import { Home, AlertCircle } from 'lucide-react';
 
 const NotFound = () => {
-  const location = useLocation();
+  const navigate = useNavigate();
 
-  useEffect(() => {
-    console.error(
-      "404 Error: User attempted to access non-existent route:",
-      location.pathname
-    );
-  }, [location.pathname]);
+  const handleGoHome = () => {
+    navigate('/');
+  };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">404</h1>
-        <p className="text-xl text-gray-600 mb-4">Oops! Page not found</p>
-        <a href="/" className="text-blue-500 hover:text-blue-700 underline">
-          Return to Home
-        </a>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-gray-900 to-black flex items-center justify-center p-4">
+      <Card className="w-full max-w-md bg-gray-800/50 border-gray-700">
+        <CardHeader className="text-center">
+          <div className="mx-auto w-12 h-12 bg-orange-600 rounded-full flex items-center justify-center mb-4">
+            <AlertCircle className="w-6 h-6 text-white" />
+          </div>
+          <CardTitle className="text-2xl font-bold text-white">Page Not Found</CardTitle>
+        </CardHeader>
+        <CardContent className="text-center space-y-4">
+          <p className="text-gray-400">
+            The page you're looking for doesn't exist or has been moved.
+          </p>
+          <Button
+            onClick={handleGoHome}
+            className="w-full bg-blue-600 hover:bg-blue-700"
+          >
+            <Home className="w-4 h-4 mr-2" />
+            Go Home
+          </Button>
+        </CardContent>
+      </Card>
     </div>
   );
 };

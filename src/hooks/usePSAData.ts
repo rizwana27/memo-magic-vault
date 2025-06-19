@@ -19,6 +19,39 @@ export const useResources = () => {
   });
 };
 
+export const useCreateResource = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (resourceData: any) => {
+      const { data, error } = await supabase
+        .from('resources')
+        .insert([resourceData])
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['resources'] });
+      toast({
+        title: "Success",
+        description: "Resource created successfully",
+      });
+    },
+    onError: (error: any) => {
+      console.error('Failed to create resource:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create resource",
+        variant: "destructive",
+      });
+    },
+  });
+};
+
 // Projects hooks
 export const useProjects = () => {
   return useQuery({
@@ -26,11 +59,47 @@ export const useProjects = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('projects')
-        .select('*')
+        .select(`
+          *,
+          client:clients(*)
+        `)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
       return data;
+    },
+  });
+};
+
+export const useCreateProject = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (projectData: any) => {
+      const { data, error } = await supabase
+        .from('projects')
+        .insert([projectData])
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      toast({
+        title: "Success",
+        description: "Project created successfully",
+      });
+    },
+    onError: (error: any) => {
+      console.error('Failed to create project:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create project",
+        variant: "destructive",
+      });
     },
   });
 };
@@ -51,6 +120,39 @@ export const useClients = () => {
   });
 };
 
+export const useCreateClient = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (clientData: any) => {
+      const { data, error } = await supabase
+        .from('clients')
+        .insert([clientData])
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['clients'] });
+      toast({
+        title: "Success",
+        description: "Client created successfully",
+      });
+    },
+    onError: (error: any) => {
+      console.error('Failed to create client:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create client",
+        variant: "destructive",
+      });
+    },
+  });
+};
+
 // Timesheets hooks
 export const useTimesheets = () => {
   return useQuery({
@@ -58,7 +160,10 @@ export const useTimesheets = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('timesheets')
-        .select('*')
+        .select(`
+          *,
+          project:projects(*)
+        `)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -83,7 +188,7 @@ export const useCreateTimesheet = () => {
     }) => {
       const { data, error } = await supabase
         .from('timesheets')
-        .insert([timesheetData])
+        .insert(timesheetData)
         .select()
         .single();
 
@@ -124,6 +229,39 @@ export const useVendors = () => {
   });
 };
 
+export const useCreateVendor = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (vendorData: any) => {
+      const { data, error } = await supabase
+        .from('vendors')
+        .insert([vendorData])
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['vendors'] });
+      toast({
+        title: "Success",
+        description: "Vendor created successfully",
+      });
+    },
+    onError: (error: any) => {
+      console.error('Failed to create vendor:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create vendor",
+        variant: "destructive",
+      });
+    },
+  });
+};
+
 // Invoices hooks
 export const useInvoices = () => {
   return useQuery({
@@ -131,11 +269,48 @@ export const useInvoices = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('invoices')
-        .select('*')
+        .select(`
+          *,
+          client:clients(*),
+          project:projects(*)
+        `)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
       return data;
+    },
+  });
+};
+
+export const useCreateInvoice = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (invoiceData: any) => {
+      const { data, error } = await supabase
+        .from('invoices')
+        .insert([invoiceData])
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      toast({
+        title: "Success",
+        description: "Invoice created successfully",
+      });
+    },
+    onError: (error: any) => {
+      console.error('Failed to create invoice:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create invoice",
+        variant: "destructive",
+      });
     },
   });
 };
@@ -147,11 +322,81 @@ export const usePurchaseOrders = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('purchase_orders')
-        .select('*')
+        .select(`
+          *,
+          vendor:vendors(*),
+          project:projects(*)
+        `)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
       return data;
+    },
+  });
+};
+
+export const useCreatePurchaseOrder = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (poData: any) => {
+      const { data, error } = await supabase
+        .from('purchase_orders')
+        .insert([poData])
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
+      toast({
+        title: "Success",
+        description: "Purchase order created successfully",
+      });
+    },
+    onError: (error: any) => {
+      console.error('Failed to create purchase order:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create purchase order",
+        variant: "destructive",
+      });
+    },
+  });
+};
+
+// Client Invites hooks
+export const useCreateClientInvite = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (inviteData: any) => {
+      const { data, error } = await supabase
+        .from('client_invites')
+        .insert([inviteData])
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Client invitation sent successfully",
+      });
+    },
+    onError: (error: any) => {
+      console.error('Failed to send client invite:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to send client invitation",
+        variant: "destructive",
+      });
     },
   });
 };
