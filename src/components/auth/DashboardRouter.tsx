@@ -4,8 +4,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import Index from '@/pages/Index';
-import Vendors from '@/components/psa/Vendors';
-import Timesheets from '@/components/psa/Timesheets';
+import VendorDashboard from '@/components/dashboards/VendorDashboard';
+import EmployeeDashboard from '@/components/dashboards/EmployeeDashboard';
 import UnauthorizedAccess from '@/components/auth/UnauthorizedAccess';
 
 const DashboardRouter: React.FC = () => {
@@ -61,17 +61,17 @@ const DashboardRouter: React.FC = () => {
   
   console.log('DashboardRouter - User role:', userRole, 'Profile:', profile);
 
-  // Route based on role - FIXED LOGIC
+  // Route based on role
   switch (userRole) {
     case 'admin':
       return <Index />; // Full PSA dashboard with all modules
     
     case 'vendor':
-      return <Vendors />; // Vendor management page only
+      return <VendorDashboard />; // Vendor portal with sign-out
     
     case 'employee':
     case 'user': // fallback for existing users
-      return <Timesheets />; // Timesheet entry page only
+      return <EmployeeDashboard />; // Employee portal with sign-out
     
     default:
       return <UnauthorizedAccess reason={`Unknown role: ${userRole}. Please contact support.`} />;
