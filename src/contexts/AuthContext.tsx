@@ -115,6 +115,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setLoading(true);
       console.log('Starting Microsoft sign in with role:', role, 'for email:', email);
       
+      // Store the selected role temporarily in sessionStorage for OAuth callback
+      if (role) {
+        sessionStorage.setItem('selectedRole', role);
+      }
+      
       // Determine if this is a work/school account or personal account
       const isWorkAccount = email && !email.includes('@gmail.com') && !email.includes('@outlook.com') && !email.includes('@hotmail.com') && !email.includes('@live.com');
       
@@ -128,10 +133,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             domain_hint: isWorkAccount ? 'organizations' : 'consumers',
             ...(email && { login_hint: email })
           },
-          scopes: 'openid email profile User.Read',
-          data: {
-            user_role: role || 'employee'
-          }
+          scopes: 'openid email profile User.Read'
         }
       });
       
