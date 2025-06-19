@@ -5,10 +5,9 @@ import SimplifiedLoginPage from './SimplifiedLoginPage';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  requiredRole?: string;
 }
 
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRole }) => {
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const { user, loading } = useAuth();
 
   console.log('ProtectedRoute - loading:', loading, 'user:', user?.email);
