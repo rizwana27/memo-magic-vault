@@ -8,8 +8,8 @@ interface AuthContextType {
   session: Session | null;
   loading: boolean;
   signInWithEmail: (email: string, password: string) => Promise<{ error?: any }>;
-  signUpWithEmail: (email: string, password: string) => Promise<{ error?: any }>;
-  signInWithMicrosoft: (email?: string) => Promise<void>;
+  signUpWithEmail: (email: string, password: string, role?: string) => Promise<{ error?: any }>;
+  signInWithMicrosoft: (email?: string, role?: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -80,16 +80,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const signUpWithEmail = async (email: string, password: string) => {
+  const signUpWithEmail = async (email: string, password: string, role?: string) => {
     try {
       setLoading(true);
-      console.log('Starting email sign up for:', email);
+      console.log('Starting email sign up for:', email, 'with role:', role);
       
       const { error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           emailRedirectTo: `${window.location.origin}/auth/callback`,
+          data: {
+            user_role: role || 'employee'
+          }
         }
       });
       
@@ -107,10 +110,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const signInWithMicrosoft = async (email?: string) => {
+  const signInWithMicrosoft = async (email?: string, role?: string) => {
     try {
       setLoading(true);
-      console.log('Starting Microsoft sign in with MFA for email:', email);
+      console.log('Starting Microsoft sign in with role:', role, 'for email:', email);
       
       // Determine if this is a work/school account or personal account
       const isWorkAccount = email && !email.includes('@gmail.com') && !email.includes('@outlook.com') && !email.includes('@hotmail.com') && !email.includes('@live.com');
@@ -120,12 +123,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         options: {
           redirectTo: `${window.location.origin}/auth/callback`,
           queryParams: {
-            prompt: 'login', // Force login prompt to ensure fresh authentication
-            acr_values: 'urn:microsoft:req:auth:mfa', // Force MFA requirement
+            prompt: 'login',
+            acr_values: 'urn:microsoft:req:auth:mfa',
             domain_hint: isWorkAccount ? 'organizations' : 'consumers',
             ...(email && { login_hint: email })
           },
-          scopes: 'openid email profile User.Read'
+          scopes: 'openid email profile User.Read',
+          data: {
+            user_role: role || 'employee'
+          }
         }
       });
       

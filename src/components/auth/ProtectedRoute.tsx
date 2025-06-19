@@ -1,7 +1,8 @@
 
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import SimplifiedLoginPage from './SimplifiedLoginPage';
+import AuthFlow from './AuthFlow';
+import DashboardRouter from './DashboardRouter';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -24,12 +25,12 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   }
 
   if (!user) {
-    console.log('No user found, showing simplified login page');
-    return <SimplifiedLoginPage />;
+    console.log('No user found, showing auth flow');
+    return <AuthFlow />;
   }
 
-  console.log('User authenticated, showing protected content');
-  return <>{children}</>;
+  console.log('User authenticated, showing role-based dashboard');
+  return <DashboardRouter />;
 };
 
 export default ProtectedRoute;

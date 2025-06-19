@@ -222,6 +222,7 @@ export type Database = {
           role: string | null
           timezone: string | null
           updated_at: string | null
+          user_role: string | null
         }
         Insert: {
           avatar_url?: string | null
@@ -237,6 +238,7 @@ export type Database = {
           role?: string | null
           timezone?: string | null
           updated_at?: string | null
+          user_role?: string | null
         }
         Update: {
           avatar_url?: string | null
@@ -252,6 +254,7 @@ export type Database = {
           role?: string | null
           timezone?: string | null
           updated_at?: string | null
+          user_role?: string | null
         }
         Relationships: []
       }
@@ -583,6 +586,10 @@ export type Database = {
       get_user_role: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      has_user_role: {
+        Args: { required_role: string }
+        Returns: boolean
       }
       is_admin: {
         Args: Record<PropertyKey, never>
