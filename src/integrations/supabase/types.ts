@@ -50,6 +50,8 @@ export type Database = {
           company_name: string
           created_at: string | null
           created_by: string | null
+          external_id: string | null
+          external_source: string | null
           industry: string | null
           notes: string | null
           phone_number: string | null
@@ -66,6 +68,8 @@ export type Database = {
           company_name: string
           created_at?: string | null
           created_by?: string | null
+          external_id?: string | null
+          external_source?: string | null
           industry?: string | null
           notes?: string | null
           phone_number?: string | null
@@ -82,6 +86,8 @@ export type Database = {
           company_name?: string
           created_at?: string | null
           created_by?: string | null
+          external_id?: string | null
+          external_source?: string | null
           industry?: string | null
           notes?: string | null
           phone_number?: string | null
@@ -505,6 +511,8 @@ export type Database = {
           contract_start_date: string | null
           created_at: string | null
           created_by: string | null
+          external_id: string | null
+          external_source: string | null
           notes: string | null
           phone_number: string | null
           services_offered: string
@@ -521,6 +529,8 @@ export type Database = {
           contract_start_date?: string | null
           created_at?: string | null
           created_by?: string | null
+          external_id?: string | null
+          external_source?: string | null
           notes?: string | null
           phone_number?: string | null
           services_offered: string
@@ -537,6 +547,8 @@ export type Database = {
           contract_start_date?: string | null
           created_at?: string | null
           created_by?: string | null
+          external_id?: string | null
+          external_source?: string | null
           notes?: string | null
           phone_number?: string | null
           services_offered?: string

@@ -153,7 +153,7 @@ export const useCreateClientApi = () => {
           .select('client_id')
           .eq('external_source', clientData.external_source)
           .eq('external_id', clientData.external_id)
-          .single();
+          .maybeSingle();
           
         if (existingClient) {
           throw new Error(`Client already imported from ${clientData.external_source}`);
@@ -357,7 +357,7 @@ export const useCreateVendorApi = () => {
           .select('vendor_id')
           .eq('external_source', vendorData.external_source)
           .eq('external_id', vendorData.external_id)
-          .single();
+          .maybeSingle();
           
         if (existingVendor) {
           throw new Error(`Vendor already imported from ${vendorData.external_source}`);

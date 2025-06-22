@@ -196,11 +196,11 @@ const Vendors = () => {
                 <div className="flex justify-between items-start">
                   <div className="flex items-center gap-2">
                     <CardTitle className="text-white text-lg">{vendor.vendor_name}</CardTitle>
-                    {vendor.external_source && (
+                    {(vendor as any).external_source && (
                       <div className="flex items-center gap-1">
                         <ExternalLink className="w-4 h-4 text-blue-400" />
                         <Badge variant="outline" className="text-xs border-blue-400 text-blue-400">
-                          {vendor.external_source}
+                          {(vendor as any).external_source}
                         </Badge>
                       </div>
                     )}
@@ -241,10 +241,10 @@ const Vendors = () => {
                     </div>
                   )}
                   
-                  {vendor.external_source && vendor.external_id && (
+                  {(vendor as any).external_source && (vendor as any).external_id && (
                     <div className="text-xs text-blue-400 flex items-center gap-1">
                       <ExternalLink className="w-3 h-3" />
-                      Imported from {vendor.external_source} (ID: {vendor.external_id})
+                      Imported from {(vendor as any).external_source} (ID: {(vendor as any).external_id})
                     </div>
                   )}
                 </div>
