@@ -850,3 +850,136 @@ export const useBulkCreateTimesheets = () => {
     }
   });
 };
+
+// New API endpoint: Get resource allocations for a project
+export const useProjectResources = (projectId?: string) => {
+  return useQuery({
+    queryKey: ['project-resources', projectId],
+    queryFn: async () => {
+      if (!projectId) return [];
+
+      const { data, error } = await supabase
+        .from('timesheets')
+        .select(`
+          created_by,
+          hours,
+          resources (
+            resource_id,
+            full_name,
+            department,
+            role
+          )
+        `)
+        .eq('project_id', projectId);
+
+      if (error) throw error;
+
+      // Aggregate resource allocations
+      const resourceMap = new Map();
+      data?.forEach(timesheet => {
+        const resourceId = timesheet.created_by;
+        if (!resourceMap.has(resourceId)) {
+          resourceMap.set(resourceId, {
+            ...timesheet.resources,
+            totalHours: 0
+          });
+        }
+        resourceMap.get(resourceId).totalHours += timesheet.hours || 0;
+      });
+
+      return Array.from(resourceMap.values());
+    },
+    enabled: !!projectId,
+  });
+};
+
+// New API endpoint: Get resource utilization data
+export const useResourcesUtilization = () => {
+  return useQuery({
+    queryKey: ['resources-utilization'],
+    queryFn: async () => {
+      // Get all resources
+      const { data: resources, error: resourcesError } = await supabase
+        .from('resources')
+        .select('*');
+
+      if (resourcesError) throw resourcesError;
+
+      // Get timesheets for the last 30 days
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      const { data: timesheets, error: timesheetsError } = await supabase
+        .from('timesheets')
+        .select('*')
+        .gte('date', thirtyDaysAgo);
+
+      if (timesheetsError) throw timesheetsError;
+
+      // Calculate utilization for each resource
+      const utilizationData = resources?.map(resource => {
+        const resourceTimesheets = timesheets?.filter(ts => ts.created_by === resource.resource_id) || [];
+        const totalHours = resourceTimesheets.reduce((sum, ts) => sum + (ts.hours || 0), 0);
+        const billableHours = resourceTimesheets
+          .filter(ts => ts.billable)
+          .reduce((sum, ts) => sum + (ts.hours || 0), 0);
+
+        const expectedHours = 22 * 8 * (resource.availability || 100) / 100; // 22 working days, 8 hours per day
+        const utilizationPercentage = expectedHours > 0 ? (billableHours / expectedHours) * 100 : 0;
+
+        return {
+          ...resource,
+          totalHours,
+          billableHours,
+          expectedHours,
+          utilizationPercentage: Math.round(utilizationPercentage),
+        };
+      }) || [];
+
+      return utilizationData;
+    },
+  });
+};
+
+// New API endpoint: Get resource allocation matrix
+export const useResourceAllocations = () => {
+  return useQuery({
+    queryKey: ['resource-allocations'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('timesheets')
+        .select(`
+          project_id,
+          created_by,
+          hours,
+          projects (
+            project_name
+          ),
+          resources (
+            full_name,
+            department
+          )
+        `)
+        .gte('date', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
+
+      if (error) throw error;
+
+      // Create allocation matrix
+      const allocationMatrix = data?.reduce((matrix, timesheet) => {
+        const key = `${timesheet.created_by}-${timesheet.project_id}`;
+        if (!matrix[key]) {
+          matrix[key] = {
+            resourceName: timesheet.resources?.full_name,
+            department: timesheet.resources?.department,
+            projectName: timesheet.projects?.project_name,
+            projectId: timesheet.project_id,
+            resourceId: timesheet.created_by,
+            totalHours: 0,
+          };
+        }
+        matrix[key].totalHours += timesheet.hours || 0;
+        return matrix;
+      }, {} as Record<string, any>) || {};
+
+      return Object.values(allocationMatrix);
+    },
+  });
+};

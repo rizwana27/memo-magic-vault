@@ -21,6 +21,7 @@ import { useProjects, useClients, useResources, useTimesheets, useInvoices, useC
 import NewProjectForm from './forms/NewProjectForm';
 import NewResourceForm from './forms/NewResourceForm';
 import ClientInviteForm from './forms/ClientInviteForm';
+import KPICards from './KPICards';
 
 interface DashboardProps {
   onTabChange?: (tab: string) => void;
@@ -98,7 +99,10 @@ const Dashboard: React.FC<DashboardProps> = ({ onTabChange }) => {
         </div>
       </div>
 
-      {/* KPI Cards */}
+      {/* Enhanced KPI Cards */}
+      <KPICards />
+
+      {/* Traditional KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card className="bg-blue-100/10 border-blue-400/30 backdrop-blur-sm hover:bg-blue-100/15 transition-all duration-200">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
