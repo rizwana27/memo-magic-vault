@@ -1,15 +1,14 @@
 
 import React, { useState } from 'react';
-import PSALayout from '@/components/psa/PSALayout';
+import TopNavLayout from '@/components/psa/TopNavLayout';
 import Dashboard from '@/components/psa/Dashboard';
 import Projects from '@/components/psa/Projects';
 import Clients from '@/components/psa/Clients';
 import Resources from '@/components/psa/Resources';
 import Timesheets from '@/components/psa/Timesheets';
-import Vendors from '@/components/psa/Vendors';
 import Financial from '@/components/psa/Financial';
+import Vendors from '@/components/psa/Vendors';
 import Reports from '@/components/psa/Reports';
-import APIStatusDashboard from '@/components/psa/APIStatusDashboard';
 import Settings from '@/components/psa/Settings';
 
 const Index = () => {
@@ -18,7 +17,7 @@ const Index = () => {
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard':
-        return <Dashboard />;
+        return <Dashboard onTabChange={setActiveTab} />;
       case 'projects':
         return <Projects />;
       case 'clients':
@@ -27,25 +26,23 @@ const Index = () => {
         return <Resources />;
       case 'timesheets':
         return <Timesheets />;
-      case 'vendors':
-        return <Vendors />;
       case 'financial':
         return <Financial />;
+      case 'vendors':
+        return <Vendors />;
       case 'reports':
         return <Reports />;
-      case 'api-status':
-        return <APIStatusDashboard />;
       case 'settings':
         return <Settings />;
       default:
-        return <Dashboard />;
+        return <Dashboard onTabChange={setActiveTab} />;
     }
   };
 
   return (
-    <PSALayout activeTab={activeTab} onTabChange={setActiveTab}>
+    <TopNavLayout activeTab={activeTab} onTabChange={setActiveTab}>
       {renderContent()}
-    </PSALayout>
+    </TopNavLayout>
   );
 };
 

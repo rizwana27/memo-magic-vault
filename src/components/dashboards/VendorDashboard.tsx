@@ -11,7 +11,6 @@ const VendorDashboard: React.FC = () => {
   const handleSignOut = async () => {
     try {
       await signOut();
-      // Redirect will be handled by the auth state change in the router
     } catch (error) {
       console.error('Error signing out:', error);
     }

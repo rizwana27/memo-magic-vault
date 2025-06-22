@@ -18,8 +18,7 @@ import {
   Building,
   TrendingUp,
   ChevronLeft,
-  ChevronRight,
-  Zap
+  ChevronRight
 } from 'lucide-react';
 
 interface PSALayoutProps {
@@ -42,7 +41,6 @@ const PSALayout: React.FC<PSALayoutProps> = ({ children, activeTab, onTabChange 
     { icon: Building, label: 'Vendors', key: 'vendors' },
     { icon: DollarSign, label: 'Financial', key: 'financial' },
     { icon: TrendingUp, label: 'Reports', key: 'reports' },
-    { icon: Zap, label: 'API Status', key: 'api-status' },
     { icon: Settings, label: 'Settings', key: 'settings' }
   ];
 
