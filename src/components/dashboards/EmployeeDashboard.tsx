@@ -1,18 +1,28 @@
-
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { LogOut } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 import Timesheets from '@/components/psa/Timesheets';
 
 const EmployeeDashboard: React.FC = () => {
   const { user, signOut } = useAuth();
+  const { toast } = useToast();
 
   const handleSignOut = async () => {
     try {
+      toast({
+        title: "Signing out...",
+        description: "You've been signed out successfully 👋",
+      });
       await signOut();
     } catch (error) {
       console.error('Error signing out:', error);
+      toast({
+        title: "Sign out completed",
+        description: "You've been signed out 👋",
+        variant: "default",
+      });
     }
   };
 

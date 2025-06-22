@@ -1,7 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
 import { 
   LayoutDashboard, 
   FolderOpen, 
@@ -32,6 +32,7 @@ interface TopNavLayoutProps {
 
 const TopNavLayout: React.FC<TopNavLayoutProps> = ({ children, activeTab, onTabChange }) => {
   const { user, signOut } = useAuth();
+  const { toast } = useToast();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [notificationOpen, setNotificationOpen] = useState(false);
@@ -77,6 +78,25 @@ const TopNavLayout: React.FC<TopNavLayoutProps> = ({ children, activeTab, onTabC
   const handleMarkAllSeen = async () => {
     if (unseenCount > 0) {
       await markAllNotificationsSeen.mutateAsync();
+    }
+  };
+
+  const handleSignOut = async () => {
+    try {
+      toast({
+        title: "Signing out...",
+        description: "You've been signed out successfully 👋",
+      });
+      setUserMenuOpen(false);
+      setMobileMenuOpen(false);
+      await signOut();
+    } catch (error) {
+      console.error('Error signing out:', error);
+      toast({
+        title: "Sign out completed",
+        description: "You've been signed out 👋",
+        variant: "default",
+      });
     }
   };
 
@@ -282,10 +302,7 @@ const TopNavLayout: React.FC<TopNavLayoutProps> = ({ children, activeTab, onTabC
 
                     <div className="border-t border-gray-700 pt-2">
                       <button
-                        onClick={() => {
-                          signOut();
-                          setUserMenuOpen(false);
-                        }}
+                        onClick={handleSignOut}
                         className="w-full flex items-center space-x-3 px-4 py-3 text-left text-red-400 hover:bg-red-600/10 hover:text-red-300 transition-colors"
                       >
                         <LogOut className="h-4 w-4 flex-shrink-0" />
@@ -335,10 +352,7 @@ const TopNavLayout: React.FC<TopNavLayoutProps> = ({ children, activeTab, onTabC
               {/* Mobile Sign Out */}
               <div className="border-t border-gray-700/50 pt-4">
                 <button
-                  onClick={() => {
-                    signOut();
-                    setMobileMenuOpen(false);
-                  }}
+                  onClick={handleSignOut}
                   className="w-full flex items-center space-x-3 px-3 py-3 rounded-xl text-red-400 hover:bg-red-600/10 hover:text-red-300 transition-colors"
                 >
                   <LogOut className="h-4 w-4" />

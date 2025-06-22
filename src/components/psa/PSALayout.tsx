@@ -1,7 +1,7 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
 import { 
   LayoutDashboard, 
   FolderOpen, 
@@ -29,8 +29,26 @@ interface PSALayoutProps {
 
 const PSALayout: React.FC<PSALayoutProps> = ({ children, activeTab, onTabChange }) => {
   const { user, signOut } = useAuth();
+  const { toast } = useToast();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  const handleSignOut = async () => {
+    try {
+      toast({
+        title: "Signing out...",
+        description: "You've been signed out successfully 👋",
+      });
+      await signOut();
+    } catch (error) {
+      console.error('Error signing out:', error);
+      toast({
+        title: "Sign out completed",
+        description: "You've been signed out 👋",
+        variant: "default",
+      });
+    }
+  };
 
   const menuItems = [
     { icon: LayoutDashboard, label: 'Dashboard', key: 'dashboard' },
@@ -141,7 +159,7 @@ const PSALayout: React.FC<PSALayoutProps> = ({ children, activeTab, onTabChange 
               </div>
             )}
             <Button
-              onClick={signOut}
+              onClick={handleSignOut}
               variant="outline"
               size={sidebarCollapsed ? "icon" : "sm"}
               className="w-full bg-red-600/10 border-red-500/30 text-red-400 hover:bg-red-600/20 hover:text-red-300 hover:border-red-400/50 transition-all duration-200 shadow-md"
