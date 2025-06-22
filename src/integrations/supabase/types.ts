@@ -268,6 +268,8 @@ export type Database = {
           delivery_status: string | null
           description: string | null
           end_date: string | null
+          external_id: string | null
+          external_source: string | null
           project_id: string
           project_manager: string | null
           project_name: string
@@ -286,6 +288,8 @@ export type Database = {
           delivery_status?: string | null
           description?: string | null
           end_date?: string | null
+          external_id?: string | null
+          external_source?: string | null
           project_id: string
           project_manager?: string | null
           project_name: string
@@ -304,6 +308,8 @@ export type Database = {
           delivery_status?: string | null
           description?: string | null
           end_date?: string | null
+          external_id?: string | null
+          external_source?: string | null
           project_id?: string
           project_manager?: string | null
           project_name?: string

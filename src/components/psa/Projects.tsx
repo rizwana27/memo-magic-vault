@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog } from '@/components/ui/dialog';
-import { Plus, Search, Filter, Calendar, Users, DollarSign } from 'lucide-react';
+import { Plus, Search, Filter, Calendar, Users, DollarSign, ExternalLink } from 'lucide-react';
 import { useProjectsApi, useCreateProjectApi } from '@/hooks/useApiIntegration';
 import NewProjectForm from './forms/NewProjectForm';
 import ProjectDetailModal from './modals/ProjectDetailModal';
@@ -51,8 +51,14 @@ const Projects = () => {
     try {
       await createProject.mutateAsync(data);
       setShowNewProjectModal(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating project:', error);
+      // Show user-friendly error message
+      if (error.message?.includes('already imported')) {
+        alert(`Error: ${error.message}`);
+      } else {
+        alert('Failed to create project. Please try again.');
+      }
     }
   };
 
@@ -132,7 +138,12 @@ const Projects = () => {
                 >
                   <CardHeader>
                     <div className="flex justify-between items-start">
-                      <CardTitle className="text-white text-lg">{project.project_name}</CardTitle>
+                      <div className="flex items-center gap-2">
+                        <CardTitle className="text-white text-lg">{project.project_name}</CardTitle>
+                        {project.external_source && (
+                          <ExternalLink className="w-4 h-4 text-blue-400" title={`Imported from ${project.external_source}`} />
+                        )}
+                      </div>
                       <Badge className={`${getStatusColor(project.status)} text-white`}>
                         {project.status?.replace('_', ' ') || 'Unknown'}
                       </Badge>
@@ -157,6 +168,13 @@ const Projects = () => {
                           {project.budget ? `$${project.budget.toLocaleString()}` : 'No budget'}
                         </div>
                       </div>
+                      
+                      {project.external_source && (
+                        <div className="text-xs text-blue-400 flex items-center gap-1">
+                          <ExternalLink className="w-3 h-3" />
+                          Imported from {project.external_source}
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>

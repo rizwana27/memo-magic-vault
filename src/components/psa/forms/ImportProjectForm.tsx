@@ -105,18 +105,21 @@ const mockExternalProjects: Record<string, ExternalProject[]> = {
 const ImportProjectForm = ({ onSubmit, onCancel }: ImportProjectFormProps) => {
   const [selectedSource, setSelectedSource] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState('');
-  const [searchResults, setSearchResults] = useState<ExternalProject[]>([]);
+  const [availableProjects, setAvailableProjects] = useState<ExternalProject[]>([]);
   const [selectedProject, setSelectedProject] = useState<ExternalProject | null>(null);
   const [isSearching, setIsSearching] = useState(false);
 
   const handleSourceChange = (source: string) => {
     setSelectedSource(source);
     setSearchTerm('');
-    setSearchResults([]);
     setSelectedProject(null);
+    
+    // Automatically load projects for the selected source
+    const sourceProjects = mockExternalProjects[source] || [];
+    setAvailableProjects(sourceProjects);
   };
 
-  const handleSearch = async () => {
+  const handleSearch = () => {
     if (!selectedSource || !searchTerm.trim()) return;
     
     setIsSearching(true);
@@ -130,7 +133,7 @@ const ImportProjectForm = ({ onSubmit, onCancel }: ImportProjectFormProps) => {
         project.client.toLowerCase().includes(searchTerm.toLowerCase())
       );
       
-      setSearchResults(filteredResults);
+      setAvailableProjects(filteredResults);
       setIsSearching(false);
     }, 1000);
   };
@@ -207,7 +210,7 @@ const ImportProjectForm = ({ onSubmit, onCancel }: ImportProjectFormProps) => {
         {/* Search */}
         {selectedSource && (
           <div>
-            <Label htmlFor="search">Search Projects</Label>
+            <Label htmlFor="search">Search Projects (Optional)</Label>
             <div className="flex gap-2 mt-1">
               <Input
                 id="search"
@@ -229,12 +232,12 @@ const ImportProjectForm = ({ onSubmit, onCancel }: ImportProjectFormProps) => {
           </div>
         )}
 
-        {/* Search Results */}
-        {searchResults.length > 0 && (
+        {/* Available Projects */}
+        {selectedSource && availableProjects.length > 0 && (
           <div>
-            <Label>Search Results ({searchResults.length} found)</Label>
+            <Label>Available Projects ({availableProjects.length} found)</Label>
             <div className="grid gap-3 mt-2 max-h-64 overflow-y-auto">
-              {searchResults.map((project) => (
+              {availableProjects.map((project) => (
                 <Card 
                   key={project.id}
                   className={`cursor-pointer transition-all hover:bg-gray-700/50 ${
@@ -242,7 +245,6 @@ const ImportProjectForm = ({ onSubmit, onCancel }: ImportProjectFormProps) => {
                       ? 'bg-blue-600/20 border-blue-400' 
                       : 'bg-gray-800/50 border-gray-600'
                   }`}
-                  onClick={() => handleProjectSelect(project)}
                 >
                   <CardContent className="p-4">
                     <div className="flex justify-between items-start mb-2">
@@ -257,7 +259,7 @@ const ImportProjectForm = ({ onSubmit, onCancel }: ImportProjectFormProps) => {
                     <p className="text-sm text-gray-300 mb-3 line-clamp-2">
                       {project.description}
                     </p>
-                    <div className="flex items-center justify-between text-xs text-gray-400">
+                    <div className="flex items-center justify-between text-xs text-gray-400 mb-3">
                       <div className="flex items-center gap-4">
                         <span className="flex items-center gap-1">
                           <User className="w-3 h-3" />
@@ -271,10 +273,18 @@ const ImportProjectForm = ({ onSubmit, onCancel }: ImportProjectFormProps) => {
                       <span className="text-blue-300">{project.source}</span>
                     </div>
                     {project.startDate && (
-                      <div className="mt-2 text-xs text-gray-400">
+                      <div className="mb-3 text-xs text-gray-400">
                         Timeline: {new Date(project.startDate).toLocaleDateString()} - {project.endDate ? new Date(project.endDate).toLocaleDateString() : 'Ongoing'}
                       </div>
                     )}
+                    <Button
+                      onClick={() => handleProjectSelect(project)}
+                      variant={selectedProject?.id === project.id ? "default" : "outline"}
+                      size="sm"
+                      className="w-full"
+                    >
+                      {selectedProject?.id === project.id ? 'Selected' : 'Select to Import'}
+                    </Button>
                   </CardContent>
                 </Card>
               ))}
@@ -332,11 +342,11 @@ const ImportProjectForm = ({ onSubmit, onCancel }: ImportProjectFormProps) => {
           </div>
         )}
 
-        {searchResults.length === 0 && searchTerm && !isSearching && selectedSource && (
+        {selectedSource && availableProjects.length === 0 && !isSearching && (
           <div className="text-center py-8 text-gray-400">
             <Search className="w-12 h-12 mx-auto mb-4 opacity-50" />
-            <p>No projects found matching "{searchTerm}"</p>
-            <p className="text-sm">Try adjusting your search terms</p>
+            <p>No projects found{searchTerm ? ` matching "${searchTerm}"` : ' in this source'}</p>
+            <p className="text-sm">Try adjusting your search terms or check another source</p>
           </div>
         )}
       </div>
