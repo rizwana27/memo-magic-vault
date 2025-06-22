@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,6 +10,7 @@ import { useProjectsApi, useCreateProjectApi } from '@/hooks/useApiIntegration';
 import NewProjectForm from './forms/NewProjectForm';
 import ProjectDetailModal from './modals/ProjectDetailModal';
 import ProjectCreationModal from './forms/ProjectCreationModal';
+import { toast } from 'react-toastify';
 
 const Projects = () => {
   const { data: projects, isLoading } = useProjectsApi();
@@ -48,18 +48,35 @@ const Projects = () => {
   ) || [];
 
   const handleNewProject = async (data: any) => {
-    console.log('Creating new project:', data);
+    console.log('Creating new project with data:', data);
+    
     try {
       await createProject.mutateAsync(data);
       setShowNewProjectModal(false);
+      
+      toast({
+        title: "Project Created",
+        description: `Project "${data.project_name}" has been created successfully.`,
+      });
     } catch (error: any) {
       console.error('Error creating project:', error);
-      // Show user-friendly error message
+      
+      // Provide detailed error information
+      let errorMessage = 'Failed to create project. Please try again.';
+      
       if (error.message?.includes('already imported')) {
-        alert(`Error: ${error.message}`);
-      } else {
-        alert('Failed to create project. Please try again.');
+        errorMessage = `Error: ${error.message}`;
+      } else if (error.message?.includes('external_id')) {
+        errorMessage = 'Database error: Missing external project information. Please contact support.';
+      } else if (error.message) {
+        errorMessage = `Error: ${error.message}`;
       }
+      
+      toast({
+        title: "Project Creation Failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
     }
   };
 
@@ -142,7 +159,12 @@ const Projects = () => {
                       <div className="flex items-center gap-2">
                         <CardTitle className="text-white text-lg">{project.project_name}</CardTitle>
                         {project.external_source && (
-                          <ExternalLink className="w-4 h-4 text-blue-400" />
+                          <div className="flex items-center gap-1">
+                            <ExternalLink className="w-4 h-4 text-blue-400" />
+                            <Badge variant="outline" className="text-xs border-blue-400 text-blue-400">
+                              {project.external_source}
+                            </Badge>
+                          </div>
                         )}
                       </div>
                       <Badge className={`${getStatusColor(project.status)} text-white`}>
@@ -170,10 +192,10 @@ const Projects = () => {
                         </div>
                       </div>
                       
-                      {project.external_source && (
+                      {project.external_source && project.external_id && (
                         <div className="text-xs text-blue-400 flex items-center gap-1">
                           <ExternalLink className="w-3 h-3" />
-                          Imported from {project.external_source}
+                          Imported from {project.external_source} (ID: {project.external_id})
                         </div>
                       )}
                     </div>

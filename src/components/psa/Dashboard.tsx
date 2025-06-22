@@ -67,30 +67,40 @@ const Dashboard: React.FC<DashboardProps> = ({ onTabChange }) => {
 
   const handleAddProject = () => {
     if (onTabChange) {
+      // Navigate to projects page and trigger modal
       onTabChange('projects');
       setTimeout(() => {
         window.dispatchEvent(new CustomEvent('openProjectModal'));
       }, 100);
     } else {
+      // Show modal directly on dashboard
       setShowProjectForm(true);
     }
   };
 
   const handleAddResource = () => {
     if (onTabChange) {
+      // Navigate to resources page and trigger modal
       onTabChange('resources');
       setTimeout(() => {
         window.dispatchEvent(new CustomEvent('openResourceModal'));
       }, 100);
     } else {
+      // Show modal directly on dashboard
       setShowResourceForm(true);
     }
   };
 
   const handleCreateProject = async (data: any) => {
     try {
+      console.log('Creating project from dashboard:', data);
       await createProject.mutateAsync(data);
       setShowProjectForm(false);
+      
+      toast({
+        title: "Project Created",
+        description: `Project "${data.project_name}" has been created successfully.`,
+      });
       
       // Send notification email if needed
       if (data.project_manager_email) {
@@ -102,8 +112,21 @@ const Dashboard: React.FC<DashboardProps> = ({ onTabChange }) => {
           relatedId: data.project_id
         });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating project:', error);
+      
+      let errorMessage = 'Failed to create project. Please try again.';
+      if (error.message?.includes('already imported')) {
+        errorMessage = `Error: ${error.message}`;
+      } else if (error.message) {
+        errorMessage = `Error: ${error.message}`;
+      }
+      
+      toast({
+        title: "Project Creation Failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
     }
   };
 
@@ -367,12 +390,14 @@ const Dashboard: React.FC<DashboardProps> = ({ onTabChange }) => {
         </Card>
       </div>
 
-      {/* Modal Forms */}
-      <ProjectCreationModal
-        open={showProjectForm}
-        onOpenChange={setShowProjectForm}
-        onSubmit={handleCreateProject}
-      />
+      {/* Modal Forms - Only show when explicitly requested */}
+      {showProjectForm && (
+        <ProjectCreationModal
+          open={showProjectForm}
+          onOpenChange={setShowProjectForm}
+          onSubmit={handleCreateProject}
+        />
+      )}
       
       {showResourceForm && (
         <NewResourceForm

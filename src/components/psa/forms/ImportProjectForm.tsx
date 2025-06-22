@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,8 +5,9 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Search, ExternalLink, Calendar, User, CheckCircle } from 'lucide-react';
+import { Search, ExternalLink, Calendar, User, CheckCircle, AlertCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface ImportProjectFormProps {
   onSubmit: (data: any) => void;
@@ -108,14 +108,19 @@ const ImportProjectForm = ({ onSubmit, onCancel }: ImportProjectFormProps) => {
   const [availableProjects, setAvailableProjects] = useState<ExternalProject[]>([]);
   const [selectedProject, setSelectedProject] = useState<ExternalProject | null>(null);
   const [isSearching, setIsSearching] = useState(false);
+  const [error, setError] = useState<string>('');
 
   const handleSourceChange = (source: string) => {
     setSelectedSource(source);
     setSearchTerm('');
     setSelectedProject(null);
+    setError('');
+    
+    console.log('Loading projects for source:', source);
     
     // Automatically load projects for the selected source
     const sourceProjects = mockExternalProjects[source] || [];
+    console.log('Found projects:', sourceProjects.length);
     setAvailableProjects(sourceProjects);
   };
 
@@ -123,6 +128,9 @@ const ImportProjectForm = ({ onSubmit, onCancel }: ImportProjectFormProps) => {
     if (!selectedSource || !searchTerm.trim()) return;
     
     setIsSearching(true);
+    setError('');
+    
+    console.log('Searching for:', searchTerm, 'in source:', selectedSource);
     
     // Simulate API call delay
     setTimeout(() => {
@@ -133,35 +141,51 @@ const ImportProjectForm = ({ onSubmit, onCancel }: ImportProjectFormProps) => {
         project.client.toLowerCase().includes(searchTerm.toLowerCase())
       );
       
+      console.log('Search results:', filteredResults.length);
       setAvailableProjects(filteredResults);
       setIsSearching(false);
     }, 1000);
   };
 
   const handleProjectSelect = (project: ExternalProject) => {
+    console.log('Selected project:', project);
     setSelectedProject(project);
+    setError('');
   };
 
   const handleImport = () => {
-    if (!selectedProject) return;
+    if (!selectedProject) {
+      setError('Please select a project to import');
+      return;
+    }
 
-    // Convert external project to our project format
-    const projectData = {
-      project_name: selectedProject.title,
-      description: selectedProject.description,
-      client_id: `external-${selectedProject.client.toLowerCase().replace(/\s+/g, '-')}`,
-      status: selectedProject.status.toLowerCase().replace(/\s+/g, '_'),
-      start_date: selectedProject.startDate || null,
-      end_date: selectedProject.endDate || null,
-      project_manager: selectedProject.owner,
-      delivery_status: 'incomplete',
-      tags: [`imported-from-${selectedSource}`, 'external-project'],
-      external_source: selectedProject.source,
-      external_id: selectedProject.id
-    };
+    try {
+      console.log('Starting import process for project:', selectedProject.title);
+      
+      // Convert external project to our project format with proper field mapping
+      const projectData = {
+        project_name: selectedProject.title,
+        description: selectedProject.description,
+        client_id: null, // Will be handled by the client creation process
+        status: selectedProject.status.toLowerCase().replace(/\s+/g, '_'),
+        start_date: selectedProject.startDate || null,
+        end_date: selectedProject.endDate || null,
+        project_manager: selectedProject.owner,
+        delivery_status: 'incomplete',
+        tags: [`imported-from-${selectedSource}`, 'external-project'],
+        external_source: selectedProject.source,
+        external_id: selectedProject.id,
+        budget: null,
+        region: null,
+        attachments: null
+      };
 
-    console.log('Importing project:', projectData);
-    onSubmit(projectData);
+      console.log('Submitting project data:', projectData);
+      onSubmit(projectData);
+    } catch (error: any) {
+      console.error('Import error:', error);
+      setError(`Failed to import project: ${error.message || 'Unknown error'}`);
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -186,6 +210,15 @@ const ImportProjectForm = ({ onSubmit, onCancel }: ImportProjectFormProps) => {
       </DialogHeader>
       
       <div className="space-y-6">
+        {error && (
+          <Alert className="border-red-600 bg-red-900/20">
+            <AlertCircle className="h-4 w-4 text-red-400" />
+            <AlertDescription className="text-red-200">
+              {error}
+            </AlertDescription>
+          </Alert>
+        )}
+
         {/* Source Selection */}
         <div>
           <Label htmlFor="source">Select Source *</Label>
@@ -324,8 +357,12 @@ const ImportProjectForm = ({ onSubmit, onCancel }: ImportProjectFormProps) => {
                     <span className="text-gray-400">Source:</span>
                     <p className="text-white">{selectedProject.source}</p>
                   </div>
+                  <div>
+                    <span className="text-gray-400">External ID:</span>
+                    <p className="text-white">{selectedProject.id}</p>
+                  </div>
                   {selectedProject.startDate && (
-                    <div className="col-span-2">
+                    <div className="col-span-1">
                       <span className="text-gray-400">Timeline:</span>
                       <p className="text-white">
                         {new Date(selectedProject.startDate).toLocaleDateString()} - {selectedProject.endDate ? new Date(selectedProject.endDate).toLocaleDateString() : 'Ongoing'}
