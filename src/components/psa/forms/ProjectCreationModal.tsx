@@ -23,9 +23,16 @@ const ProjectCreationModal = ({ open, onOpenChange, onSubmit }: ProjectCreationM
     onOpenChange(false);
   };
 
-  const handleSubmit = (data: any) => {
-    onSubmit(data);
-    handleClose();
+  const handleSubmit = async (data: any) => {
+    try {
+      await onSubmit(data);
+      // Reset mode and close modal after successful submission
+      setMode('selection');
+      onOpenChange(false);
+    } catch (error) {
+      // Error handling is done in the parent component
+      console.error('Project creation failed:', error);
+    }
   };
 
   const handleCancel = () => {

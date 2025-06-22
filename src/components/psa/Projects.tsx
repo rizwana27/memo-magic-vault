@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,7 +13,7 @@ import ProjectCreationModal from './forms/ProjectCreationModal';
 import { useToast } from '@/hooks/use-toast';
 
 const Projects = () => {
-  const { data: projects, isLoading } = useProjectsApi();
+  const { data: projects, isLoading, refetch } = useProjectsApi();
   const createProject = useCreateProjectApi();
   const [searchTerm, setSearchTerm] = useState('');
   const [showNewProjectModal, setShowNewProjectModal] = useState(false);
@@ -54,6 +53,11 @@ const Projects = () => {
     
     try {
       await createProject.mutateAsync(data);
+      
+      // Refetch projects to get the updated list
+      await refetch();
+      
+      // Close modal
       setShowNewProjectModal(false);
       
       toast({
