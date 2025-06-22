@@ -10,6 +10,8 @@ interface AuthContextType {
   signInWithEmail: (email: string, password: string) => Promise<{ error?: any }>;
   signUpWithEmail: (email: string, password: string, role?: string) => Promise<{ error?: any }>;
   signInWithMicrosoft: (email?: string, role?: string) => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
+  signInWithGitHub: () => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -148,6 +150,52 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const signInWithGoogle = async () => {
+    try {
+      setLoading(true);
+      console.log('Starting Google sign in');
+      
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        }
+      });
+      
+      if (error) {
+        console.error('Google sign in error:', error);
+        throw error;
+      }
+    } catch (error) {
+      console.error('Error signing in with Google:', error);
+      setLoading(false);
+      throw error;
+    }
+  };
+
+  const signInWithGitHub = async () => {
+    try {
+      setLoading(true);
+      console.log('Starting GitHub sign in');
+      
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'github',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        }
+      });
+      
+      if (error) {
+        console.error('GitHub sign in error:', error);
+        throw error;
+      }
+    } catch (error) {
+      console.error('Error signing in with GitHub:', error);
+      setLoading(false);
+      throw error;
+    }
+  };
+
   const signOut = async () => {
     try {
       console.log('Signing out...');
@@ -165,6 +213,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     signInWithEmail,
     signUpWithEmail,
     signInWithMicrosoft,
+    signInWithGoogle,
+    signInWithGitHub,
     signOut,
   };
 

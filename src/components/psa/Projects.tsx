@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -141,7 +142,7 @@ const Projects = () => {
                       <div className="flex items-center gap-2">
                         <CardTitle className="text-white text-lg">{project.project_name}</CardTitle>
                         {project.external_source && (
-                          <ExternalLink className="w-4 h-4 text-blue-400" title={`Imported from ${project.external_source}`} />
+                          <ExternalLink className="w-4 h-4 text-blue-400" />
                         )}
                       </div>
                       <Badge className={`${getStatusColor(project.status)} text-white`}>
