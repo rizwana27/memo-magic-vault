@@ -1,47 +1,51 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { Dialog } from '@/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Building, FileText, DollarSign, Package, Eye, Edit, Trash2 } from 'lucide-react';
+import { Plus, Search, Filter, Building, Mail, Phone, Calendar } from 'lucide-react';
+import { useVendorsApi, useCreateVendorApi } from '@/hooks/useApiIntegration';
 import NewVendorForm from './forms/NewVendorForm';
-import NewPurchaseOrderForm from './forms/NewPurchaseOrderForm';
-import { useVendors, usePurchaseOrders, useCreateVendor, useCreatePurchaseOrder } from '@/hooks/usePSAData';
+import VendorDetailModal from './modals/VendorDetailModal';
 
 const Vendors = () => {
-  const { data: vendors, isLoading: vendorsLoading } = useVendors();
-  const { data: purchaseOrders, isLoading: poLoading } = usePurchaseOrders();
-  const createVendor = useCreateVendor();
-  const createPurchaseOrder = useCreatePurchaseOrder();
-  
-  const [showNewVendorForm, setShowNewVendorForm] = useState(false);
-  const [showNewPOForm, setShowNewPOForm] = useState(false);
+  const { data: vendors, isLoading } = useVendorsApi();
+  const createVendor = useCreateVendorApi();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showNewVendorModal, setShowNewVendorModal] = useState(false);
+  const [selectedVendorId, setSelectedVendorId] = useState<string | null>(null);
 
-  const handleCreateVendor = async (vendorData: any) => {
-    await createVendor.mutateAsync(vendorData);
-    setShowNewVendorForm(false);
+  const getStatusColor = (status?: string) => {
+    switch (status) {
+      case 'active': return 'bg-green-500';
+      case 'inactive': return 'bg-red-500';
+      case 'pending': return 'bg-yellow-500';
+      default: return 'bg-gray-500';
+    }
   };
 
-  const handleCreatePO = async (poData: any) => {
-    await createPurchaseOrder.mutateAsync(poData);
-    setShowNewPOForm(false);
+  const filteredVendors = vendors?.filter(vendor =>
+    vendor?.vendor_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    vendor?.contact_email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    vendor?.services_offered?.toLowerCase().includes(searchTerm.toLowerCase())
+  ) || [];
+
+  const handleNewVendor = async (data: any) => {
+    console.log('Creating new vendor:', data);
+    try {
+      await createVendor.mutateAsync(data);
+      setShowNewVendorModal(false);
+    } catch (error) {
+      console.error('Error creating vendor:', error);
+    }
   };
 
-  const getStatusBadge = (status: string) => {
-    const statusColors = {
-      active: 'bg-green-500',
-      inactive: 'bg-gray-500',
-      suspended: 'bg-red-500',
-      open: 'bg-blue-500',
-      'in-progress': 'bg-yellow-500',
-      closed: 'bg-gray-500',
-    };
-    return statusColors[status as keyof typeof statusColors] || 'bg-gray-500';
+  const handleVendorClick = (vendorId: string) => {
+    setSelectedVendorId(vendorId);
   };
 
-  if (vendorsLoading || poLoading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-white">Loading vendors...</div>
@@ -52,237 +56,163 @@ const Vendors = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold text-white">Vendors</h1>
-          <p className="text-gray-400">Manage your vendor relationships and purchase orders</p>
+          <p className="text-gray-400">Manage your vendor relationships</p>
         </div>
+        <Button 
+          className="bg-blue-600 hover:bg-blue-700"
+          onClick={() => setShowNewVendorModal(true)}
+          disabled={createVendor.isPending}
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          {createVendor.isPending ? 'Adding...' : 'Add Vendor'}
+        </Button>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card className="bg-white/10 backdrop-blur-md border-white/20">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-gray-300">Total Vendors</CardTitle>
-            <Building className="h-4 w-4 text-blue-400" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-white">{vendors?.length || 0}</div>
-            <p className="text-xs text-gray-400">
-              {vendors?.filter(v => v.status === 'active').length || 0} active
-            </p>
-          </CardContent>
-        </Card>
+      {/* Filters */}
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+          <Input
+            placeholder="Search vendors..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10 bg-gray-800/50 border-gray-700 text-white"
+          />
+        </div>
+        <Button variant="outline" className="border-gray-600 text-gray-300 hover:bg-gray-700">
+          <Filter className="w-4 h-4 mr-2" />
+          Filters
+        </Button>
+      </div>
 
-        <Card className="bg-white/10 backdrop-blur-md border-white/20">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-gray-300">Purchase Orders</CardTitle>
-            <FileText className="h-4 w-4 text-green-400" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-white">{purchaseOrders?.length || 0}</div>
-            <p className="text-xs text-gray-400">
-              {purchaseOrders?.filter(po => po.status === 'open').length || 0} open
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-white/10 backdrop-blur-md border-white/20">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-gray-300">Total Spend</CardTitle>
-            <DollarSign className="h-4 w-4 text-yellow-400" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-white">
-              ${purchaseOrders?.reduce((sum, po) => sum + (po.total_amount || 0), 0).toLocaleString() || '0'}
+      {/* Vendor Stats */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <Card className="bg-gray-800/50 border-gray-700">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-400 text-sm">Total Vendors</p>
+                <p className="text-2xl font-bold text-white">{vendors?.length || 0}</p>
+              </div>
+              <Building className="w-8 h-8 text-blue-500" />
             </div>
-            <p className="text-xs text-gray-400">Across all POs</p>
           </CardContent>
         </Card>
-
-        <Card className="bg-white/10 backdrop-blur-md border-white/20">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-gray-300">Pending Deliveries</CardTitle>
-            <Package className="h-4 w-4 text-purple-400" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-white">
-              {purchaseOrders?.filter(po => po.status === 'in-progress').length || 0}
+        <Card className="bg-gray-800/50 border-gray-700">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-400 text-sm">Active Vendors</p>
+                <p className="text-2xl font-bold text-green-500">
+                  {vendors?.filter(v => v?.status === 'active').length || 0}
+                </p>
+              </div>
+              <div className="w-3 h-3 bg-green-500 rounded-full"></div>
             </div>
-            <p className="text-xs text-gray-400">In progress</p>
+          </CardContent>
+        </Card>
+        <Card className="bg-gray-800/50 border-gray-700">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-400 text-sm">Pending</p>
+                <p className="text-2xl font-bold text-yellow-500">
+                  {vendors?.filter(v => v?.status === 'pending').length || 0}
+                </p>
+              </div>
+              <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+            </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Main Content */}
-      <Tabs defaultValue="vendors" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2 bg-white/10">
-          <TabsTrigger value="vendors" className="text-gray-300 data-[state=active]:text-white">
-            Vendors
-          </TabsTrigger>
-          <TabsTrigger value="purchase-orders" className="text-gray-300 data-[state=active]:text-white">
-            Purchase Orders
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="vendors" className="space-y-6">
-          <div className="flex justify-between items-center">
-            <h2 className="text-xl font-semibold text-white">Vendor List</h2>
-            <Button
-              onClick={() => setShowNewVendorForm(true)}
-              className="bg-blue-600 hover:bg-blue-700"
+      {/* Vendors Grid */}
+      {isLoading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[...Array(6)].map((_, i) => (
+            <Card key={i} className="bg-gray-800/50 border-gray-700 animate-pulse">
+              <CardHeader>
+                <div className="h-4 bg-gray-600 rounded w-3/4"></div>
+                <div className="h-3 bg-gray-600 rounded w-1/2"></div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <div className="h-3 bg-gray-600 rounded"></div>
+                  <div className="h-3 bg-gray-600 rounded w-2/3"></div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredVendors.map((vendor) => (
+            <Card 
+              key={vendor.vendor_id} 
+              className="bg-gray-800/50 border-gray-700 hover:bg-gray-800/70 transition-colors cursor-pointer"
+              onClick={() => handleVendorClick(vendor.vendor_id)}
             >
-              <Plus className="h-4 w-4 mr-2" />
-              Add Vendor
-            </Button>
-          </div>
+              <CardHeader>
+                <div className="flex justify-between items-start">
+                  <CardTitle className="text-white text-lg">{vendor.vendor_name}</CardTitle>
+                  <Badge className={`${getStatusColor(vendor.status)} text-white`}>
+                    {vendor.status || 'Unknown'}
+                  </Badge>
+                </div>
+                <CardDescription className="text-gray-400">
+                  {vendor.services_offered}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {vendor.contact_email && (
+                    <div className="flex items-center text-gray-300 text-sm">
+                      <Mail className="w-4 h-4 mr-2 text-gray-400" />
+                      {vendor.contact_email}
+                    </div>
+                  )}
+                  
+                  {vendor.phone_number && (
+                    <div className="flex items-center text-gray-300 text-sm">
+                      <Phone className="w-4 h-4 mr-2 text-gray-400" />
+                      {vendor.phone_number}
+                    </div>
+                  )}
+                  
+                  <div className="flex items-center text-gray-300 text-sm">
+                    <Building className="w-4 h-4 mr-2 text-gray-400" />
+                    {vendor.contact_person}
+                  </div>
+                  
+                  {vendor.contract_start_date && (
+                    <div className="flex items-center text-gray-300 text-sm">
+                      <Calendar className="w-4 h-4 mr-2 text-gray-400" />
+                      Contract: {new Date(vendor.contract_start_date).toLocaleDateString()}
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
 
-          <Card className="bg-white/10 backdrop-blur-md border-white/20">
-            <Table>
-              <TableHeader>
-                <TableRow className="border-white/10">
-                  <TableHead className="text-gray-300">Vendor Name</TableHead>
-                  <TableHead className="text-gray-300">Contact Person</TableHead>
-                  <TableHead className="text-gray-300">Services</TableHead>
-                  <TableHead className="text-gray-300">Status</TableHead>
-                  <TableHead className="text-gray-300">Contract Period</TableHead>
-                  <TableHead className="text-gray-300">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {vendors?.map((vendor) => (
-                  <TableRow key={vendor.vendor_id} className="border-white/10">
-                    <TableCell className="text-white font-medium">
-                      {vendor.vendor_name}
-                    </TableCell>
-                    <TableCell className="text-gray-300">
-                      <div>
-                        <div>{vendor.contact_person}</div>
-                        <div className="text-sm text-gray-400">{vendor.contact_email}</div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-gray-300">
-                      {vendor.services_offered}
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={`${getStatusBadge(vendor.status || 'active')} text-white`}>
-                        {vendor.status || 'active'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-gray-300">
-                      {vendor.contract_start_date && vendor.contract_end_date ? (
-                        <div className="text-sm">
-                          <div>{new Date(vendor.contract_start_date).toLocaleDateString()}</div>
-                          <div className="text-gray-400">to {new Date(vendor.contract_end_date).toLocaleDateString()}</div>
-                        </div>
-                      ) : (
-                        'Not specified'
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex space-x-2">
-                        <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white">
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white">
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm" className="text-red-400 hover:text-red-300">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="purchase-orders" className="space-y-6">
-          <div className="flex justify-between items-center">
-            <h2 className="text-xl font-semibold text-white">Purchase Orders</h2>
-            <Button
-              onClick={() => setShowNewPOForm(true)}
-              className="bg-green-600 hover:bg-green-700"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Create PO
-            </Button>
-          </div>
-
-          <Card className="bg-white/10 backdrop-blur-md border-white/20">
-            <Table>
-              <TableHeader>
-                <TableRow className="border-white/10">
-                  <TableHead className="text-gray-300">PO Number</TableHead>
-                  <TableHead className="text-gray-300">Vendor</TableHead>
-                  <TableHead className="text-gray-300">Project</TableHead>
-                  <TableHead className="text-gray-300">Order Date</TableHead>
-                  <TableHead className="text-gray-300">Total Amount</TableHead>
-                  <TableHead className="text-gray-300">Status</TableHead>
-                  <TableHead className="text-gray-300">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {purchaseOrders?.map((po) => (
-                  <TableRow key={po.id} className="border-white/10">
-                    <TableCell className="text-white font-medium">
-                      {po.po_number}
-                    </TableCell>
-                    <TableCell className="text-gray-300">
-                      {po.vendor?.vendor_name || 'No vendor'}
-                    </TableCell>
-                    <TableCell className="text-gray-300">
-                      {po.project?.project_name || 'No project'}
-                    </TableCell>
-                    <TableCell className="text-gray-300">
-                      {new Date(po.order_date).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell className="text-gray-300">
-                      ${po.total_amount?.toLocaleString() || '0.00'}
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={`${getStatusBadge(po.status)} text-white`}>
-                        {po.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex space-x-2">
-                        <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white">
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white">
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm" className="text-red-400 hover:text-red-300">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </Card>
-        </TabsContent>
-      </Tabs>
-
-      {/* New Vendor Dialog */}
-      <Dialog open={showNewVendorForm} onOpenChange={setShowNewVendorForm}>
+      {/* New Vendor Modal */}
+      <Dialog open={showNewVendorModal} onOpenChange={setShowNewVendorModal}>
         <NewVendorForm
-          onSubmit={handleCreateVendor}
-          onCancel={() => setShowNewVendorForm(false)}
+          onSubmit={handleNewVendor}
+          onCancel={() => setShowNewVendorModal(false)}
         />
       </Dialog>
 
-      {/* New Purchase Order Dialog */}
-      <Dialog open={showNewPOForm} onOpenChange={setShowNewPOForm}>
-        <NewPurchaseOrderForm
-          onSubmit={handleCreatePO}
-          onCancel={() => setShowNewPOForm(false)}
-        />
-      </Dialog>
+      {/* Vendor Detail Modal */}
+      <VendorDetailModal
+        vendorId={selectedVendorId}
+        onClose={() => setSelectedVendorId(null)}
+      />
     </div>
   );
 };

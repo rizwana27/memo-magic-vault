@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 // Core API service for PSA platform
@@ -14,6 +13,21 @@ export class PSAApiService {
         timesheets(hours, billable)
       `)
       .order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    return data;
+  }
+
+  static async getProject(projectId: string) {
+    const { data, error } = await supabase
+      .from('projects')
+      .select(`
+        *,
+        client:clients(*),
+        timesheets(hours, billable)
+      `)
+      .eq('project_id', projectId)
+      .single();
     
     if (error) throw error;
     return data;
@@ -38,7 +52,10 @@ export class PSAApiService {
       .from('projects')
       .update(updates)
       .eq('project_id', projectId)
-      .select()
+      .select(`
+        *,
+        client:clients(*)
+      `)
       .single();
     
     if (error) throw error;
@@ -101,10 +118,33 @@ export class PSAApiService {
     return data;
   }
 
+  static async getResource(resourceId: string) {
+    const { data, error } = await supabase
+      .from('resources')
+      .select('*')
+      .eq('resource_id', resourceId)
+      .single();
+    
+    if (error) throw error;
+    return data;
+  }
+
   static async createResource(resourceData: any) {
     const { data, error } = await supabase
       .from('resources')
       .insert([resourceData])
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  }
+
+  static async updateResource(resourceId: string, updates: any) {
+    const { data, error } = await supabase
+      .from('resources')
+      .update(updates)
+      .eq('resource_id', resourceId)
       .select()
       .single();
     
@@ -336,10 +376,33 @@ export class PSAApiService {
     return data;
   }
 
+  static async getClient(clientId: string) {
+    const { data, error } = await supabase
+      .from('clients')
+      .select('*')
+      .eq('client_id', clientId)
+      .single();
+    
+    if (error) throw error;
+    return data;
+  }
+
   static async createClient(clientData: any) {
     const { data, error } = await supabase
       .from('clients')
       .insert([clientData])
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  }
+
+  static async updateClient(clientId: string, updates: any) {
+    const { data, error } = await supabase
+      .from('clients')
+      .update(updates)
+      .eq('client_id', clientId)
       .select()
       .single();
     
@@ -384,10 +447,33 @@ export class PSAApiService {
     return data;
   }
 
+  static async getVendor(vendorId: string) {
+    const { data, error } = await supabase
+      .from('vendors')
+      .select('*')
+      .eq('vendor_id', vendorId)
+      .single();
+    
+    if (error) throw error;
+    return data;
+  }
+
   static async createVendor(vendorData: any) {
     const { data, error } = await supabase
       .from('vendors')
       .insert([vendorData])
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  }
+
+  static async updateVendor(vendorId: string, updates: any) {
+    const { data, error } = await supabase
+      .from('vendors')
+      .update(updates)
+      .eq('vendor_id', vendorId)
       .select()
       .single();
     

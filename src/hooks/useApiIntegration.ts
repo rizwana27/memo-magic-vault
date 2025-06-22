@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { PSAApiService } from '@/services/apiService';
@@ -9,6 +8,15 @@ export const useProjectsApi = () => {
     queryKey: ['projects-api'],
     queryFn: PSAApiService.getProjects,
     staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+};
+
+export const useProjectApi = (projectId: string) => {
+  return useQuery({
+    queryKey: ['project-api', projectId],
+    queryFn: () => PSAApiService.getProject(projectId),
+    enabled: !!projectId,
+    staleTime: 5 * 60 * 1000,
   });
 };
 
@@ -36,10 +44,44 @@ export const useCreateProjectApi = () => {
   });
 };
 
+export const useUpdateProjectApi = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: ({ projectId, updates }: { projectId: string; updates: any }) =>
+      PSAApiService.updateProject(projectId, updates),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['projects-api'] });
+      queryClient.invalidateQueries({ queryKey: ['project-api', data.project_id] });
+      toast({
+        title: "Success",
+        description: `Project "${data.project_name}" updated successfully`,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update project",
+        variant: "destructive",
+      });
+    },
+  });
+};
+
 export const useResourcesApi = () => {
   return useQuery({
     queryKey: ['resources-api'],
     queryFn: PSAApiService.getResources,
+    staleTime: 5 * 60 * 1000,
+  });
+};
+
+export const useResourceApi = (resourceId: string) => {
+  return useQuery({
+    queryKey: ['resource-api', resourceId],
+    queryFn: () => PSAApiService.getResource(resourceId),
+    enabled: !!resourceId,
     staleTime: 5 * 60 * 1000,
   });
 };
@@ -62,6 +104,31 @@ export const useCreateResourceApi = () => {
       toast({
         title: "Error",
         description: error.message || "Failed to add resource",
+        variant: "destructive",
+      });
+    },
+  });
+};
+
+export const useUpdateResourceApi = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: ({ resourceId, updates }: { resourceId: string; updates: any }) =>
+      PSAApiService.updateResource(resourceId, updates),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['resources-api'] });
+      queryClient.invalidateQueries({ queryKey: ['resource-api', data.resource_id] });
+      toast({
+        title: "Success",
+        description: `Resource "${data.full_name}" updated successfully`,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update resource",
         variant: "destructive",
       });
     },
@@ -176,6 +243,15 @@ export const useClientsApi = () => {
   });
 };
 
+export const useClientApi = (clientId: string) => {
+  return useQuery({
+    queryKey: ['client-api', clientId],
+    queryFn: () => PSAApiService.getClient(clientId),
+    enabled: !!clientId,
+    staleTime: 5 * 60 * 1000,
+  });
+};
+
 export const useCreateClientApi = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -193,6 +269,31 @@ export const useCreateClientApi = () => {
       toast({
         title: "Error",
         description: error.message || "Failed to add client",
+        variant: "destructive",
+      });
+    },
+  });
+};
+
+export const useUpdateClientApi = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: ({ clientId, updates }: { clientId: string; updates: any }) =>
+      PSAApiService.updateClient(clientId, updates),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['clients-api'] });
+      queryClient.invalidateQueries({ queryKey: ['client-api', data.client_id] });
+      toast({
+        title: "Success",
+        description: `Client "${data.client_name}" updated successfully`,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update client",
         variant: "destructive",
       });
     },
@@ -240,6 +341,15 @@ export const useVendorsApi = () => {
   });
 };
 
+export const useVendorApi = (vendorId: string) => {
+  return useQuery({
+    queryKey: ['vendor-api', vendorId],
+    queryFn: () => PSAApiService.getVendor(vendorId),
+    enabled: !!vendorId,
+    staleTime: 5 * 60 * 1000,
+  });
+};
+
 export const useCreateVendorApi = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -257,6 +367,31 @@ export const useCreateVendorApi = () => {
       toast({
         title: "Error",
         description: error.message || "Failed to add vendor",
+        variant: "destructive",
+      });
+    },
+  });
+};
+
+export const useUpdateVendorApi = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: ({ vendorId, updates }: { vendorId: string; updates: any }) =>
+      PSAApiService.updateVendor(vendorId, updates),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['vendors-api'] });
+      queryClient.invalidateQueries({ queryKey: ['vendor-api', data.vendor_id] });
+      toast({
+        title: "Success",
+        description: `Vendor "${data.vendor_name}" updated successfully`,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update vendor",
         variant: "destructive",
       });
     },

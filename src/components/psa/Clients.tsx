@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -5,27 +6,22 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Dialog } from '@/components/ui/dialog';
 import { Plus, Search, Filter, Globe, Mail, Phone, Building } from 'lucide-react';
-import { useClients, useCreateClient } from '@/hooks/usePSAData';
+import { useClientsApi, useCreateClientApi } from '@/hooks/useApiIntegration';
 import NewClientForm from './forms/NewClientForm';
+import ClientDetailModal from './modals/ClientDetailModal';
 
 const Clients = () => {
-  const { data: clients, isLoading, error } = useClients();
-  const createClient = useCreateClient();
+  const { data: clients, isLoading, error } = useClientsApi();
+  const createClient = useCreateClientApi();
   const [searchTerm, setSearchTerm] = useState('');
   const [showNewClientModal, setShowNewClientModal] = useState(false);
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
 
   const getHealthColor = (healthScore?: number) => {
     if (!healthScore) return 'bg-gray-500';
     if (healthScore >= 8) return 'bg-green-500';
     if (healthScore >= 5) return 'bg-yellow-500';
     return 'bg-red-500';
-  };
-
-  const getHealthStatus = (healthScore?: number) => {
-    if (!healthScore) return 'new';
-    if (healthScore >= 8) return 'healthy';
-    if (healthScore >= 5) return 'at risk';
-    return 'critical';
   };
 
   const filteredClients = clients?.filter(client =>
@@ -42,6 +38,10 @@ const Clients = () => {
     } catch (error) {
       console.error('Error creating client:', error);
     }
+  };
+
+  const handleClientClick = (clientId: string) => {
+    setSelectedClientId(clientId);
   };
 
   if (error) {
@@ -163,7 +163,11 @@ const Clients = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredClients.map((client) => (
-            <Card key={client.client_id} className="bg-gray-800/50 border-gray-700 hover:bg-gray-800/70 transition-colors cursor-pointer">
+            <Card 
+              key={client.client_id} 
+              className="bg-gray-800/50 border-gray-700 hover:bg-gray-800/70 transition-colors cursor-pointer"
+              onClick={() => handleClientClick(client.client_id)}
+            >
               <CardHeader>
                 <div className="flex justify-between items-start">
                   <CardTitle className="text-white text-lg">{client.client_name}</CardTitle>
@@ -236,6 +240,12 @@ const Clients = () => {
           onCancel={() => setShowNewClientModal(false)}
         />
       </Dialog>
+
+      {/* Client Detail Modal */}
+      <ClientDetailModal
+        clientId={selectedClientId}
+        onClose={() => setSelectedClientId(null)}
+      />
     </div>
   );
 };

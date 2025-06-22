@@ -6,14 +6,16 @@ import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog } from '@/components/ui/dialog';
 import { Plus, Search, Filter, Calendar, Users, DollarSign } from 'lucide-react';
-import { useProjects, useCreateProject } from '@/hooks/usePSAData';
+import { useProjectsApi, useCreateProjectApi } from '@/hooks/useApiIntegration';
 import NewProjectForm from './forms/NewProjectForm';
+import ProjectDetailModal from './modals/ProjectDetailModal';
 
 const Projects = () => {
-  const { data: projects, isLoading } = useProjects();
-  const createProject = useCreateProject();
+  const { data: projects, isLoading } = useProjectsApi();
+  const createProject = useCreateProjectApi();
   const [searchTerm, setSearchTerm] = useState('');
   const [showNewProjectModal, setShowNewProjectModal] = useState(false);
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
 
   // Listen for custom event from Dashboard
   useEffect(() => {
@@ -51,6 +53,10 @@ const Projects = () => {
     } catch (error) {
       console.error('Error creating project:', error);
     }
+  };
+
+  const handleProjectClick = (projectId: string) => {
+    setSelectedProjectId(projectId);
   };
 
   return (
@@ -118,7 +124,11 @@ const Projects = () => {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredProjects.map((project) => (
-                <Card key={project.project_id} className="bg-gray-800/50 border-gray-700 hover:bg-gray-800/70 transition-colors cursor-pointer">
+                <Card 
+                  key={project.project_id} 
+                  className="bg-gray-800/50 border-gray-700 hover:bg-gray-800/70 transition-colors cursor-pointer"
+                  onClick={() => handleProjectClick(project.project_id)}
+                >
                   <CardHeader>
                     <div className="flex justify-between items-start">
                       <CardTitle className="text-white text-lg">{project.project_name}</CardTitle>
@@ -245,6 +255,12 @@ const Projects = () => {
           onCancel={() => setShowNewProjectModal(false)}
         />
       </Dialog>
+
+      {/* Project Detail Modal */}
+      <ProjectDetailModal
+        projectId={selectedProjectId}
+        onClose={() => setSelectedProjectId(null)}
+      />
     </div>
   );
 };

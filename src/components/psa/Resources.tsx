@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,15 +7,17 @@ import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog } from '@/components/ui/dialog';
 import { Plus, Search, Filter, User, Mail, Phone, Calendar } from 'lucide-react';
-import { useResources, useCreateResource } from '@/hooks/usePSAData';
+import { useResourcesApi, useCreateResourceApi } from '@/hooks/useApiIntegration';
 import NewResourceForm from './forms/NewResourceForm';
+import ResourceDetailModal from './modals/ResourceDetailModal';
 import CapacityPlanning from './CapacityPlanning';
 
 const Resources = () => {
-  const { data: resources, isLoading } = useResources();
-  const createResource = useCreateResource();
+  const { data: resources, isLoading } = useResourcesApi();
+  const createResource = useCreateResourceApi();
   const [searchTerm, setSearchTerm] = useState('');
   const [showNewResourceModal, setShowNewResourceModal] = useState(false);
+  const [selectedResourceId, setSelectedResourceId] = useState<string | null>(null);
 
   // Listen for custom event from Dashboard
   useEffect(() => {
@@ -50,6 +53,10 @@ const Resources = () => {
     } catch (error) {
       console.error('Error creating resource:', error);
     }
+  };
+
+  const handleResourceClick = (resourceId: string) => {
+    setSelectedResourceId(resourceId);
   };
 
   return (
@@ -123,7 +130,11 @@ const Resources = () => {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredResources.map((resource) => (
-                <Card key={resource.resource_id} className="bg-gray-800/50 border-gray-700 hover:bg-gray-800/70 transition-colors cursor-pointer">
+                <Card 
+                  key={resource.resource_id} 
+                  className="bg-gray-800/50 border-gray-700 hover:bg-gray-800/70 transition-colors cursor-pointer"
+                  onClick={() => handleResourceClick(resource.resource_id)}
+                >
                   <CardHeader>
                     <div className="flex justify-between items-start">
                       <CardTitle className="text-white text-lg">{resource.full_name}</CardTitle>
@@ -222,6 +233,12 @@ const Resources = () => {
           onCancel={() => setShowNewResourceModal(false)}
         />
       </Dialog>
+
+      {/* Resource Detail Modal */}
+      <ResourceDetailModal
+        resourceId={selectedResourceId}
+        onClose={() => setSelectedResourceId(null)}
+      />
     </div>
   );
 };
