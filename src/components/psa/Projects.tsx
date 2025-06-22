@@ -9,6 +9,7 @@ import { Plus, Search, Filter, Calendar, Users, DollarSign } from 'lucide-react'
 import { useProjectsApi, useCreateProjectApi } from '@/hooks/useApiIntegration';
 import NewProjectForm from './forms/NewProjectForm';
 import ProjectDetailModal from './modals/ProjectDetailModal';
+import ProjectCreationModal from './forms/ProjectCreationModal';
 
 const Projects = () => {
   const { data: projects, isLoading } = useProjectsApi();
@@ -248,13 +249,12 @@ const Projects = () => {
         </TabsContent>
       </Tabs>
 
-      {/* New Project Modal */}
-      <Dialog open={showNewProjectModal} onOpenChange={setShowNewProjectModal}>
-        <NewProjectForm
-          onSubmit={handleNewProject}
-          onCancel={() => setShowNewProjectModal(false)}
-        />
-      </Dialog>
+      {/* Project Creation Modal */}
+      <ProjectCreationModal
+        open={showNewProjectModal}
+        onOpenChange={setShowNewProjectModal}
+        onSubmit={handleNewProject}
+      />
 
       {/* Project Detail Modal */}
       <ProjectDetailModal

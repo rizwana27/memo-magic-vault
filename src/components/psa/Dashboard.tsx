@@ -33,6 +33,7 @@ import KPICards from './KPICards';
 import { OutboundApiService } from '@/services/outboundApiService';
 import { useToast } from '@/hooks/use-toast';
 import AIDataCopilot from './AIDataCopilot';
+import ProjectCreationModal from './forms/ProjectCreationModal';
 
 interface DashboardProps {
   onTabChange?: (tab: string) => void;
@@ -367,12 +368,11 @@ const Dashboard: React.FC<DashboardProps> = ({ onTabChange }) => {
       </div>
 
       {/* Modal Forms */}
-      {showProjectForm && (
-        <NewProjectForm
-          onSubmit={handleCreateProject}
-          onCancel={() => setShowProjectForm(false)}
-        />
-      )}
+      <ProjectCreationModal
+        open={showProjectForm}
+        onOpenChange={setShowProjectForm}
+        onSubmit={handleCreateProject}
+      />
       
       {showResourceForm && (
         <NewResourceForm
