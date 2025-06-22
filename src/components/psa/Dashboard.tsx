@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -33,6 +32,7 @@ import ClientInviteForm from './forms/ClientInviteForm';
 import KPICards from './KPICards';
 import { OutboundApiService } from '@/services/outboundApiService';
 import { useToast } from '@/hooks/use-toast';
+import AIDataCopilot from './AIDataCopilot';
 
 interface DashboardProps {
   onTabChange?: (tab: string) => void;
@@ -382,6 +382,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onTabChange }) => {
       )}
       
       <ClientInviteForm open={showClientInviteForm} onOpenChange={setShowClientInviteForm} />
+
+      {/* AI Data Copilot Floating Widget */}
+      <AIDataCopilot />
     </div>
   );
 };

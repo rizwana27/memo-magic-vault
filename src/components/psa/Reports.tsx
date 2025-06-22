@@ -1,302 +1,320 @@
-
-import React from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
-import { TrendingUp, Users, DollarSign, Clock, Building, FileText, Target, Activity } from 'lucide-react';
-import { useProjects, useClients, useResources, useTimesheets, useInvoices } from '@/hooks/usePSAData';
-import AIDataCopilot from './AIDataCopilot';
+import { Progress } from '@/components/ui/progress';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  PieChart,
+  Pie,
+  Cell,
+  LineChart,
+  Line,
+  ResponsiveContainer
+} from 'recharts';
+import { 
+  Download, 
+  Calendar,
+  TrendingUp,
+  Users,
+  DollarSign,
+  Clock,
+  Target
+} from 'lucide-react';
+import { useProjectsApi, useResourcesApi, useTimesheetsApi, useInvoicesApi } from '@/hooks/useApiIntegration';
+import { useKPIData } from '@/hooks/useKPIData';
 
 const Reports = () => {
-  const { data: projects, isLoading: projectsLoading } = useProjects();
-  const { data: clients, isLoading: clientsLoading } = useClients();
-  const { data: resources, isLoading: resourcesLoading } = useResources();
-  const { data: timesheets, isLoading: timesheetsLoading } = useTimesheets();
-  const { data: invoices, isLoading: invoicesLoading } = useInvoices();
-
-  if (projectsLoading || clientsLoading || resourcesLoading || timesheetsLoading || invoicesLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-white">Loading reports...</div>
-      </div>
-    );
-  }
-
-  // Calculate real metrics
-  const totalRevenue = invoices?.reduce((sum, invoice) => sum + (invoice.total_amount || 0), 0) || 0;
-  const activeProjects = projects?.filter(p => p.status === 'active').length || 0;
-  const totalClients = clients?.length || 0;
-  const activeResources = resources?.filter(r => r.active_status).length || 0;
+  const [selectedTimeRange, setSelectedTimeRange] = useState('30d');
   
-  // Calculate utilization from real timesheet data
-  const totalHours = timesheets?.reduce((sum, ts) => {
-    const start = new Date(`2000-01-01T${ts.start_time}`);
-    const end = new Date(`2000-01-01T${ts.end_time}`);
-    return sum + ((end.getTime() - start.getTime()) / (1000 * 60 * 60));
-  }, 0) || 0;
+  const { data: projects = [] } = useProjectsApi();
+  const { data: resources = [] } = useResourcesApi();
+  const { data: timesheets = [] } = useTimesheetsApi();
+  const { data: invoices = [] } = useInvoicesApi();
+  
+  const kpiData = useKPIData();
 
-  const billableHours = timesheets?.filter(ts => ts.billable).reduce((sum, ts) => {
-    const start = new Date(`2000-01-01T${ts.start_time}`);
-    const end = new Date(`2000-01-01T${ts.end_time}`);
-    return sum + ((end.getTime() - start.getTime()) / (1000 * 60 * 60));
-  }, 0) || 0;
+  const timeRangeOptions = [
+    { label: 'Last 30 Days', value: '30d' },
+    { label: 'Last 90 Days', value: '90d' },
+    { label: 'Last 6 Months', value: '6mo' },
+    { label: 'Last Year', value: '1y' },
+  ];
 
-  const utilizationRate = totalHours > 0 ? (billableHours / totalHours) * 100 : 0;
+  // Data processing and calculations
+  const totalProjects = projects.length;
+  const activeProjects = projects.filter(p => p.status === 'active').length;
+  const completedProjects = projects.filter(p => p.status === 'completed').length;
+  const onHoldProjects = projects.filter(p => p.status === 'on_hold').length;
 
-  // Project status distribution
+  const totalResources = resources.length;
+  const activeResources = resources.filter(r => r.active_status).length;
+  const availableResources = resources.filter(r => r.availability > 0.75).length;
+
+  const totalInvoices = invoices.length;
+  const paidInvoices = invoices.filter(i => i.status === 'paid').length;
+  const pendingInvoices = invoices.filter(i => i.status === 'sent' || i.status === 'overdue').length;
+  const totalRevenue = invoices.filter(inv => inv.status === 'paid').reduce((sum, inv) => sum + (inv.total_amount || 0), 0);
+
+  // Chart data
   const projectStatusData = [
-    { name: 'Active', value: projects?.filter(p => p.status === 'active').length || 0, color: '#22c55e' },
-    { name: 'Planning', value: projects?.filter(p => p.status === 'planning').length || 0, color: '#3b82f6' },
-    { name: 'On Hold', value: projects?.filter(p => p.status === 'on_hold').length || 0, color: '#f59e0b' },
-    { name: 'Completed', value: projects?.filter(p => p.status === 'completed').length || 0, color: '#6b7280' },
+    { name: 'Active', value: activeProjects },
+    { name: 'Completed', value: completedProjects },
+    { name: 'On Hold', value: onHoldProjects },
   ];
 
-  // Revenue by month (mock data based on invoices)
-  const revenueData = [
-    { month: 'Jan', revenue: Math.floor(totalRevenue * 0.1) },
-    { month: 'Feb', revenue: Math.floor(totalRevenue * 0.08) },
-    { month: 'Mar', revenue: Math.floor(totalRevenue * 0.12) },
-    { month: 'Apr', revenue: Math.floor(totalRevenue * 0.15) },
-    { month: 'May', revenue: Math.floor(totalRevenue * 0.18) },
-    { month: 'Jun', revenue: Math.floor(totalRevenue * 0.37) },
+  const resourceAvailabilityData = [
+    { name: 'Available', value: availableResources },
+    { name: 'Allocated', value: activeResources - availableResources },
   ];
 
-  // Resource utilization by department - Fixed type issues
-  interface DepartmentData {
-    department: string;
-    count: number;
-    availability: number;
-  }
+  const invoiceStatusData = [
+    { name: 'Paid', value: paidInvoices },
+    { name: 'Pending', value: pendingInvoices },
+  ];
 
-  const resourceData: Record<string, DepartmentData> = {};
-  
-  resources?.forEach(resource => {
-    const dept = resource.department || 'Unassigned';
-    if (!resourceData[dept]) {
-      resourceData[dept] = { department: dept, count: 0, availability: 0 };
-    }
-    resourceData[dept].count++;
-    resourceData[dept].availability += resource.availability || 100;
-  });
+  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
 
-  const departmentData = Object.values(resourceData).map(dept => ({
-    ...dept,
-    availability: dept.count > 0 ? dept.availability / dept.count : 0,
-  }));
+  const RADIAN = Math.PI / 180;
+  const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, index }: any) => {
+    const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+    const x = cx + radius * Math.cos(-midAngle * RADIAN);
+    const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+    return (
+      <text x={x} y={y} fill="white" textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central">
+        {`${(percent * 100).toFixed(0)}%`}
+      </text>
+    );
+  };
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-white">Reports & Analytics</h1>
-        <p className="text-gray-400">Insights and performance metrics for your business</p>
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-white">Reports & Analytics</h1>
+          <p className="text-gray-400 mt-1">Get insights into your PSA data</p>
+        </div>
+
+        {/* Time Range Selector */}
+        <div className="mt-4 md:mt-0">
+          <select
+            value={selectedTimeRange}
+            onChange={(e) => setSelectedTimeRange(e.target.value)}
+            className="bg-gray-700 border-gray-600 text-white rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            {timeRangeOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
-      {/* AI Data Copilot */}
-      <AIDataCopilot />
-
-      {/* Key Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card className="bg-white/10 backdrop-blur-md border-white/20">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-gray-300">Total Revenue</CardTitle>
-            <DollarSign className="h-4 w-4 text-green-400" />
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card className="bg-gray-800/50 border-gray-600">
+          <CardHeader>
+            <CardTitle className="text-white flex items-center gap-2">
+              <FolderOpen className="h-4 w-4 text-blue-400" />
+              Total Projects
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-white">${totalRevenue.toLocaleString()}</div>
-            <p className="text-xs text-gray-400">
-              +12% from last month
+            <div className="text-3xl font-bold text-white">{totalProjects}</div>
+            <p className="text-sm text-gray-300 mt-1">
+              <Badge variant="secondary" className="bg-blue-500/20 text-blue-300 border-blue-500">
+                {activeProjects} Active
+              </Badge>{' '}
+              <Badge variant="secondary" className="bg-green-500/20 text-green-300 border-green-500">
+                {completedProjects} Completed
+              </Badge>
             </p>
           </CardContent>
         </Card>
 
-        <Card className="bg-white/10 backdrop-blur-md border-white/20">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-gray-300">Active Projects</CardTitle>
-            <Target className="h-4 w-4 text-blue-400" />
+        <Card className="bg-gray-800/50 border-gray-600">
+          <CardHeader>
+            <CardTitle className="text-white flex items-center gap-2">
+              <Users className="h-4 w-4 text-purple-400" />
+              Team Resources
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-white">{activeProjects}</div>
-            <p className="text-xs text-gray-400">
-              of {projects?.length || 0} total projects
+            <div className="text-3xl font-bold text-white">{totalResources}</div>
+            <p className="text-sm text-gray-300 mt-1">
+              <Badge variant="secondary" className="bg-purple-500/20 text-purple-300 border-purple-500">
+                {activeResources} Active
+              </Badge>{' '}
+              <Badge variant="secondary" className="bg-orange-500/20 text-orange-300 border-orange-500">
+                {availableResources} Available
+              </Badge>
             </p>
           </CardContent>
         </Card>
 
-        <Card className="bg-white/10 backdrop-blur-md border-white/20">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-gray-300">Resource Utilization</CardTitle>
-            <Activity className="h-4 w-4 text-purple-400" />
+        <Card className="bg-gray-800/50 border-gray-600">
+          <CardHeader>
+            <CardTitle className="text-white flex items-center gap-2">
+              <DollarSign className="h-4 w-4 text-green-400" />
+              Total Revenue
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-white">{utilizationRate.toFixed(1)}%</div>
-            <p className="text-xs text-gray-400">
-              {billableHours.toFixed(1)}h billable
+            <div className="text-3xl font-bold text-white">${totalRevenue.toLocaleString()}</div>
+            <p className="text-sm text-gray-300 mt-1">
+              <Badge variant="secondary" className="bg-green-500/20 text-green-300 border-green-500">
+                {paidInvoices} Paid
+              </Badge>{' '}
+              <Badge variant="secondary" className="bg-red-500/20 text-red-300 border-red-500">
+                {pendingInvoices} Pending
+              </Badge>
             </p>
           </CardContent>
         </Card>
 
-        <Card className="bg-white/10 backdrop-blur-md border-white/20">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-gray-300">Client Growth</CardTitle>
-            <TrendingUp className="h-4 w-4 text-yellow-400" />
+        <Card className="bg-gray-800/50 border-gray-600">
+          <CardHeader>
+            <CardTitle className="text-white flex items-center gap-2">
+              <Clock className="h-4 w-4 text-yellow-400" />
+              Resource Utilization
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-white">{totalClients}</div>
-            <p className="text-xs text-gray-400">
-              +3 this quarter
+            <div className="text-3xl font-bold text-white">{kpiData.resourceUtilization}%</div>
+            <p className="text-sm text-gray-300 mt-1">
+              <Progress value={kpiData.resourceUtilization} className="h-2" />
             </p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Main Content */}
-      <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4 bg-white/10">
-          <TabsTrigger value="overview" className="text-gray-300 data-[state=active]:text-white">
-            Overview
-          </TabsTrigger>
-          <TabsTrigger value="financial" className="text-gray-300 data-[state=active]:text-white">
-            Financial
-          </TabsTrigger>
-          <TabsTrigger value="projects" className="text-gray-300 data-[state=active]:text-white">
-            Projects
-          </TabsTrigger>
-          <TabsTrigger value="resources" className="text-gray-300 data-[state=active]:text-white">
-            Resources
-          </TabsTrigger>
-        </TabsList>
+      {/* Charts and Graphs */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Project Status Distribution */}
+        <Card className="bg-gray-800/50 border-gray-600">
+          <CardHeader>
+            <CardTitle className="text-white">Project Status Distribution</CardTitle>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={projectStatusData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={renderCustomizedLabel}
+                    outerRadius={120}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {projectStatusData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </CardHeader>
+        </Card>
 
-        <TabsContent value="overview" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card className="bg-white/10 backdrop-blur-md border-white/20">
-              <CardHeader>
-                <CardTitle className="text-white">Revenue Trend</CardTitle>
-                <CardDescription className="text-gray-400">
-                  Monthly revenue performance
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={revenueData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                    <XAxis dataKey="month" stroke="#9ca3af" />
-                    <YAxis stroke="#9ca3af" />
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: '#1f2937', 
-                        border: '1px solid #374151',
-                        borderRadius: '8px',
-                        color: '#fff'
-                      }} 
-                    />
-                    <Line type="monotone" dataKey="revenue" stroke="#22c55e" strokeWidth={2} />
-                  </LineChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
+        {/* Resource Availability */}
+        <Card className="bg-gray-800/50 border-gray-600">
+          <CardHeader>
+            <CardTitle className="text-white">Resource Availability</CardTitle>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={resourceAvailabilityData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={renderCustomizedLabel}
+                    outerRadius={120}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {resourceAvailabilityData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </CardHeader>
+        </Card>
+      </div>
 
-            <Card className="bg-white/10 backdrop-blur-md border-white/20">
-              <CardHeader>
-                <CardTitle className="text-white">Project Status Distribution</CardTitle>
-                <CardDescription className="text-gray-400">
-                  Current project portfolio status
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <PieChart>
-                    <Pie
-                      data={projectStatusData}
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={80}
-                      fill="#8884d8"
-                      dataKey="value"
-                      label={({ name, value }) => `${name}: ${value}`}
-                    >
-                      {projectStatusData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Invoice Status */}
+        <Card className="bg-gray-800/50 border-gray-600">
+          <CardHeader>
+            <CardTitle className="text-white">Invoice Status</CardTitle>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={invoiceStatusData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={renderCustomizedLabel}
+                    outerRadius={120}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {invoiceStatusData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </CardHeader>
+        </Card>
 
-        <TabsContent value="financial" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card className="bg-white/10 backdrop-blur-md border-white/20">
-              <CardHeader>
-                <CardTitle className="text-white">Financial Overview</CardTitle>
-                <CardDescription className="text-gray-400">
-                  Key financial metrics and trends
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8 text-gray-400">
-                  <DollarSign className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>Detailed financial analysis coming soon...</p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="projects" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card className="bg-white/10 backdrop-blur-md border-white/20">
-              <CardHeader>
-                <CardTitle className="text-white">Project Performance</CardTitle>
-                <CardDescription className="text-gray-400">
-                  Project metrics and analysis
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8 text-gray-400">
-                  <Target className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>Project analytics coming soon...</p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="resources" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card className="bg-white/10 backdrop-blur-md border-white/20">
-              <CardHeader>
-                <CardTitle className="text-white">Resource Utilization</CardTitle>
-                <CardDescription className="text-gray-400">
-                  Team performance and availability
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={departmentData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                    <XAxis dataKey="department" stroke="#9ca3af" />
-                    <YAxis stroke="#9ca3af" />
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: '#1f2937', 
-                        border: '1px solid #374151',
-                        borderRadius: '8px',
-                        color: '#fff'
-                      }} 
-                    />
-                    <Bar dataKey="availability" fill="#8b5cf6" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-      </Tabs>
+        {/* Revenue Trend (Dummy Data) */}
+        <Card className="bg-gray-800/50 border-gray-600">
+          <CardHeader>
+            <CardTitle className="text-white">Revenue Trend</CardTitle>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={[
+                  { name: 'Jan', revenue: 4000 },
+                  { name: 'Feb', revenue: 3000 },
+                  { name: 'Mar', revenue: 2000 },
+                  { name: 'Apr', revenue: 2780 },
+                  { name: 'May', revenue: 1890 },
+                  { name: 'Jun', revenue: 2390 },
+                  { name: 'Jul', revenue: 3490 },
+                ]}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Line type="monotone" dataKey="revenue" stroke="#8884d8" activeDot={{ r: 8 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </CardHeader>
+        </Card>
+      </div>
     </div>
   );
 };

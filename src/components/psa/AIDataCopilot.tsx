@@ -5,9 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Database, Sparkles } from 'lucide-react';
+import { Loader2, Database, Sparkles, MessageSquare, Bot, X, Minimize2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 interface QueryResult {
   sql: string;
@@ -15,23 +16,45 @@ interface QueryResult {
   rowCount: number;
 }
 
+interface Message {
+  id: string;
+  type: 'user' | 'assistant' | 'system';
+  content: string;
+  data?: any[];
+  sql?: string;
+  timestamp: Date;
+}
+
 const AIDataCopilot = () => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [isMinimized, setIsMinimized] = useState(false);
   const [prompt, setPrompt] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [result, setResult] = useState<QueryResult | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      id: '1',
+      type: 'system',
+      content: 'Hi there! 👋 How can I help you? How are you doing today?',
+      timestamp: new Date()
+    }
+  ]);
   const { toast } = useToast();
 
-  const examplePrompts = [
-    "Show me all unallocated resources this quarter",
-    "List top 5 projects by budget",
-    "Find all active clients in the technology industry",
-    "Show me vendor contracts expiring this year",
-    "Display projects with low utilization rates"
+  const quickPrompts = [
+    "Show me underutilized resources",
+    "List top-performing projects this quarter", 
+    "Hours logged last week by each team"
   ];
 
-  const handleRunQuery = async () => {
-    if (!prompt.trim()) {
+  const handleQuickPrompt = (promptText: string) => {
+    setPrompt(promptText);
+    handleRunQuery(promptText);
+  };
+
+  const handleRunQuery = async (queryText?: string) => {
+    const queryPrompt = queryText || prompt;
+    
+    if (!queryPrompt.trim()) {
       toast({
         title: "Please enter a query",
         description: "Type a question about your data",
@@ -40,28 +63,46 @@ const AIDataCopilot = () => {
       return;
     }
 
+    // Add user message
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      type: 'user',
+      content: queryPrompt,
+      timestamp: new Date()
+    };
+    setMessages(prev => [...prev, userMessage]);
+    setPrompt('');
     setIsLoading(true);
-    setError(null);
-    setResult(null);
 
     try {
       const { data, error } = await supabase.functions.invoke('ai-data-copilot', {
-        body: { prompt }
+        body: { prompt: queryPrompt }
       });
 
       if (error) {
         throw error;
       }
 
+      const assistantMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        type: 'assistant',
+        content: data.error ? `Sorry, I encountered an error: ${data.error}` : 
+                 data.rowCount === 0 ? "No results found for your query." :
+                 `Found ${data.rowCount} result${data.rowCount !== 1 ? 's' : ''}:`,
+        data: data.data || [],
+        sql: data.sql,
+        timestamp: new Date()
+      };
+      
+      setMessages(prev => [...prev, assistantMessage]);
+
       if (data.error) {
-        setError(data.error);
         toast({
           title: "Query Error",
           description: data.error,
           variant: "destructive"
         });
       } else {
-        setResult(data);
         toast({
           title: "Query Executed",
           description: `Found ${data.rowCount} results`,
@@ -69,7 +110,14 @@ const AIDataCopilot = () => {
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to execute query';
-      setError(errorMessage);
+      const assistantMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        type: 'assistant',
+        content: `Sorry, I encountered an error: ${errorMessage}`,
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, assistantMessage]);
+      
       toast({
         title: "Error",
         description: errorMessage,
@@ -82,33 +130,28 @@ const AIDataCopilot = () => {
 
   const renderTable = (data: any[]) => {
     if (!data || data.length === 0) {
-      return (
-        <div className="text-center py-8 text-gray-400">
-          <Database className="h-12 w-12 mx-auto mb-4 opacity-50" />
-          <p>No data found for your query</p>
-        </div>
-      );
+      return null;
     }
 
     const columns = Object.keys(data[0]);
 
     return (
-      <div className="overflow-auto max-h-96">
+      <div className="overflow-auto max-h-48 mt-2 border border-gray-600 rounded">
         <Table>
           <TableHeader>
             <TableRow>
               {columns.map((column) => (
-                <TableHead key={column} className="text-gray-300 font-medium">
+                <TableHead key={column} className="text-gray-300 font-medium text-xs px-2 py-1">
                   {column.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
                 </TableHead>
               ))}
             </TableRow>
           </TableHeader>
           <TableBody>
-            {data.map((row, index) => (
+            {data.slice(0, 10).map((row, index) => (
               <TableRow key={index}>
                 {columns.map((column) => (
-                  <TableCell key={column} className="text-gray-100">
+                  <TableCell key={column} className="text-gray-100 text-xs px-2 py-1">
                     {row[column] !== null && row[column] !== undefined 
                       ? String(row[column]) 
                       : '-'}
@@ -118,105 +161,159 @@ const AIDataCopilot = () => {
             ))}
           </TableBody>
         </Table>
+        {data.length > 10 && (
+          <div className="text-xs text-gray-400 p-2 border-t border-gray-600">
+            Showing first 10 of {data.length} results
+          </div>
+        )}
       </div>
     );
   };
 
+  if (!isOpen) {
+    return (
+      <Button
+        onClick={() => setIsOpen(true)}
+        className="fixed bottom-6 right-6 h-14 w-14 rounded-full bg-blue-600 hover:bg-blue-700 shadow-lg z-50"
+        size="icon"
+      >
+        <Bot className="h-6 w-6 text-white" />
+      </Button>
+    );
+  }
+
   return (
-    <Card className="bg-white/10 backdrop-blur-md border-white/20 mb-6">
-      <CardHeader>
-        <CardTitle className="text-white flex items-center gap-2">
-          <Sparkles className="h-5 w-5 text-blue-400" />
-          AI Data Copilot
-        </CardTitle>
-        <CardDescription className="text-gray-400">
-          Ask questions about your PSA data in natural language
-        </CardDescription>
-      </CardHeader>
-
-      <CardContent className="space-y-4">
-        {/* Query Input */}
-        <div className="space-y-2">
-          <Textarea
-            placeholder="Ask a question like: Show me projects where utilization is under 60%"
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400 min-h-[80px]"
-            disabled={isLoading}
-          />
-          
-          <div className="flex flex-wrap gap-2">
-            {examplePrompts.map((example, index) => (
-              <Button
-                key={index}
-                variant="outline"
-                size="sm"
-                onClick={() => setPrompt(example)}
-                className="text-xs border-gray-600 text-gray-300 hover:bg-gray-700"
-                disabled={isLoading}
-              >
-                {example}
-              </Button>
-            ))}
+    <div className="fixed bottom-6 right-6 z-50">
+      <Card className={`bg-gray-800 border-gray-600 shadow-xl transition-all duration-200 ${
+        isMinimized ? 'w-80 h-16' : 'w-96 h-[600px]'
+      }`}>
+        <CardHeader className="flex flex-row items-center justify-between p-4 border-b border-gray-600">
+          <div className="flex items-center gap-2">
+            <Bot className="h-5 w-5 text-blue-400" />
+            <CardTitle className="text-white text-sm">AI Data Copilot</CardTitle>
           </div>
-        </div>
-
-        {/* Run Query Button */}
-        <Button
-          onClick={handleRunQuery}
-          disabled={isLoading || !prompt.trim()}
-          className="bg-blue-600 hover:bg-blue-700"
-        >
-          {isLoading ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Processing...
-            </>
-          ) : (
-            'Run Query'
-          )}
-        </Button>
-
-        {/* Results Section */}
-        {(result || error) && (
-          <div className="space-y-4">
-            {/* SQL Display */}
-            {result?.sql && (
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="text-gray-300 border-gray-600">
-                    Generated SQL
-                  </Badge>
-                  <Badge variant="outline" className="text-blue-300 border-blue-600">
-                    {result.rowCount} rows
-                  </Badge>
-                </div>
-                <pre className="bg-gray-800 p-3 rounded text-sm text-gray-300 overflow-auto">
-                  {result.sql}
-                </pre>
-              </div>
-            )}
-
-            {/* Error Display */}
-            {error && (
-              <div className="bg-red-900/20 border border-red-600 rounded p-4">
-                <p className="text-red-300 text-sm">{error}</p>
-              </div>
-            )}
-
-            {/* Data Table */}
-            {result?.data && (
-              <div className="space-y-2">
-                <h4 className="text-white font-medium">Results</h4>
-                <div className="bg-gray-800/50 border border-gray-600 rounded">
-                  {renderTable(result.data)}
-                </div>
-              </div>
-            )}
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6 text-gray-400 hover:text-white"
+              onClick={() => setIsMinimized(!isMinimized)}
+            >
+              <Minimize2 className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6 text-gray-400 hover:text-white"
+              onClick={() => setIsOpen(false)}
+            >
+              <X className="h-4 w-4" />
+            </Button>
           </div>
-        )}
-      </CardContent>
-    </Card>
+        </CardHeader>
+
+        <Collapsible open={!isMinimized}>
+          <CollapsibleContent>
+            <CardContent className="p-0 flex flex-col h-[520px]">
+              {/* Messages Area */}
+              <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                {messages.map((message) => (
+                  <div key={message.id} className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`max-w-[80%] rounded-lg p-3 ${
+                      message.type === 'user' 
+                        ? 'bg-blue-600 text-white ml-4' 
+                        : 'bg-gray-700 text-gray-100 mr-4'
+                    }`}>
+                      <p className="text-sm">{message.content}</p>
+                      
+                      {message.sql && (
+                        <div className="mt-2">
+                          <Badge variant="outline" className="text-xs text-gray-300 border-gray-500">
+                            SQL Generated
+                          </Badge>
+                          <pre className="bg-gray-800 p-2 rounded text-xs text-gray-300 mt-1 overflow-auto">
+                            {message.sql}
+                          </pre>
+                        </div>
+                      )}
+                      
+                      {message.data && message.data.length > 0 && (
+                        <div className="mt-2">
+                          {renderTable(message.data)}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+                
+                {isLoading && (
+                  <div className="flex justify-start">
+                    <div className="bg-gray-700 text-gray-100 rounded-lg p-3 mr-4">
+                      <div className="flex items-center gap-2">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span className="text-sm">Analyzing your query...</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Quick Prompts - Show only initially */}
+              {messages.length === 1 && (
+                <div className="px-4 pb-2">
+                  <div className="flex flex-wrap gap-2">
+                    {quickPrompts.map((promptText, index) => (
+                      <Button
+                        key={index}
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleQuickPrompt(promptText)}
+                        className="text-xs border-gray-600 text-gray-300 hover:bg-gray-700"
+                        disabled={isLoading}
+                      >
+                        {promptText}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Input Area */}
+              <div className="border-t border-gray-600 p-4">
+                <div className="flex gap-2">
+                  <Textarea
+                    placeholder="Ask me anything about your data..."
+                    value={prompt}
+                    onChange={(e) => setPrompt(e.target.value)}
+                    className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400 text-sm resize-none"
+                    disabled={isLoading}
+                    rows={2}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        handleRunQuery();
+                      }
+                    }}
+                  />
+                  <Button
+                    onClick={() => handleRunQuery()}
+                    disabled={isLoading || !prompt.trim()}
+                    className="bg-blue-600 hover:bg-blue-700 px-3"
+                    size="sm"
+                  >
+                    {isLoading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      'Send'
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </CollapsibleContent>
+        </Collapsible>
+      </Card>
+    </div>
   );
 };
 
