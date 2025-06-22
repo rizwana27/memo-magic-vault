@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,18 +18,9 @@ const Projects = () => {
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const { toast } = useToast();
 
-  // Listen for custom event from Dashboard
-  useEffect(() => {
-    const handleOpenModal = () => {
-      setShowNewProjectModal(true);
-    };
-
-    window.addEventListener('openProjectModal', handleOpenModal);
-    return () => {
-      window.removeEventListener('openProjectModal', handleOpenModal);
-    };
-  }, []);
-
+  // Remove the automatic modal opening event listener
+  // Projects should only show the modal when user clicks the button
+  
   const getStatusColor = (status?: string) => {
     switch (status) {
       case 'active': return 'bg-green-500';
@@ -56,7 +46,7 @@ const Projects = () => {
       // Refetch projects to get the updated list
       await refetch();
       
-      // Close modal
+      // Close modal and reset state
       setShowNewProjectModal(false);
       
       toast({
@@ -90,8 +80,13 @@ const Projects = () => {
   };
 
   const handleAddProjectClick = () => {
-    console.log('Add Project button clicked');
+    console.log('Add Project button clicked - showing modal');
     setShowNewProjectModal(true);
+  };
+
+  const handleCloseProjectModal = () => {
+    console.log('Closing project creation modal');
+    setShowNewProjectModal(false);
   };
 
   return (
@@ -300,12 +295,14 @@ const Projects = () => {
         </TabsContent>
       </Tabs>
 
-      {/* Project Creation Modal - Only shown when button is clicked */}
-      <ProjectCreationModal
-        open={showNewProjectModal}
-        onOpenChange={setShowNewProjectModal}
-        onSubmit={handleNewProject}
-      />
+      {/* Project Creation Modal - Only shown when showNewProjectModal is true */}
+      {showNewProjectModal && (
+        <ProjectCreationModal
+          open={showNewProjectModal}
+          onOpenChange={handleCloseProjectModal}
+          onSubmit={handleNewProject}
+        />
+      )}
 
       {/* Project Detail Modal */}
       <ProjectDetailModal
