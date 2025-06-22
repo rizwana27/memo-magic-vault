@@ -1,20 +1,22 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Dialog } from '@/components/ui/dialog';
-import { Plus, Search, Filter, Building, Mail, Phone, Calendar } from 'lucide-react';
+import { Plus, Search, Filter, Building, Mail, Phone, Calendar, ExternalLink } from 'lucide-react';
 import { useVendorsApi, useCreateVendorApi } from '@/hooks/useApiIntegration';
-import NewVendorForm from './forms/NewVendorForm';
+import VendorCreationModal from './forms/VendorCreationModal';
 import VendorDetailModal from './modals/VendorDetailModal';
+import { useToast } from '@/hooks/use-toast';
 
 const Vendors = () => {
-  const { data: vendors, isLoading } = useVendorsApi();
+  const { data: vendors, isLoading, refetch } = useVendorsApi();
   const createVendor = useCreateVendorApi();
   const [searchTerm, setSearchTerm] = useState('');
   const [showNewVendorModal, setShowNewVendorModal] = useState(false);
   const [selectedVendorId, setSelectedVendorId] = useState<string | null>(null);
+  const { toast } = useToast();
 
   const getStatusColor = (status?: string) => {
     switch (status) {
@@ -35,14 +37,49 @@ const Vendors = () => {
     console.log('Creating new vendor:', data);
     try {
       await createVendor.mutateAsync(data);
+      
+      // Refetch vendors to get the updated list
+      await refetch();
+      
+      // Close modal
       setShowNewVendorModal(false);
-    } catch (error) {
+      
+      toast({
+        title: "Vendor Created",
+        description: `Vendor "${data.vendor_name}" has been created successfully.`,
+      });
+    } catch (error: any) {
       console.error('Error creating vendor:', error);
+      
+      // Provide detailed error information
+      let errorMessage = 'Failed to create vendor. Please try again.';
+      
+      if (error.message?.includes('already imported')) {
+        errorMessage = `Error: ${error.message}`;
+      } else if (error.message) {
+        errorMessage = `Error: ${error.message}`;
+      }
+      
+      toast({
+        title: "Vendor Creation Failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
     }
   };
 
   const handleVendorClick = (vendorId: string) => {
     setSelectedVendorId(vendorId);
+  };
+
+  const handleAddVendorClick = () => {
+    console.log('Add Vendor button clicked - showing modal');
+    setShowNewVendorModal(true);
+  };
+
+  const handleCloseVendorModal = () => {
+    console.log('Closing vendor creation modal');
+    setShowNewVendorModal(false);
   };
 
   if (isLoading) {
@@ -63,7 +100,7 @@ const Vendors = () => {
         </div>
         <Button 
           className="bg-blue-600 hover:bg-blue-700"
-          onClick={() => setShowNewVendorModal(true)}
+          onClick={handleAddVendorClick}
           disabled={createVendor.isPending}
         >
           <Plus className="w-4 h-4 mr-2" />
@@ -157,7 +194,17 @@ const Vendors = () => {
             >
               <CardHeader>
                 <div className="flex justify-between items-start">
-                  <CardTitle className="text-white text-lg">{vendor.vendor_name}</CardTitle>
+                  <div className="flex items-center gap-2">
+                    <CardTitle className="text-white text-lg">{vendor.vendor_name}</CardTitle>
+                    {vendor.external_source && (
+                      <div className="flex items-center gap-1">
+                        <ExternalLink className="w-4 h-4 text-blue-400" />
+                        <Badge variant="outline" className="text-xs border-blue-400 text-blue-400">
+                          {vendor.external_source}
+                        </Badge>
+                      </div>
+                    )}
+                  </div>
                   <Badge className={`${getStatusColor(vendor.status)} text-white`}>
                     {vendor.status || 'Unknown'}
                   </Badge>
@@ -193,6 +240,13 @@ const Vendors = () => {
                       Contract: {new Date(vendor.contract_start_date).toLocaleDateString()}
                     </div>
                   )}
+                  
+                  {vendor.external_source && vendor.external_id && (
+                    <div className="text-xs text-blue-400 flex items-center gap-1">
+                      <ExternalLink className="w-3 h-3" />
+                      Imported from {vendor.external_source} (ID: {vendor.external_id})
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -200,13 +254,33 @@ const Vendors = () => {
         </div>
       )}
 
-      {/* New Vendor Modal */}
-      <Dialog open={showNewVendorModal} onOpenChange={setShowNewVendorModal}>
-        <NewVendorForm
+      {filteredVendors.length === 0 && !isLoading && (
+        <Card className="bg-gray-800/50 border-gray-700">
+          <CardContent className="p-12 text-center">
+            <Building className="w-16 h-16 mx-auto mb-4 text-gray-400 opacity-50" />
+            <h3 className="text-xl font-medium text-white mb-2">No vendors found</h3>
+            <p className="text-gray-400 mb-4">
+              {searchTerm ? 'Try adjusting your search terms' : 'Get started by adding your first vendor'}
+            </p>
+            <Button 
+              className="bg-blue-600 hover:bg-blue-700"
+              onClick={handleAddVendorClick}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Add Vendor
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Vendor Creation Modal - Only shown when showNewVendorModal is true */}
+      {showNewVendorModal && (
+        <VendorCreationModal
+          open={showNewVendorModal}
+          onOpenChange={handleCloseVendorModal}
           onSubmit={handleNewVendor}
-          onCancel={() => setShowNewVendorModal(false)}
         />
-      </Dialog>
+      )}
 
       {/* Vendor Detail Modal */}
       <VendorDetailModal

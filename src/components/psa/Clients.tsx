@@ -4,18 +4,19 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Dialog } from '@/components/ui/dialog';
-import { Plus, Search, Filter, Globe, Mail, Phone, Building } from 'lucide-react';
+import { Plus, Search, Filter, Globe, Mail, Phone, Building, ExternalLink } from 'lucide-react';
 import { useClientsApi, useCreateClientApi } from '@/hooks/useApiIntegration';
-import NewClientForm from './forms/NewClientForm';
+import ClientCreationModal from './forms/ClientCreationModal';
 import ClientDetailModal from './modals/ClientDetailModal';
+import { useToast } from '@/hooks/use-toast';
 
 const Clients = () => {
-  const { data: clients, isLoading, error } = useClientsApi();
+  const { data: clients, isLoading, error, refetch } = useClientsApi();
   const createClient = useCreateClientApi();
   const [searchTerm, setSearchTerm] = useState('');
   const [showNewClientModal, setShowNewClientModal] = useState(false);
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+  const { toast } = useToast();
 
   const getHealthColor = (healthScore?: number) => {
     if (!healthScore) return 'bg-gray-500';
@@ -34,14 +35,49 @@ const Clients = () => {
     console.log('Submitting new client:', data);
     try {
       await createClient.mutateAsync(data);
+      
+      // Refetch clients to get the updated list
+      await refetch();
+      
+      // Close modal
       setShowNewClientModal(false);
-    } catch (error) {
+      
+      toast({
+        title: "Client Created",
+        description: `Client "${data.client_name}" has been created successfully.`,
+      });
+    } catch (error: any) {
       console.error('Error creating client:', error);
+      
+      // Provide detailed error information
+      let errorMessage = 'Failed to create client. Please try again.';
+      
+      if (error.message?.includes('already imported')) {
+        errorMessage = `Error: ${error.message}`;
+      } else if (error.message) {
+        errorMessage = `Error: ${error.message}`;
+      }
+      
+      toast({
+        title: "Client Creation Failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
     }
   };
 
   const handleClientClick = (clientId: string) => {
     setSelectedClientId(clientId);
+  };
+
+  const handleAddClientClick = () => {
+    console.log('Add Client button clicked - showing modal');
+    setShowNewClientModal(true);
+  };
+
+  const handleCloseClientModal = () => {
+    console.log('Closing client creation modal');
+    setShowNewClientModal(false);
   };
 
   if (error) {
@@ -76,7 +112,7 @@ const Clients = () => {
         </div>
         <Button 
           className="bg-blue-600 hover:bg-blue-700"
-          onClick={() => setShowNewClientModal(true)}
+          onClick={handleAddClientClick}
           disabled={createClient.isPending}
         >
           <Plus className="w-4 h-4 mr-2" />
@@ -170,7 +206,17 @@ const Clients = () => {
             >
               <CardHeader>
                 <div className="flex justify-between items-start">
-                  <CardTitle className="text-white text-lg">{client.client_name}</CardTitle>
+                  <div className="flex items-center gap-2">
+                    <CardTitle className="text-white text-lg">{client.client_name}</CardTitle>
+                    {client.external_source && (
+                      <div className="flex items-center gap-1">
+                        <ExternalLink className="w-4 h-4 text-blue-400" />
+                        <Badge variant="outline" className="text-xs border-blue-400 text-blue-400">
+                          {client.external_source}
+                        </Badge>
+                      </div>
+                    )}
+                  </div>
                   <Badge className={`${getHealthColor()} text-white`}>
                     {client.client_type || 'new'}
                   </Badge>
@@ -207,6 +253,13 @@ const Clients = () => {
                       <p>Revenue Tier: {client.revenue_tier}</p>
                     </div>
                   )}
+                  
+                  {client.external_source && client.external_id && (
+                    <div className="text-xs text-blue-400 flex items-center gap-1">
+                      <ExternalLink className="w-3 h-3" />
+                      Imported from {client.external_source} (ID: {client.external_id})
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -224,7 +277,7 @@ const Clients = () => {
             </p>
             <Button 
               className="bg-blue-600 hover:bg-blue-700"
-              onClick={() => setShowNewClientModal(true)}
+              onClick={handleAddClientClick}
             >
               <Plus className="w-4 h-4 mr-2" />
               Add Client
@@ -233,13 +286,14 @@ const Clients = () => {
         </Card>
       )}
 
-      {/* New Client Modal */}
-      <Dialog open={showNewClientModal} onOpenChange={setShowNewClientModal}>
-        <NewClientForm
+      {/* Client Creation Modal - Only shown when showNewClientModal is true */}
+      {showNewClientModal && (
+        <ClientCreationModal
+          open={showNewClientModal}
+          onOpenChange={handleCloseClientModal}
           onSubmit={handleNewClient}
-          onCancel={() => setShowNewClientModal(false)}
         />
-      </Dialog>
+      )}
 
       {/* Client Detail Modal */}
       <ClientDetailModal

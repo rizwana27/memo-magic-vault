@@ -1,240 +1,185 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
-import { DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { ArrowLeft } from 'lucide-react';
 
 interface NewClientFormProps {
   onSubmit: (data: any) => void;
   onCancel: () => void;
+  onBack?: () => void;
 }
 
-const NewClientForm = ({ onSubmit, onCancel }: NewClientFormProps) => {
-  const [formData, setFormData] = React.useState({
+const NewClientForm = ({ onSubmit, onCancel, onBack }: NewClientFormProps) => {
+  const [formData, setFormData] = useState({
     client_name: '',
     company_name: '',
-    industry: '',
-    primary_contact_name: '',
     primary_contact_email: '',
+    primary_contact_name: '',
     phone_number: '',
-    client_type: '',
+    industry: '',
+    client_type: 'prospect',
     revenue_tier: '',
-    notes: '',
+    notes: ''
   });
 
-  const [selectedTags, setSelectedTags] = React.useState<string[]>([]);
-  const availableTags = ['VIP', 'Priority', 'New Business', 'Recurring', 'High Value', 'Strategic'];
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Validate required fields
-    if (!formData.client_name.trim()) {
-      alert('Client name is required');
-      return;
-    }
-    
-    if (!formData.company_name.trim()) {
-      alert('Company name is required');
-      return;
-    }
-    
-    if (!formData.primary_contact_name.trim()) {
-      alert('Primary contact name is required');
-      return;
-    }
-    
-    if (!formData.primary_contact_email.trim()) {
-      alert('Primary contact email is required');
-      return;
-    }
-    
-    if (!formData.client_type) {
-      alert('Client type is required');
-      return;
-    }
-
-    const submitData = {
-      client_name: formData.client_name.trim(),
-      company_name: formData.company_name.trim(),
-      industry: formData.industry || null,
-      primary_contact_name: formData.primary_contact_name.trim(),
-      primary_contact_email: formData.primary_contact_email.trim(),
-      phone_number: formData.phone_number.trim() || null,
-      client_type: formData.client_type,
-      revenue_tier: formData.revenue_tier || null,
-      notes: formData.notes.trim() || null,
-      tags: selectedTags.length > 0 ? selectedTags : null,
-    };
-
-    console.log('Submitting client data:', submitData);
-    onSubmit(submitData);
-  };
-
-  const toggleTag = (tag: string) => {
-    setSelectedTags(prev => 
-      prev.includes(tag) 
-        ? prev.filter(t => t !== tag)
-        : [...prev, tag]
-    );
+    console.log('Submitting client form:', formData);
+    onSubmit(formData);
   };
 
   return (
-    <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-gray-900 border-gray-700">
+    <DialogContent className="bg-white/10 backdrop-blur-md border-white/20 text-white max-w-2xl max-h-[80vh] overflow-y-auto">
       <DialogHeader>
-        <DialogTitle className="text-white text-2xl">Add New Client</DialogTitle>
+        <div className="flex items-center gap-2">
+          {onBack && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={onBack}
+              className="p-1"
+            >
+              <ArrowLeft className="w-4 h-4" />
+            </Button>
+          )}
+          <DialogTitle className="text-white">Add New Client</DialogTitle>
+        </div>
       </DialogHeader>
       
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-2">
-            <Label htmlFor="client_name" className="text-gray-300">Client Name *</Label>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="client_name">Client Name *</Label>
             <Input
               id="client_name"
-              required
               value={formData.client_name}
-              onChange={(e) => setFormData(prev => ({ ...prev, client_name: e.target.value }))}
-              className="bg-gray-800 border-gray-600 text-white"
-              placeholder="Enter client name"
+              onChange={(e) => handleInputChange('client_name', e.target.value)}
+              className="bg-white/10 border-white/20"
+              required
             />
           </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="company_name" className="text-gray-300">Company Name *</Label>
+          
+          <div>
+            <Label htmlFor="company_name">Company Name *</Label>
             <Input
               id="company_name"
-              required
               value={formData.company_name}
-              onChange={(e) => setFormData(prev => ({ ...prev, company_name: e.target.value }))}
-              className="bg-gray-800 border-gray-600 text-white"
-              placeholder="Enter company name"
+              onChange={(e) => handleInputChange('company_name', e.target.value)}
+              className="bg-white/10 border-white/20"
+              required
             />
           </div>
+        </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="industry" className="text-gray-300">Industry</Label>
-            <Select value={formData.industry} onValueChange={(value) => setFormData(prev => ({ ...prev, industry: value }))}>
-              <SelectTrigger className="bg-gray-800 border-gray-600 text-white">
-                <SelectValue placeholder="Select industry" />
-              </SelectTrigger>
-              <SelectContent className="bg-gray-800 border-gray-600">
-                <SelectItem value="it">Information Technology</SelectItem>
-                <SelectItem value="finance">Finance & Banking</SelectItem>
-                <SelectItem value="healthcare">Healthcare</SelectItem>
-                <SelectItem value="manufacturing">Manufacturing</SelectItem>
-                <SelectItem value="retail">Retail & E-commerce</SelectItem>
-                <SelectItem value="education">Education</SelectItem>
-                <SelectItem value="government">Government</SelectItem>
-                <SelectItem value="other">Other</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="client_type" className="text-gray-300">Client Type *</Label>
-            <Select value={formData.client_type} onValueChange={(value) => setFormData(prev => ({ ...prev, client_type: value }))}>
-              <SelectTrigger className="bg-gray-800 border-gray-600 text-white">
-                <SelectValue placeholder="Select client type" />
-              </SelectTrigger>
-              <SelectContent className="bg-gray-800 border-gray-600">
-                <SelectItem value="prospect">Prospect</SelectItem>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="inactive">Inactive</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="primary_contact_name" className="text-gray-300">Primary Contact Name *</Label>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="primary_contact_name">Primary Contact Name *</Label>
             <Input
               id="primary_contact_name"
-              required
               value={formData.primary_contact_name}
-              onChange={(e) => setFormData(prev => ({ ...prev, primary_contact_name: e.target.value }))}
-              className="bg-gray-800 border-gray-600 text-white"
-              placeholder="Enter contact name"
+              onChange={(e) => handleInputChange('primary_contact_name', e.target.value)}
+              className="bg-white/10 border-white/20"
+              required
             />
           </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="primary_contact_email" className="text-gray-300">Primary Contact Email *</Label>
+          
+          <div>
+            <Label htmlFor="primary_contact_email">Primary Contact Email *</Label>
             <Input
               id="primary_contact_email"
               type="email"
-              required
               value={formData.primary_contact_email}
-              onChange={(e) => setFormData(prev => ({ ...prev, primary_contact_email: e.target.value }))}
-              className="bg-gray-800 border-gray-600 text-white"
-              placeholder="Enter email address"
+              onChange={(e) => handleInputChange('primary_contact_email', e.target.value)}
+              className="bg-white/10 border-white/20"
+              required
             />
           </div>
+        </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="phone_number" className="text-gray-300">Phone Number</Label>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="phone_number">Phone Number</Label>
             <Input
               id="phone_number"
               value={formData.phone_number}
-              onChange={(e) => setFormData(prev => ({ ...prev, phone_number: e.target.value }))}
-              className="bg-gray-800 border-gray-600 text-white"
-              placeholder="Enter phone number"
+              onChange={(e) => handleInputChange('phone_number', e.target.value)}
+              className="bg-white/10 border-white/20"
             />
           </div>
+          
+          <div>
+            <Label htmlFor="industry">Industry</Label>
+            <Input
+              id="industry"
+              value={formData.industry}
+              onChange={(e) => handleInputChange('industry', e.target.value)}
+              className="bg-white/10 border-white/20"
+            />
+          </div>
+        </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="revenue_tier" className="text-gray-300">Revenue Tier</Label>
-            <Select value={formData.revenue_tier} onValueChange={(value) => setFormData(prev => ({ ...prev, revenue_tier: value }))}>
-              <SelectTrigger className="bg-gray-800 border-gray-600 text-white">
-                <SelectValue placeholder="Select revenue tier" />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="client_type">Client Type</Label>
+            <Select value={formData.client_type} onValueChange={(value) => handleInputChange('client_type', value)}>
+              <SelectTrigger className="bg-white/10 border-white/20 text-white">
+                <SelectValue />
               </SelectTrigger>
               <SelectContent className="bg-gray-800 border-gray-600">
-                <SelectItem value="small">Small ($0 - $50K)</SelectItem>
-                <SelectItem value="medium">Medium ($50K - $500K)</SelectItem>
-                <SelectItem value="enterprise">Enterprise ($500K+)</SelectItem>
+                <SelectItem value="prospect" className="text-white hover:bg-gray-700">Prospect</SelectItem>
+                <SelectItem value="active" className="text-white hover:bg-gray-700">Active</SelectItem>
+                <SelectItem value="inactive" className="text-white hover:bg-gray-700">Inactive</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div>
+            <Label htmlFor="revenue_tier">Revenue Tier</Label>
+            <Select value={formData.revenue_tier} onValueChange={(value) => handleInputChange('revenue_tier', value)}>
+              <SelectTrigger className="bg-white/10 border-white/20 text-white">
+                <SelectValue placeholder="Select tier" />
+              </SelectTrigger>
+              <SelectContent className="bg-gray-800 border-gray-600">
+                <SelectItem value="small" className="text-white hover:bg-gray-700">Small ($0-$1M)</SelectItem>
+                <SelectItem value="medium" className="text-white hover:bg-gray-700">Medium ($1M-$10M)</SelectItem>
+                <SelectItem value="large" className="text-white hover:bg-gray-700">Large ($10M+)</SelectItem>
               </SelectContent>
             </Select>
           </div>
         </div>
 
-        <div className="space-y-2">
-          <Label className="text-gray-300">Tags</Label>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-            {availableTags.map((tag) => (
-              <div key={tag} className="flex items-center space-x-2">
-                <Checkbox
-                  id={tag}
-                  checked={selectedTags.includes(tag)}
-                  onCheckedChange={() => toggleTag(tag)}
-                />
-                <Label htmlFor={tag} className="text-sm text-gray-300">{tag}</Label>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="notes" className="text-gray-300">Notes / Communication History</Label>
+        <div>
+          <Label htmlFor="notes">Notes</Label>
           <Textarea
             id="notes"
             value={formData.notes}
-            onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-            className="bg-gray-800 border-gray-600 text-white"
-            placeholder="Enter notes or communication history"
-            rows={4}
+            onChange={(e) => handleInputChange('notes', e.target.value)}
+            className="bg-white/10 border-white/20"
+            rows={3}
           />
         </div>
 
-        <div className="flex justify-end space-x-4 pt-6">
-          <Button type="button" variant="outline" onClick={onCancel} className="border-gray-600 text-gray-300">
+        <DialogFooter>
+          <Button type="button" variant="secondary" onClick={onCancel}>
             Cancel
           </Button>
           <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
-            Add Client
+            Create Client
           </Button>
-        </div>
+        </DialogFooter>
       </form>
     </DialogContent>
   );

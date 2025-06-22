@@ -5,20 +5,16 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { CalendarIcon, Upload } from 'lucide-react';
-import { format } from 'date-fns';
-import { cn } from '@/lib/utils';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { ArrowLeft } from 'lucide-react';
 
 interface NewVendorFormProps {
   onSubmit: (data: any) => void;
   onCancel: () => void;
+  onBack?: () => void;
 }
 
-const NewVendorForm = ({ onSubmit, onCancel }: NewVendorFormProps) => {
+const NewVendorForm = ({ onSubmit, onCancel, onBack }: NewVendorFormProps) => {
   const [formData, setFormData] = useState({
     vendor_name: '',
     contact_person: '',
@@ -26,290 +22,169 @@ const NewVendorForm = ({ onSubmit, onCancel }: NewVendorFormProps) => {
     phone_number: '',
     services_offered: '',
     status: 'active',
-    notes: '',
+    contract_start_date: '',
+    contract_end_date: '',
+    notes: ''
   });
-  const [contractStart, setContractStart] = useState<Date>();
-  const [contractEnd, setContractEnd] = useState<Date>();
-  const [attachments, setAttachments] = useState<FileList | null>(null);
-  const [error, setError] = useState<string>('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    if (error) setError('');
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    setIsSubmitting(true);
-
-    try {
-      // Comprehensive validation
-      if (!formData.vendor_name.trim()) {
-        throw new Error('Vendor name is required');
-      }
-
-      if (!formData.contact_person.trim()) {
-        throw new Error('Contact person is required');
-      }
-
-      if (!formData.contact_email.trim()) {
-        throw new Error('Contact email is required');
-      }
-
-      if (!isEmailValid(formData.contact_email)) {
-        throw new Error('Please enter a valid email address');
-      }
-
-      if (!formData.services_offered.trim()) {
-        throw new Error('Services offered is required');
-      }
-
-      // Validate contract dates
-      if (contractStart && contractEnd && contractStart >= contractEnd) {
-        throw new Error('Contract end date must be after start date');
-      }
-
-      // Map form data to exact database schema
-      const vendorData = {
-        vendor_name: formData.vendor_name.trim(),
-        contact_person: formData.contact_person.trim(),
-        contact_email: formData.contact_email.trim(),
-        phone_number: formData.phone_number.trim() || null,
-        services_offered: formData.services_offered.trim(),
-        status: formData.status,
-        notes: formData.notes.trim() || null,
-        contract_start_date: contractStart ? contractStart.toISOString().split('T')[0] : null,
-        contract_end_date: contractEnd ? contractEnd.toISOString().split('T')[0] : null,
-        attachments: null, // Setting to null as per schema
-      };
-
-      console.log('Submitting vendor data:', vendorData);
-      await onSubmit(vendorData);
-      
-    } catch (error) {
-      console.error('Vendor form validation error:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to create vendor. Please check your input and try again.';
-      setError(errorMessage);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const isEmailValid = (email: string) => {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    console.log('Submitting vendor form:', formData);
+    
+    // Format dates properly or set to null if empty
+    const submitData = {
+      ...formData,
+      contract_start_date: formData.contract_start_date || null,
+      contract_end_date: formData.contract_end_date || null
+    };
+    
+    onSubmit(submitData);
   };
 
   return (
-    <DialogContent className="bg-white/10 backdrop-blur-md border-white/20 text-white max-w-3xl max-h-[90vh] overflow-y-auto">
+    <DialogContent className="bg-white/10 backdrop-blur-md border-white/20 text-white max-w-2xl max-h-[80vh] overflow-y-auto">
       <DialogHeader>
-        <DialogTitle className="text-white text-xl">Add New Vendor</DialogTitle>
+        <div className="flex items-center gap-2">
+          {onBack && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={onBack}
+              className="p-1"
+            >
+              <ArrowLeft className="w-4 h-4" />
+            </Button>
+          )}
+          <DialogTitle className="text-white">Add New Vendor</DialogTitle>
+        </div>
       </DialogHeader>
       
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {error && (
-          <Alert className="border-red-500 bg-red-500/10">
-            <AlertDescription className="text-red-400">{error}</AlertDescription>
-          </Alert>
-        )}
-
+      <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Vendor Name */}
-          <div className="space-y-2">
-            <Label htmlFor="vendor_name" className="text-gray-200">Vendor Name *</Label>
+          <div>
+            <Label htmlFor="vendor_name">Vendor Name *</Label>
             <Input
               id="vendor_name"
               value={formData.vendor_name}
               onChange={(e) => handleInputChange('vendor_name', e.target.value)}
-              className="bg-white/10 border-white/20 text-white placeholder-gray-400"
-              placeholder="Enter vendor name"
+              className="bg-white/10 border-white/20"
               required
             />
           </div>
-
-          {/* Contact Person */}
-          <div className="space-y-2">
-            <Label htmlFor="contact_person" className="text-gray-200">Contact Person *</Label>
+          
+          <div>
+            <Label htmlFor="contact_person">Contact Person *</Label>
             <Input
               id="contact_person"
               value={formData.contact_person}
               onChange={(e) => handleInputChange('contact_person', e.target.value)}
-              className="bg-white/10 border-white/20 text-white placeholder-gray-400"
-              placeholder="Enter contact person name"
+              className="bg-white/10 border-white/20"
               required
             />
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Contact Email */}
-          <div className="space-y-2">
-            <Label htmlFor="contact_email" className="text-gray-200">Contact Email *</Label>
+          <div>
+            <Label htmlFor="contact_email">Contact Email *</Label>
             <Input
               id="contact_email"
               type="email"
               value={formData.contact_email}
               onChange={(e) => handleInputChange('contact_email', e.target.value)}
-              className="bg-white/10 border-white/20 text-white placeholder-gray-400"
-              placeholder="vendor@example.com"
+              className="bg-white/10 border-white/20"
               required
             />
           </div>
-
-          {/* Phone Number */}
-          <div className="space-y-2">
-            <Label htmlFor="phone_number" className="text-gray-200">Phone Number</Label>
+          
+          <div>
+            <Label htmlFor="phone_number">Phone Number</Label>
             <Input
               id="phone_number"
-              type="tel"
               value={formData.phone_number}
               onChange={(e) => handleInputChange('phone_number', e.target.value)}
-              className="bg-white/10 border-white/20 text-white placeholder-gray-400"
-              placeholder="+1-555-0123"
+              className="bg-white/10 border-white/20"
             />
           </div>
         </div>
 
-        {/* Services Offered */}
-        <div className="space-y-2">
-          <Label htmlFor="services_offered" className="text-gray-200">Services Offered *</Label>
-          <Textarea
+        <div>
+          <Label htmlFor="services_offered">Services Offered *</Label>
+          <Input
             id="services_offered"
             value={formData.services_offered}
             onChange={(e) => handleInputChange('services_offered', e.target.value)}
-            className="bg-white/10 border-white/20 text-white placeholder-gray-400"
-            placeholder="Describe the services this vendor provides..."
-            rows={3}
+            className="bg-white/10 border-white/20"
             required
           />
         </div>
 
-        {/* Status */}
-        <div className="space-y-2">
-          <Label className="text-gray-200">Status *</Label>
-          <Select value={formData.status} onValueChange={(value) => handleInputChange('status', value)}>
-            <SelectTrigger className="bg-white/10 border-white/20 text-white">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent className="bg-gray-800 border-gray-600">
-              <SelectItem value="active" className="text-white hover:bg-gray-700">Active</SelectItem>
-              <SelectItem value="inactive" className="text-white hover:bg-gray-700">Inactive</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Contract Dates */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label className="text-gray-200">Contract Start Date</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "w-full justify-start text-left font-normal bg-white/10 border-white/20 text-white hover:bg-white/20",
-                    !contractStart && "text-gray-400"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {contractStart ? format(contractStart, "PPP") : <span>Pick start date</span>}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0 bg-gray-800 border-gray-600" align="start">
-                <Calendar
-                  mode="single"
-                  selected={contractStart}
-                  onSelect={(date) => {
-                    setContractStart(date);
-                    if (error) setError('');
-                  }}
-                  initialFocus
-                  className="bg-gray-800 text-white"
-                />
-              </PopoverContent>
-            </Popover>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <Label htmlFor="status">Status</Label>
+            <Select value={formData.status} onValueChange={(value) => handleInputChange('status', value)}>
+              <SelectTrigger className="bg-white/10 border-white/20 text-white">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-gray-800 border-gray-600">
+                <SelectItem value="active" className="text-white hover:bg-gray-700">Active</SelectItem>
+                <SelectItem value="inactive" className="text-white hover:bg-gray-700">Inactive</SelectItem>
+                <SelectItem value="pending" className="text-white hover:bg-gray-700">Pending</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-
-          <div className="space-y-2">
-            <Label className="text-gray-200">Contract End Date</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "w-full justify-start text-left font-normal bg-white/10 border-white/20 text-white hover:bg-white/20",
-                    !contractEnd && "text-gray-400"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {contractEnd ? format(contractEnd, "PPP") : <span>Pick end date</span>}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0 bg-gray-800 border-gray-600" align="start">
-                <Calendar
-                  mode="single"
-                  selected={contractEnd}
-                  onSelect={(date) => {
-                    setContractEnd(date);
-                    if (error) setError('');
-                  }}
-                  initialFocus
-                  className="bg-gray-800 text-white"
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
-        </div>
-
-        {/* Attachments */}
-        <div className="space-y-2">
-          <Label htmlFor="attachments" className="text-gray-200">Attachments</Label>
-          <div className="relative">
+          
+          <div>
+            <Label htmlFor="contract_start_date">Contract Start Date</Label>
             <Input
-              id="attachments"
-              type="file"
-              multiple
-              onChange={(e) => setAttachments(e.target.files)}
-              className="bg-white/10 border-white/20 text-white file:bg-blue-600 file:text-white file:border-0 file:rounded file:px-3 file:py-1"
+              id="contract_start_date"
+              type="date"
+              value={formData.contract_start_date}
+              onChange={(e) => handleInputChange('contract_start_date', e.target.value)}
+              className="bg-white/10 border-white/20"
             />
-            <Upload className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
           </div>
-          <p className="text-xs text-gray-400">Upload contracts, certificates, or other relevant documents</p>
+          
+          <div>
+            <Label htmlFor="contract_end_date">Contract End Date</Label>
+            <Input
+              id="contract_end_date"
+              type="date"
+              value={formData.contract_end_date}
+              onChange={(e) => handleInputChange('contract_end_date', e.target.value)}
+              className="bg-white/10 border-white/20"
+            />
+          </div>
         </div>
 
-        {/* Notes */}
-        <div className="space-y-2">
-          <Label htmlFor="notes" className="text-gray-200">Notes (Optional)</Label>
+        <div>
+          <Label htmlFor="notes">Notes</Label>
           <Textarea
             id="notes"
             value={formData.notes}
             onChange={(e) => handleInputChange('notes', e.target.value)}
-            className="bg-white/10 border-white/20 text-white placeholder-gray-400"
-            placeholder="Add any additional notes about this vendor..."
+            className="bg-white/10 border-white/20"
             rows={3}
           />
         </div>
-      </form>
 
-      <DialogFooter>
-        <Button
-          type="button"
-          variant="outline"
-          onClick={onCancel}
-          className="border-gray-600 text-gray-300 hover:bg-gray-700"
-          disabled={isSubmitting}
-        >
-          Cancel
-        </Button>
-        <Button
-          onClick={handleSubmit}
-          className="bg-blue-600 hover:bg-blue-700 text-white"
-          disabled={isSubmitting || !formData.vendor_name || !formData.contact_person || !formData.contact_email || !formData.services_offered || (formData.contact_email && !isEmailValid(formData.contact_email))}
-        >
-          {isSubmitting ? 'Adding...' : 'Add Vendor'}
-        </Button>
-      </DialogFooter>
+        <DialogFooter>
+          <Button type="button" variant="secondary" onClick={onCancel}>
+            Cancel
+          </Button>
+          <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
+            Create Vendor
+          </Button>
+        </DialogFooter>
+      </form>
     </DialogContent>
   );
 };

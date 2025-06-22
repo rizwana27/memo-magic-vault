@@ -144,13 +144,33 @@ export const useCreateClientApi = () => {
   
   return useMutation({
     mutationFn: async (clientData: any) => {
+      console.log('Creating client with data:', clientData);
+      
+      // Check for duplicates if importing from external source
+      if (clientData.external_source && clientData.external_id) {
+        const { data: existingClient } = await supabase
+          .from('clients')
+          .select('client_id')
+          .eq('external_source', clientData.external_source)
+          .eq('external_id', clientData.external_id)
+          .single();
+          
+        if (existingClient) {
+          throw new Error(`Client already imported from ${clientData.external_source}`);
+        }
+      }
+      
       const { data, error } = await supabase
         .from('clients')
         .insert([clientData])
         .select()
         .single();
       
-      if (error) throw error;
+      if (error) {
+        console.error('Client creation error:', error);
+        throw error;
+      }
+      
       return data;
     },
     onSuccess: () => {
@@ -328,13 +348,33 @@ export const useCreateVendorApi = () => {
   
   return useMutation({
     mutationFn: async (vendorData: any) => {
+      console.log('Creating vendor with data:', vendorData);
+      
+      // Check for duplicates if importing from external source
+      if (vendorData.external_source && vendorData.external_id) {
+        const { data: existingVendor } = await supabase
+          .from('vendors')
+          .select('vendor_id')
+          .eq('external_source', vendorData.external_source)
+          .eq('external_id', vendorData.external_id)
+          .single();
+          
+        if (existingVendor) {
+          throw new Error(`Vendor already imported from ${vendorData.external_source}`);
+        }
+      }
+      
       const { data, error } = await supabase
         .from('vendors')
         .insert([vendorData])
         .select()
         .single();
       
-      if (error) throw error;
+      if (error) {
+        console.error('Vendor creation error:', error);
+        throw error;
+      }
+      
       return data;
     },
     onSuccess: () => {
