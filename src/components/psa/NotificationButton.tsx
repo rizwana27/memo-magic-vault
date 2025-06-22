@@ -14,7 +14,8 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { useNotifications } from '@/hooks/useNotifications';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface NotificationButtonProps {
   type: 'task_assignment' | 'timesheet_approval' | 'invoice_sent' | 'project_update';
@@ -31,15 +32,22 @@ const NotificationButton: React.FC<NotificationButtonProps> = ({
   defaultName = '',
   buttonText = 'Send Notification'
 }) => {
-  const { sendNotification } = useNotifications();
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState(defaultEmail);
   const [name, setName] = useState(defaultName);
   const [customMessage, setCustomMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const { toast } = useToast();
 
   const handleSend = async () => {
-    if (!email) return;
+    if (!email) {
+      toast({
+        title: "Error",
+        description: "Email address is required",
+        variant: "destructive",
+      });
+      return;
+    }
 
     setIsSending(true);
     
@@ -49,17 +57,33 @@ const NotificationButton: React.FC<NotificationButtonProps> = ({
     };
 
     try {
-      await sendNotification({
-        type,
-        recipient_email: email,
-        recipient_name: name,
-        data: notificationData
+      const { data: result, error } = await supabase.functions.invoke('send-notifications', {
+        body: {
+          type,
+          recipient_email: email,
+          recipient_name: name,
+          data: notificationData
+        }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Notification sent",
+        description: `Email notification sent to ${email}`,
       });
       
       setOpen(false);
       setEmail('');
       setName('');
       setCustomMessage('');
+    } catch (error: any) {
+      console.error('Notification error:', error);
+      toast({
+        title: "Notification failed",
+        description: error.message || "Failed to send notification. Please check if RESEND_API_KEY is configured.",
+        variant: "destructive",
+      });
     } finally {
       setIsSending(false);
     }
