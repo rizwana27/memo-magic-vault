@@ -34,15 +34,28 @@ Important notes:
 `;
 
 function validateSQL(sql: string): boolean {
-  const sqlLower = sql.toLowerCase().trim();
+  console.log('=== SQL VALIDATION START ===');
+  console.log('Original SQL:', sql);
+  
+  const sqlTrimmed = sql.trim();
+  const sqlLower = sqlTrimmed.toLowerCase();
+  
+  console.log('Trimmed SQL:', sqlTrimmed);
+  console.log('Lowercase SQL:', sqlLower);
+  
+  // Remove trailing semicolon if present
+  const cleanSQL = sqlTrimmed.replace(/;+$/, '');
+  const cleanSQLLower = cleanSQL.toLowerCase();
+  
+  console.log('Clean SQL (no semicolon):', cleanSQL);
   
   // Must start with SELECT
-  if (!sqlLower.startsWith('select')) {
+  if (!cleanSQLLower.startsWith('select')) {
     console.log('SQL validation failed: Does not start with SELECT');
     return false;
   }
   
-  // Improved forbidden keywords check - be more specific to avoid false positives
+  // Forbidden keywords check - be more specific to avoid false positives
   const forbiddenPatterns = [
     /\binsert\s+into\b/i,
     /\bupdate\s+\w+\s+set\b/i,
@@ -59,12 +72,13 @@ function validateSQL(sql: string): boolean {
   ];
   
   for (const pattern of forbiddenPatterns) {
-    if (pattern.test(sql)) {
+    if (pattern.test(cleanSQL)) {
       console.log(`SQL validation failed: Contains forbidden pattern: ${pattern}`);
       return false;
     }
   }
   
+  console.log('SQL validation passed');
   return true;
 }
 
@@ -74,8 +88,12 @@ async function executeSQL(sql: string) {
   console.log('SQL Length:', sql.length);
   
   try {
+    // Clean the SQL by removing trailing semicolons
+    const cleanSQL = sql.trim().replace(/;+$/, '');
+    console.log('Clean SQL for execution:', cleanSQL);
+    
     // Execute the query using the database function
-    const { data, error } = await supabase.rpc('execute_sql', { query: sql });
+    const { data, error } = await supabase.rpc('execute_sql', { query: cleanSQL });
     
     if (error) {
       console.error('=== DATABASE ERROR ===');
@@ -172,7 +190,7 @@ serve(async (req) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'gpt-4o-mini',
+          model: 'gpt-4.1-2025-04-14',
           messages: [
             {
               role: 'system',
@@ -191,7 +209,8 @@ Rules:
 8. Return only the SQL query, no explanations or markdown formatting
 9. For resource queries, consider filtering by active_status = true unless specifically asked for inactive resources
 10. Use CURRENT_DATE for date comparisons
-11. When referencing time periods like "last week", use proper date arithmetic`
+11. When referencing time periods like "last week", use proper date arithmetic
+12. Do not include semicolons at the end of queries`
             },
             {
               role: 'user',
@@ -203,6 +222,9 @@ Rules:
         }),
       });
 
+      console.log('OpenAI Response Status:', aiResponse.status);
+      console.log('OpenAI Response OK:', aiResponse.ok);
+
       if (!aiResponse.ok) {
         const errorText = await aiResponse.text();
         console.error('OpenAI API error:', aiResponse.status, errorText);
@@ -211,8 +233,10 @@ Rules:
 
       const aiData = await aiResponse.json();
       console.log('OpenAI response received successfully');
+      console.log('AI Data structure:', Object.keys(aiData));
       
       if (!aiData.choices || !aiData.choices[0] || !aiData.choices[0].message) {
+        console.error('Invalid OpenAI response structure:', aiData);
         throw new Error('Invalid response structure from OpenAI');
       }
 
@@ -252,6 +276,8 @@ Rules:
     } catch (aiError) {
       console.error('=== OPENAI ERROR ===');
       console.error('AI request failed:', aiError);
+      console.error('Error details:', aiError.message);
+      console.error('Error stack:', aiError.stack);
       
       return new Response(JSON.stringify({ 
         error: 'Failed to generate SQL query. Please try rephrasing your question.',
@@ -267,6 +293,7 @@ Rules:
   } catch (error) {
     console.error('=== GENERAL ERROR ===');
     console.error('Error in ai-data-copilot function:', error);
+    console.error('Error message:', error.message);
     console.error('Error stack:', error.stack);
     
     // Return a proper error response with detailed logging

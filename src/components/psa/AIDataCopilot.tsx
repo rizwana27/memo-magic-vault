@@ -34,16 +34,16 @@ const AIDataCopilot = () => {
     {
       id: '1',
       type: 'system',
-      content: 'Hi there! 👋 How can I help you? How are you doing today?',
+      content: 'Hi there! 👋 How can I help you analyze your PSA data today?',
       timestamp: new Date()
     }
   ]);
   const { toast } = useToast();
 
   const quickPrompts = [
-    "Show me underutilized resources",
-    "List top-performing projects this quarter", 
-    "Hours logged last week by each team"
+    "List all clients",
+    "Show me active projects", 
+    "List all resources"
   ];
 
   const handleQuickPrompt = (promptText: string) => {
@@ -90,18 +90,28 @@ const AIDataCopilot = () => {
         console.error('=== FRONTEND: Supabase Function Error ===');
         console.error('Error details:', error);
         
-        const errorMessage = `Function error: ${error.message || 'Edge Function returned a non-2xx status code'}`;
+        let errorMessage = "I encountered a technical error. Please try again.";
+        
+        // Try to extract more specific error information
+        if (error.message) {
+          if (error.message.includes("Edge Function returned a non-2xx status code")) {
+            errorMessage = "The AI service is currently experiencing issues. Please try a simpler query or contact support.";
+          } else {
+            errorMessage = `Technical error: ${error.message}`;
+          }
+        }
+        
         const assistantMessage: Message = {
           id: (Date.now() + 1).toString(),
           type: 'assistant',
-          content: `Sorry, I encountered a technical error: ${errorMessage}. Please try again or contact support if the issue persists.`,
+          content: errorMessage,
           timestamp: new Date()
         };
         setMessages(prev => [...prev, assistantMessage]);
 
         toast({
-          title: "Technical Error",
-          description: "The AI service encountered an error. Please try again.",
+          title: "Query Failed",
+          description: errorMessage,
           variant: "destructive"
         });
         return;
