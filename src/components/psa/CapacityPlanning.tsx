@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { AlertTriangle, CheckCircle, TrendingUp, TrendingDown } from 'lucide-react';
+import { AlertTriangle, CheckCircle, TrendingUp, TrendingDown, Users } from 'lucide-react';
 import { useResourceUtilizationApi } from '@/hooks/useApiIntegration';
 
 const CapacityPlanning = () => {

@@ -164,26 +164,39 @@ export class OutboundApiService {
   }
 
   private static async generateUtilizationReport(params: any) {
-    // Get utilization data from API
-    const { data: timesheets, error } = await supabase
+    // Get timesheets data
+    const { data: timesheets, error: timesheetsError } = await supabase
       .from('timesheets')
-      .select(`
-        *,
-        project:projects(project_name),
-        resource:resources(full_name, department)
-      `)
+      .select('*')
       .gte('date', params.dateRange.start)
       .lte('date', params.dateRange.end);
 
-    if (error) throw error;
+    if (timesheetsError) throw timesheetsError;
+
+    // Get projects data separately
+    const { data: projects, error: projectsError } = await supabase
+      .from('projects')
+      .select('project_id, project_name');
+
+    if (projectsError) throw projectsError;
+
+    // Get resources data separately
+    const { data: resources, error: resourcesError } = await supabase
+      .from('resources')
+      .select('resource_id, full_name, department');
+
+    if (resourcesError) throw resourcesError;
 
     // Process and aggregate data for report
     const utilizationData = timesheets?.reduce((acc, sheet) => {
       const resourceKey = sheet.created_by;
       if (!acc[resourceKey]) {
+        const resource = resources?.find(r => r.resource_id === sheet.created_by);
+        const project = projects?.find(p => p.project_id === sheet.project_id);
+        
         acc[resourceKey] = {
-          resourceName: sheet.resource?.full_name || 'Unknown',
-          department: sheet.resource?.department || 'Unknown',
+          resourceName: resource?.full_name || 'Unknown',
+          department: resource?.department || 'Unknown',
           totalHours: 0,
           billableHours: 0,
           projects: new Set(),
@@ -194,7 +207,9 @@ export class OutboundApiService {
       if (sheet.billable) {
         acc[resourceKey].billableHours += sheet.hours || 0;
       }
-      acc[resourceKey].projects.add(sheet.project?.project_name || 'Unknown');
+      
+      const project = projects?.find(p => p.project_id === sheet.project_id);
+      acc[resourceKey].projects.add(project?.project_name || 'Unknown');
       
       return acc;
     }, {});
@@ -202,7 +217,7 @@ export class OutboundApiService {
     return {
       type: 'utilization',
       dateRange: params.dateRange,
-      data: Object.values(utilizationData),
+      data: Object.values(utilizationData || {}),
       summary: {
         totalResources: Object.keys(utilizationData || {}).length,
         totalHours: Object.values(utilizationData || {}).reduce((sum: number, resource: any) => sum + resource.totalHours, 0),
@@ -212,28 +227,41 @@ export class OutboundApiService {
   }
 
   private static async generateAllocationReport(params: any) {
-    // Get allocation data
-    const { data: timesheets, error } = await supabase
+    // Get timesheets data
+    const { data: timesheets, error: timesheetsError } = await supabase
       .from('timesheets')
-      .select(`
-        *,
-        project:projects(project_name, client_id),
-        resource:resources(full_name, department)
-      `)
+      .select('*')
       .gte('date', params.dateRange.start)
       .lte('date', params.dateRange.end);
 
-    if (error) throw error;
+    if (timesheetsError) throw timesheetsError;
+
+    // Get projects data separately
+    const { data: projects, error: projectsError } = await supabase
+      .from('projects')
+      .select('project_id, project_name, client_id');
+
+    if (projectsError) throw projectsError;
+
+    // Get resources data separately
+    const { data: resources, error: resourcesError } = await supabase
+      .from('resources')
+      .select('resource_id, full_name, department');
+
+    if (resourcesError) throw resourcesError;
 
     // Process allocation data
     const allocationMatrix = timesheets?.reduce((acc, sheet) => {
       const key = `${sheet.created_by}-${sheet.project_id}`;
       if (!acc[key]) {
+        const resource = resources?.find(r => r.resource_id === sheet.created_by);
+        const project = projects?.find(p => p.project_id === sheet.project_id);
+        
         acc[key] = {
-          resourceName: sheet.resource?.full_name || 'Unknown',
-          department: sheet.resource?.department || 'Unknown',
-          projectName: sheet.project?.project_name || 'Unknown',
-          clientId: sheet.project?.client_id || 'Unknown',
+          resourceName: resource?.full_name || 'Unknown',
+          department: resource?.department || 'Unknown',
+          projectName: project?.project_name || 'Unknown',
+          clientId: project?.client_id || 'Unknown',
           totalHours: 0,
           billableHours: 0,
         };
