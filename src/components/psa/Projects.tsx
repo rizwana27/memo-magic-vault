@@ -1,13 +1,12 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Dialog } from '@/components/ui/dialog';
 import { Plus, Search, Filter, Calendar, Users, DollarSign, ExternalLink } from 'lucide-react';
 import { useProjectsApi, useCreateProjectApi } from '@/hooks/useApiIntegration';
-import NewProjectForm from './forms/NewProjectForm';
 import ProjectDetailModal from './modals/ProjectDetailModal';
 import ProjectCreationModal from './forms/ProjectCreationModal';
 import { useToast } from '@/hooks/use-toast';
@@ -90,6 +89,11 @@ const Projects = () => {
     setSelectedProjectId(projectId);
   };
 
+  const handleAddProjectClick = () => {
+    console.log('Add Project button clicked');
+    setShowNewProjectModal(true);
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -100,7 +104,7 @@ const Projects = () => {
         </div>
         <Button 
           className="bg-blue-600 hover:bg-blue-700"
-          onClick={() => setShowNewProjectModal(true)}
+          onClick={handleAddProjectClick}
           disabled={createProject.isPending}
         >
           <Plus className="w-4 h-4 mr-2" />
@@ -221,7 +225,7 @@ const Projects = () => {
                 </p>
                 <Button 
                   className="bg-blue-600 hover:bg-blue-700"
-                  onClick={() => setShowNewProjectModal(true)}
+                  onClick={handleAddProjectClick}
                 >
                   <Plus className="w-4 h-4 mr-2" />
                   Create Project
@@ -296,7 +300,7 @@ const Projects = () => {
         </TabsContent>
       </Tabs>
 
-      {/* Project Creation Modal */}
+      {/* Project Creation Modal - Only shown when button is clicked */}
       <ProjectCreationModal
         open={showNewProjectModal}
         onOpenChange={setShowNewProjectModal}
