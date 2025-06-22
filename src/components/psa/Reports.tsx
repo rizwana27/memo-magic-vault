@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -5,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
 import { TrendingUp, Users, DollarSign, Clock, Building, FileText, Target, Activity } from 'lucide-react';
 import { useProjects, useClients, useResources, useTimesheets, useInvoices } from '@/hooks/usePSAData';
+import AIDataCopilot from './AIDataCopilot';
 
 const Reports = () => {
   const { data: projects, isLoading: projectsLoading } = useProjects();
@@ -90,6 +92,9 @@ const Reports = () => {
         <h1 className="text-3xl font-bold text-white">Reports & Analytics</h1>
         <p className="text-gray-400">Insights and performance metrics for your business</p>
       </div>
+
+      {/* AI Data Copilot */}
+      <AIDataCopilot />
 
       {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
