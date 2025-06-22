@@ -10,11 +10,11 @@ import {
   AlertTriangle,
   CheckCircle 
 } from 'lucide-react';
-import { useResourceUtilization, useResourceAllocation } from '@/hooks/useKPIData';
+import { useKPIResourceUtilizationApi, useKPIResourceAllocationApi } from '@/hooks/useApiIntegration';
 
 const KPICards = () => {
-  const { data: utilization, isLoading: utilizationLoading } = useResourceUtilization();
-  const { data: allocation, isLoading: allocationLoading } = useResourceAllocation();
+  const { data: utilization, isLoading: utilizationLoading } = useKPIResourceUtilizationApi();
+  const { data: allocation, isLoading: allocationLoading } = useKPIResourceAllocationApi();
 
   if (utilizationLoading || allocationLoading) {
     return (

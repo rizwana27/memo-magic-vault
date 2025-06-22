@@ -4,10 +4,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { AlertTriangle, CheckCircle, TrendingUp, TrendingDown } from 'lucide-react';
-import { useDetailedResourceUtilization } from '@/hooks/useKPIData';
+import { useResourceUtilizationApi } from '@/hooks/useApiIntegration';
 
 const CapacityPlanning = () => {
-  const { data: resourceUtilization, isLoading } = useDetailedResourceUtilization();
+  const { data: resourceUtilization, isLoading } = useResourceUtilizationApi();
 
   if (isLoading) {
     return (
@@ -134,6 +134,13 @@ const CapacityPlanning = () => {
                 </div>
               </div>
             ))}
+            {(!resourceUtilization || resourceUtilization.length === 0) && (
+              <div className="text-center py-8 text-gray-400">
+                <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>No resource utilization data available</p>
+                <p className="text-sm">Add resources and timesheets to see capacity planning</p>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>

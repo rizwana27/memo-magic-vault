@@ -15,13 +15,24 @@ import {
   Calendar,
   AlertTriangle,
   CheckCircle,
-  XCircle
+  XCircle,
+  Download
 } from 'lucide-react';
-import { useProjects, useClients, useResources, useTimesheets, useInvoices, useCreateProject, useCreateResource } from '@/hooks/usePSAData';
+import { 
+  useProjectsApi, 
+  useClientsApi, 
+  useResourcesApi, 
+  useTimesheetsApi, 
+  useInvoicesApi,
+  useCreateProjectApi,
+  useCreateResourceApi
+} from '@/hooks/useApiIntegration';
 import NewProjectForm from './forms/NewProjectForm';
 import NewResourceForm from './forms/NewResourceForm';
 import ClientInviteForm from './forms/ClientInviteForm';
 import KPICards from './KPICards';
+import { OutboundApiService } from '@/services/outboundApiService';
+import { useToast } from '@/hooks/use-toast';
 
 interface DashboardProps {
   onTabChange?: (tab: string) => void;
@@ -31,15 +42,19 @@ const Dashboard: React.FC<DashboardProps> = ({ onTabChange }) => {
   const [showProjectForm, setShowProjectForm] = useState(false);
   const [showResourceForm, setShowResourceForm] = useState(false);
   const [showClientInviteForm, setShowClientInviteForm] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
-  const { data: projects = [] } = useProjects();
-  const { data: clients = [] } = useClients();
-  const { data: resources = [] } = useResources();
-  const { data: timesheets = [] } = useTimesheets();
-  const { data: invoices = [] } = useInvoices();
+  const { toast } = useToast();
   
-  const createProject = useCreateProject();
-  const createResource = useCreateResource();
+  // Use the new API hooks
+  const { data: projects = [], isLoading: projectsLoading } = useProjectsApi();
+  const { data: clients = [], isLoading: clientsLoading } = useClientsApi();
+  const { data: resources = [], isLoading: resourcesLoading } = useResourcesApi();
+  const { data: timesheets = [], isLoading: timesheetsLoading } = useTimesheetsApi();
+  const { data: invoices = [], isLoading: invoicesLoading } = useInvoicesApi();
+  
+  const createProject = useCreateProjectApi();
+  const createResource = useCreateResourceApi();
 
   // Calculate KPIs from real data
   const activeProjects = projects.filter(p => p.status === 'active').length;
@@ -47,10 +62,11 @@ const Dashboard: React.FC<DashboardProps> = ({ onTabChange }) => {
   const pendingInvoices = invoices.filter(inv => inv.status === 'sent' || inv.status === 'overdue').length;
   const utilization = resources.length > 0 ? Math.round((resources.filter(r => r.active_status).length / resources.length) * 100) : 0;
 
+  const isLoading = projectsLoading || clientsLoading || resourcesLoading || timesheetsLoading || invoicesLoading;
+
   const handleAddProject = () => {
     if (onTabChange) {
       onTabChange('projects');
-      // Small delay to ensure the projects page loads before opening the modal
       setTimeout(() => {
         window.dispatchEvent(new CustomEvent('openProjectModal'));
       }, 100);
@@ -62,7 +78,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onTabChange }) => {
   const handleAddResource = () => {
     if (onTabChange) {
       onTabChange('resources');
-      // Small delay to ensure the resources page loads before opening the modal
       setTimeout(() => {
         window.dispatchEvent(new CustomEvent('openResourceModal'));
       }, 100);
@@ -75,6 +90,17 @@ const Dashboard: React.FC<DashboardProps> = ({ onTabChange }) => {
     try {
       await createProject.mutateAsync(data);
       setShowProjectForm(false);
+      
+      // Send notification email if needed
+      if (data.project_manager_email) {
+        await OutboundApiService.sendEmailNotification({
+          to: [data.project_manager_email],
+          subject: `New Project Assigned: ${data.project_name}`,
+          message: `You have been assigned as project manager for ${data.project_name}`,
+          type: 'project_update',
+          relatedId: data.project_id
+        });
+      }
     } catch (error) {
       console.error('Error creating project:', error);
     }
@@ -84,8 +110,46 @@ const Dashboard: React.FC<DashboardProps> = ({ onTabChange }) => {
     try {
       await createResource.mutateAsync(data);
       setShowResourceForm(false);
+      
+      // Send welcome email
+      if (data.email_address) {
+        await OutboundApiService.sendEmailNotification({
+          to: [data.email_address],
+          subject: 'Welcome to the Team!',
+          message: `Welcome ${data.full_name}! Your account has been created.`,
+          type: 'task_assignment',
+          relatedId: data.resource_id
+        });
+      }
     } catch (error) {
       console.error('Error creating resource:', error);
+    }
+  };
+
+  const handleExportData = async (type: 'projects' | 'resources' | 'timesheets' | 'financials') => {
+    setIsExporting(true);
+    try {
+      await OutboundApiService.exportData({
+        type,
+        format: 'csv',
+        dateRange: {
+          start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          end: new Date().toISOString().split('T')[0]
+        }
+      });
+      
+      toast({
+        title: "Export Started",
+        description: `${type} data export has been initiated. Download will start shortly.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Export Failed",
+        description: `Failed to export ${type} data. Please try again.`,
+        variant: "destructive",
+      });
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -97,12 +161,23 @@ const Dashboard: React.FC<DashboardProps> = ({ onTabChange }) => {
           <h1 className="text-3xl font-bold text-white">Dashboard</h1>
           <p className="text-gray-300 mt-1">Welcome back! Here's what's happening with your projects.</p>
         </div>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            onClick={() => handleExportData('projects')}
+            disabled={isExporting}
+            className="border-gray-600 text-gray-300"
+          >
+            <Download className="w-4 h-4 mr-2" />
+            {isExporting ? 'Exporting...' : 'Export Data'}
+          </Button>
+        </div>
       </div>
 
-      {/* Enhanced KPI Cards */}
+      {/* Enhanced KPI Cards with Real Data */}
       <KPICards />
 
-      {/* Traditional KPI Cards */}
+      {/* Traditional KPI Cards with Real-time Data */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card className="bg-blue-100/10 border-blue-400/30 backdrop-blur-sm hover:bg-blue-100/15 transition-all duration-200">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -110,7 +185,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onTabChange }) => {
             <FolderOpen className="h-4 w-4 text-blue-300" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-white">{activeProjects}</div>
+            <div className="text-2xl font-bold text-white">
+              {isLoading ? '...' : activeProjects}
+            </div>
             <p className="text-xs text-blue-200 mt-1">
               {projects.length} total projects
             </p>
@@ -123,7 +200,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onTabChange }) => {
             <DollarSign className="h-4 w-4 text-green-300" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-white">${totalRevenue.toLocaleString()}</div>
+            <div className="text-2xl font-bold text-white">
+              {isLoading ? '...' : `$${totalRevenue.toLocaleString()}`}
+            </div>
             <p className="text-xs text-green-200 mt-1">
               {pendingInvoices} pending invoices
             </p>
@@ -136,7 +215,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onTabChange }) => {
             <Users className="h-4 w-4 text-purple-300" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-white">{resources.length}</div>
+            <div className="text-2xl font-bold text-white">
+              {isLoading ? '...' : resources.length}
+            </div>
             <p className="text-xs text-purple-200 mt-1">
               {resources.filter(r => r.active_status).length} active
             </p>
@@ -149,7 +230,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onTabChange }) => {
             <TrendingUp className="h-4 w-4 text-orange-300" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-white">{utilization}%</div>
+            <div className="text-2xl font-bold text-white">
+              {isLoading ? '...' : `${utilization}%`}
+            </div>
             <Progress value={utilization} className="mt-2 h-2" />
           </CardContent>
         </Card>
@@ -188,7 +271,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onTabChange }) => {
         </Card>
       </div>
 
-      {/* Recent Activity & Project Status */}
+      {/* Recent Activity & Project Status with Real Data */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Projects */}
         <Card className="bg-gray-800/50 border-gray-600">
@@ -200,30 +283,42 @@ const Dashboard: React.FC<DashboardProps> = ({ onTabChange }) => {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {projects.slice(0, 5).map((project) => (
-                <div key={project.project_id} className="flex items-center justify-between p-3 bg-gray-700/30 rounded-lg">
-                  <div>
-                    <p className="font-medium text-white">{project.project_name}</p>
-                    <p className="text-sm text-gray-300">{project.client_id}</p>
+              {isLoading ? (
+                [...Array(3)].map((_, i) => (
+                  <div key={i} className="flex items-center justify-between p-3 bg-gray-700/30 rounded-lg animate-pulse">
+                    <div className="flex-1">
+                      <div className="h-4 bg-gray-600 rounded w-3/4 mb-2"></div>
+                      <div className="h-3 bg-gray-600 rounded w-1/2"></div>
+                    </div>
+                    <div className="w-16 h-4 bg-gray-600 rounded"></div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    {project.status === 'active' && <CheckCircle className="h-4 w-4 text-green-400" />}
-                    {project.status === 'planning' && <Clock className="h-4 w-4 text-yellow-400" />}
-                    {project.status === 'on_hold' && <AlertTriangle className="h-4 w-4 text-orange-400" />}
-                    {project.status === 'completed' && <CheckCircle className="h-4 w-4 text-blue-400" />}
-                    {project.status === 'cancelled' && <XCircle className="h-4 w-4 text-red-400" />}
-                    <span className="text-xs text-gray-300 capitalize">{project.status}</span>
+                ))
+              ) : (
+                projects.slice(0, 5).map((project) => (
+                  <div key={project.project_id} className="flex items-center justify-between p-3 bg-gray-700/30 rounded-lg">
+                    <div>
+                      <p className="font-medium text-white">{project.project_name}</p>
+                      <p className="text-sm text-gray-300">{project.client?.client_name || project.client_id}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {project.status === 'active' && <CheckCircle className="h-4 w-4 text-green-400" />}
+                      {project.status === 'planning' && <Clock className="h-4 w-4 text-yellow-400" />}
+                      {project.status === 'on_hold' && <AlertTriangle className="h-4 w-4 text-orange-400" />}
+                      {project.status === 'completed' && <CheckCircle className="h-4 w-4 text-blue-400" />}
+                      {project.status === 'cancelled' && <XCircle className="h-4 w-4 text-red-400" />}
+                      <span className="text-xs text-gray-300 capitalize">{project.status}</span>
+                    </div>
                   </div>
-                </div>
-              ))}
-              {projects.length === 0 && (
+                ))
+              )}
+              {!isLoading && projects.length === 0 && (
                 <p className="text-gray-300 text-center py-4">No projects yet</p>
               )}
             </div>
           </CardContent>
         </Card>
 
-        {/* Team Utilization */}
+        {/* Team Overview */}
         <Card className="bg-gray-800/50 border-gray-600">
           <CardHeader>
             <CardTitle className="text-white flex items-center gap-2">
@@ -233,25 +328,37 @@ const Dashboard: React.FC<DashboardProps> = ({ onTabChange }) => {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {resources.slice(0, 5).map((resource) => (
-                <div key={resource.resource_id} className="flex items-center justify-between p-3 bg-gray-700/30 rounded-lg">
-                  <div>
-                    <p className="font-medium text-white">{resource.full_name}</p>
-                    <p className="text-sm text-gray-300">{resource.role} • {resource.department}</p>
+              {isLoading ? (
+                [...Array(3)].map((_, i) => (
+                  <div key={i} className="flex items-center justify-between p-3 bg-gray-700/30 rounded-lg animate-pulse">
+                    <div className="flex-1">
+                      <div className="h-4 bg-gray-600 rounded w-3/4 mb-2"></div>
+                      <div className="h-3 bg-gray-600 rounded w-1/2"></div>
+                    </div>
+                    <div className="w-16 h-4 bg-gray-600 rounded"></div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    {resource.active_status ? (
-                      <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                    ) : (
-                      <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
-                    )}
-                    <span className="text-xs text-gray-300">
-                      {resource.active_status ? 'Active' : 'Inactive'}
-                    </span>
+                ))
+              ) : (
+                resources.slice(0, 5).map((resource) => (
+                  <div key={resource.resource_id} className="flex items-center justify-between p-3 bg-gray-700/30 rounded-lg">
+                    <div>
+                      <p className="font-medium text-white">{resource.full_name}</p>
+                      <p className="text-sm text-gray-300">{resource.role} • {resource.department}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {resource.active_status ? (
+                        <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                      ) : (
+                        <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+                      )}
+                      <span className="text-xs text-gray-300">
+                        {resource.active_status ? 'Active' : 'Inactive'}
+                      </span>
+                    </div>
                   </div>
-                </div>
-              ))}
-              {resources.length === 0 && (
+                ))
+              )}
+              {!isLoading && resources.length === 0 && (
                 <p className="text-gray-300 text-center py-4">No team members yet</p>
               )}
             </div>
