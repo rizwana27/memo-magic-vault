@@ -79,6 +79,8 @@ const AuthFlow = () => {
   if (currentStep === 'auth' && selectedRole) {
     return (
       <AuthCard
+        title={`${selectedRole === 'admin' ? 'Admin' : selectedRole === 'vendor' ? 'Vendor' : 'Employee'} Sign In`}
+        description={`Access your ${selectedRole} dashboard and tools`}
         selectedRole={selectedRole}
         onBack={handleBackToRoleSelection}
         onAuthSuccess={handleAuthSuccess}
