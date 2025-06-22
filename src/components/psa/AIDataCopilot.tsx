@@ -75,19 +75,43 @@ const AIDataCopilot = () => {
     setIsLoading(true);
 
     try {
+      console.log('Invoking AI Data Copilot function with prompt:', queryPrompt);
+      
       const { data, error } = await supabase.functions.invoke('ai-data-copilot', {
         body: { prompt: queryPrompt }
       });
 
+      console.log('Function response:', { data, error });
+
       if (error) {
-        throw error;
+        console.error('Supabase function error:', error);
+        throw new Error(`Function error: ${error.message}`);
       }
 
+      // Check if the response contains an error
+      if (data?.error) {
+        console.error('AI Copilot error:', data.error);
+        const assistantMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          type: 'assistant',
+          content: `Sorry, I encountered an error: ${data.error}`,
+          timestamp: new Date()
+        };
+        setMessages(prev => [...prev, assistantMessage]);
+
+        toast({
+          title: "Query Error",
+          description: data.error,
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Success case
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         type: 'assistant',
-        content: data.error ? `Sorry, I encountered an error: ${data.error}` : 
-                 data.rowCount === 0 ? "No results found for your query." :
+        content: data.rowCount === 0 ? "No results found for your query." :
                  `Found ${data.rowCount} result${data.rowCount !== 1 ? 's' : ''}:`,
         data: data.data || [],
         sql: data.sql,
@@ -96,19 +120,13 @@ const AIDataCopilot = () => {
       
       setMessages(prev => [...prev, assistantMessage]);
 
-      if (data.error) {
-        toast({
-          title: "Query Error",
-          description: data.error,
-          variant: "destructive"
-        });
-      } else {
-        toast({
-          title: "Query Executed",
-          description: `Found ${data.rowCount} results`,
-        });
-      }
+      toast({
+        title: "Query Executed",
+        description: `Found ${data.rowCount} results`,
+      });
+
     } catch (err) {
+      console.error('Copilot error:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to execute query';
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),

@@ -27,7 +27,7 @@ Tables:
 
 Important notes:
 - Use proper JOIN statements when querying across tables
-- timesheets.created_by references resources.resource_id (not UUID)
+- timesheets.created_by references resources.resource_id
 - All queries must be SELECT only
 - Use proper date formatting and time calculations
 - Filter by active_status = true for resources when relevant
@@ -42,7 +42,7 @@ function validateSQL(sql: string): boolean {
   }
   
   // Forbidden keywords
-  const forbidden = ['insert', 'update', 'delete', 'drop', 'create', 'alter', 'truncate', 'grant', 'revoke'];
+  const forbidden = ['insert', 'update', 'delete', 'drop', 'create', 'alter', 'truncate', 'grant', 'revoke', 'exec', 'execute'];
   for (const keyword of forbidden) {
     if (sqlLower.includes(keyword)) {
       return false;
@@ -50,6 +50,26 @@ function validateSQL(sql: string): boolean {
   }
   
   return true;
+}
+
+async function executeSQL(sql: string) {
+  console.log('Executing SQL:', sql);
+  
+  try {
+    // Execute the query directly using the Supabase client
+    const { data, error } = await supabase.rpc('execute_sql', { query: sql });
+    
+    if (error) {
+      console.error('Database error:', error);
+      throw new Error(`Database error: ${error.message}`);
+    }
+    
+    console.log('Query executed successfully, rows returned:', data?.length || 0);
+    return data || [];
+  } catch (err) {
+    console.error('SQL execution failed:', err);
+    throw err;
+  }
 }
 
 serve(async (req) => {
@@ -62,7 +82,16 @@ serve(async (req) => {
     
     console.log('Received prompt:', prompt);
 
+    if (!prompt || typeof prompt !== 'string') {
+      throw new Error('Prompt is required and must be a string');
+    }
+
+    if (!openAIApiKey) {
+      throw new Error('OpenAI API key is not configured');
+    }
+
     // Generate SQL using OpenAI
+    console.log('Generating SQL with OpenAI...');
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -98,6 +127,12 @@ Rules:
       }),
     });
 
+    if (!response.ok) {
+      const errorData = await response.text();
+      console.error('OpenAI API error:', response.status, errorData);
+      throw new Error(`OpenAI API error: ${response.status}`);
+    }
+
     const aiData = await response.json();
     const generatedSQL = aiData.choices[0].message.content.trim();
     
@@ -105,31 +140,28 @@ Rules:
 
     // Validate the SQL
     if (!validateSQL(generatedSQL)) {
+      console.error('Generated SQL failed validation');
       throw new Error('Generated query contains forbidden operations or invalid syntax');
     }
 
     // Execute the SQL query
-    const { data, error } = await supabase.rpc('execute_sql', { 
-      query: generatedSQL 
-    });
+    const queryResults = await executeSQL(generatedSQL);
 
-    if (error) {
-      console.error('SQL execution error:', error);
-      throw new Error(`Query execution failed: ${error.message}`);
-    }
-
+    console.log('Query completed successfully');
     return new Response(JSON.stringify({ 
       sql: generatedSQL,
-      data: data || [],
-      rowCount: data?.length || 0
+      data: queryResults,
+      rowCount: queryResults.length
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
   } catch (error) {
     console.error('Error in ai-data-copilot function:', error);
+    
+    // Return a proper error response
     return new Response(JSON.stringify({ 
-      error: error.message,
+      error: error.message || 'An unexpected error occurred',
       sql: null,
       data: [],
       rowCount: 0
