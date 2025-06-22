@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -25,10 +26,11 @@ import {
   Users,
   DollarSign,
   Clock,
-  Target
+  Target,
+  FolderOpen
 } from 'lucide-react';
 import { useProjectsApi, useResourcesApi, useTimesheetsApi, useInvoicesApi } from '@/hooks/useApiIntegration';
-import { useKPIData } from '@/hooks/useKPIData';
+import { useResourceUtilization } from '@/hooks/useKPIData';
 
 const Reports = () => {
   const [selectedTimeRange, setSelectedTimeRange] = useState('30d');
@@ -38,7 +40,7 @@ const Reports = () => {
   const { data: timesheets = [] } = useTimesheetsApi();
   const { data: invoices = [] } = useInvoicesApi();
   
-  const kpiData = useKPIData();
+  const { data: resourceUtilizationData } = useResourceUtilization();
 
   const timeRangeOptions = [
     { label: 'Last 30 Days', value: '30d' },
@@ -61,6 +63,9 @@ const Reports = () => {
   const paidInvoices = invoices.filter(i => i.status === 'paid').length;
   const pendingInvoices = invoices.filter(i => i.status === 'sent' || i.status === 'overdue').length;
   const totalRevenue = invoices.filter(inv => inv.status === 'paid').reduce((sum, inv) => sum + (inv.total_amount || 0), 0);
+
+  // Get resource utilization from the hook
+  const resourceUtilization = resourceUtilizationData?.utilizationPercentage || 0;
 
   // Chart data
   const projectStatusData = [
@@ -189,9 +194,9 @@ const Reports = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-white">{kpiData.resourceUtilization}%</div>
+            <div className="text-3xl font-bold text-white">{resourceUtilization}%</div>
             <p className="text-sm text-gray-300 mt-1">
-              <Progress value={kpiData.resourceUtilization} className="h-2" />
+              <Progress value={resourceUtilization} className="h-2" />
             </p>
           </CardContent>
         </Card>
