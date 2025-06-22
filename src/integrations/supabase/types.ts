@@ -585,6 +585,10 @@ export type Database = {
         }
         Returns: string
       }
+      execute_sql: {
+        Args: { query: string }
+        Returns: Json
+      }
       generate_client_id: {
         Args: Record<PropertyKey, never>
         Returns: string

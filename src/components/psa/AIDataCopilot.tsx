@@ -75,26 +75,47 @@ const AIDataCopilot = () => {
     setIsLoading(true);
 
     try {
-      console.log('Invoking AI Data Copilot function with prompt:', queryPrompt);
+      console.log('=== FRONTEND: Invoking AI Data Copilot ===');
+      console.log('Prompt:', queryPrompt);
       
       const { data, error } = await supabase.functions.invoke('ai-data-copilot', {
         body: { prompt: queryPrompt }
       });
 
-      console.log('Function response:', { data, error });
+      console.log('=== FRONTEND: Function Response ===');
+      console.log('Data:', data);
+      console.log('Error:', error);
 
       if (error) {
-        console.error('Supabase function error:', error);
-        throw new Error(`Function error: ${error.message}`);
-      }
-
-      // Check if the response contains an error
-      if (data?.error) {
-        console.error('AI Copilot error:', data.error);
+        console.error('=== FRONTEND: Supabase Function Error ===');
+        console.error('Error details:', error);
+        
+        const errorMessage = `Function error: ${error.message || 'Edge Function returned a non-2xx status code'}`;
         const assistantMessage: Message = {
           id: (Date.now() + 1).toString(),
           type: 'assistant',
-          content: `Sorry, I encountered an error: ${data.error}`,
+          content: `Sorry, I encountered a technical error: ${errorMessage}. Please try again or contact support if the issue persists.`,
+          timestamp: new Date()
+        };
+        setMessages(prev => [...prev, assistantMessage]);
+
+        toast({
+          title: "Technical Error",
+          description: "The AI service encountered an error. Please try again.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Check if the response contains an error field
+      if (data?.error) {
+        console.error('=== FRONTEND: AI Copilot Error ===');
+        console.error('AI error:', data.error);
+        
+        const assistantMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          type: 'assistant',
+          content: `${data.error}`,
           timestamp: new Date()
         };
         setMessages(prev => [...prev, assistantMessage]);
@@ -108,6 +129,10 @@ const AIDataCopilot = () => {
       }
 
       // Success case
+      console.log('=== FRONTEND: Success ===');
+      console.log('SQL:', data.sql);
+      console.log('Row count:', data.rowCount);
+      
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         type: 'assistant',
@@ -126,19 +151,23 @@ const AIDataCopilot = () => {
       });
 
     } catch (err) {
-      console.error('Copilot error:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Failed to execute query';
+      console.error('=== FRONTEND: Catch Block Error ===');
+      console.error('Caught error:', err);
+      console.error('Error type:', typeof err);
+      console.error('Error details:', err);
+      
+      const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         type: 'assistant',
-        content: `Sorry, I encountered an error: ${errorMessage}`,
+        content: `Sorry, I encountered an unexpected error: ${errorMessage}. Please try again or contact support if the issue persists.`,
         timestamp: new Date()
       };
       setMessages(prev => [...prev, assistantMessage]);
       
       toast({
-        title: "Error",
-        description: errorMessage,
+        title: "Unexpected Error",
+        description: "Something went wrong. Please try again.",
         variant: "destructive"
       });
     } finally {
