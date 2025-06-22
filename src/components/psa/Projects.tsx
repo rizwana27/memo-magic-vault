@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,7 +11,7 @@ import { useProjectsApi, useCreateProjectApi } from '@/hooks/useApiIntegration';
 import NewProjectForm from './forms/NewProjectForm';
 import ProjectDetailModal from './modals/ProjectDetailModal';
 import ProjectCreationModal from './forms/ProjectCreationModal';
-import { toast } from 'react-toastify';
+import { useToast } from '@/hooks/use-toast';
 
 const Projects = () => {
   const { data: projects, isLoading } = useProjectsApi();
@@ -18,6 +19,7 @@ const Projects = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showNewProjectModal, setShowNewProjectModal] = useState(false);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+  const { toast } = useToast();
 
   // Listen for custom event from Dashboard
   useEffect(() => {
