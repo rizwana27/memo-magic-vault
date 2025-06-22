@@ -43,7 +43,7 @@ const Reports = () => {
   
   const [dateRange, setDateRange] = useState({ start: '', end: '' });
   const [selectedProject, setSelectedProject] = useState('');
-  const [showExportModal, setShowNewProjectModal] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
   const [exportConfig, setExportConfig] = useState({ type: '', title: '' });
 
   const projectStatusData = [
@@ -78,7 +78,7 @@ const Reports = () => {
 
   const openExportModal = (reportType: string, title: string) => {
     setExportConfig({ type: reportType, title });
-    setShowNewProjectModal(true);
+    setShowExportModal(true);
   };
 
   const currentFilters = {
@@ -395,7 +395,7 @@ const Reports = () => {
       {/* Export Modal */}
       <ExportModal
         open={showExportModal}
-        onOpenChange={setShowNewProjectModal}
+        onOpenChange={setShowExportModal}
         reportTitle={exportConfig.title}
         onExport={handleExport}
       />
