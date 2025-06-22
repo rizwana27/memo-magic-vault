@@ -858,33 +858,43 @@ export const useProjectResources = (projectId?: string) => {
     queryFn: async () => {
       if (!projectId) return [];
 
-      const { data, error } = await supabase
+      // Get timesheets for the project
+      const { data: timesheets, error: timesheetsError } = await supabase
         .from('timesheets')
-        .select(`
-          created_by,
-          hours,
-          resources (
-            resource_id,
-            full_name,
-            department,
-            role
-          )
-        `)
+        .select('created_by, hours')
         .eq('project_id', projectId);
 
-      if (error) throw error;
+      if (timesheetsError) throw timesheetsError;
+
+      // Get unique resource IDs from timesheets
+      const resourceIds = [...new Set(timesheets?.map(ts => ts.created_by).filter(Boolean))] as string[];
+      
+      if (resourceIds.length === 0) return [];
+
+      // Get resource details for those who worked on the project
+      const { data: resources, error: resourcesError } = await supabase
+        .from('resources')
+        .select('resource_id, full_name, department, role')
+        .in('resource_id', resourceIds);
+
+      if (resourcesError) throw resourcesError;
 
       // Aggregate resource allocations
       const resourceMap = new Map();
-      data?.forEach(timesheet => {
+      timesheets?.forEach(timesheet => {
         const resourceId = timesheet.created_by;
         if (!resourceMap.has(resourceId)) {
-          resourceMap.set(resourceId, {
-            ...timesheet.resources,
-            totalHours: 0
-          });
+          const resource = resources?.find(r => r.resource_id === resourceId);
+          if (resource) {
+            resourceMap.set(resourceId, {
+              ...resource,
+              totalHours: 0
+            });
+          }
         }
-        resourceMap.get(resourceId).totalHours += timesheet.hours || 0;
+        if (resourceMap.has(resourceId)) {
+          resourceMap.get(resourceId).totalHours += timesheet.hours || 0;
+        }
       });
 
       return Array.from(resourceMap.values());
@@ -926,7 +936,12 @@ export const useResourcesUtilization = () => {
         const utilizationPercentage = expectedHours > 0 ? (billableHours / expectedHours) * 100 : 0;
 
         return {
-          ...resource,
+          resource_id: resource.resource_id,
+          full_name: resource.full_name,
+          department: resource.department,
+          role: resource.role,
+          active_status: resource.active_status,
+          availability: resource.availability,
           totalHours,
           billableHours,
           expectedHours,
@@ -944,32 +959,40 @@ export const useResourceAllocations = () => {
   return useQuery({
     queryKey: ['resource-allocations'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Get timesheets for the last 30 days
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      const { data: timesheets, error: timesheetsError } = await supabase
         .from('timesheets')
-        .select(`
-          project_id,
-          created_by,
-          hours,
-          projects (
-            project_name
-          ),
-          resources (
-            full_name,
-            department
-          )
-        `)
-        .gte('date', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
+        .select('project_id, created_by, hours')
+        .gte('date', thirtyDaysAgo);
 
-      if (error) throw error;
+      if (timesheetsError) throw timesheetsError;
+
+      // Get projects data
+      const { data: projects, error: projectsError } = await supabase
+        .from('projects')
+        .select('project_id, project_name');
+
+      if (projectsError) throw projectsError;
+
+      // Get resources data
+      const { data: resources, error: resourcesError } = await supabase
+        .from('resources')
+        .select('resource_id, full_name, department');
+
+      if (resourcesError) throw resourcesError;
 
       // Create allocation matrix
-      const allocationMatrix = data?.reduce((matrix, timesheet) => {
+      const allocationMatrix = timesheets?.reduce((matrix, timesheet) => {
         const key = `${timesheet.created_by}-${timesheet.project_id}`;
         if (!matrix[key]) {
+          const resource = resources?.find(r => r.resource_id === timesheet.created_by);
+          const project = projects?.find(p => p.project_id === timesheet.project_id);
+          
           matrix[key] = {
-            resourceName: timesheet.resources?.full_name,
-            department: timesheet.resources?.department,
-            projectName: timesheet.projects?.project_name,
+            resourceName: resource?.full_name || 'Unknown',
+            department: resource?.department || 'Unknown',
+            projectName: project?.project_name || 'Unknown',
             projectId: timesheet.project_id,
             resourceId: timesheet.created_by,
             totalHours: 0,
