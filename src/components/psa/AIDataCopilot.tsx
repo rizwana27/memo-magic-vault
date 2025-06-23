@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Database, Sparkles, MessageSquare, Bot, X, Minimize2 } from 'lucide-react';
+import { Loader2, Database, Sparkles, MessageSquare, Bot, X, Minimize2, AlertCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -23,6 +23,7 @@ interface Message {
   data?: any[];
   sql?: string;
   timestamp: Date;
+  error?: boolean;
 }
 
 const AIDataCopilot = () => {
@@ -34,16 +35,17 @@ const AIDataCopilot = () => {
     {
       id: '1',
       type: 'system',
-      content: 'Hi there! 👋 How can I help you analyze your PSA data today?',
+      content: 'How can I help you today? 👋 Ask me anything about your PSA data!',
       timestamp: new Date()
     }
   ]);
   const { toast } = useToast();
 
   const quickPrompts = [
-    "List all clients",
-    "Show me active projects", 
-    "List all resources"
+    "Show all clients",
+    "List active projects", 
+    "Show team members",
+    "Display recent timesheets"
   ];
 
   const handleQuickPrompt = (promptText: string) => {
@@ -92,12 +94,16 @@ const AIDataCopilot = () => {
         
         let errorMessage = "I encountered a technical error. Please try again.";
         
-        // Try to extract more specific error information
+        // Provide more specific error messages
         if (error.message) {
           if (error.message.includes("Edge Function returned a non-2xx status code")) {
-            errorMessage = "The AI service is currently experiencing issues. Please try a simpler query or contact support.";
+            errorMessage = "The AI service is temporarily unavailable. Please try again in a moment.";
+          } else if (error.message.includes("timeout")) {
+            errorMessage = "The query took too long to process. Please try a simpler query.";
+          } else if (error.message.includes("quota") || error.message.includes("insufficient")) {
+            errorMessage = "⚠️ AI service quota exceeded. Please contact your administrator to update the OpenAI API subscription.";
           } else {
-            errorMessage = `Technical error: ${error.message}`;
+            errorMessage = `Service error: ${error.message}`;
           }
         }
         
@@ -105,7 +111,8 @@ const AIDataCopilot = () => {
           id: (Date.now() + 1).toString(),
           type: 'assistant',
           content: errorMessage,
-          timestamp: new Date()
+          timestamp: new Date(),
+          error: true
         };
         setMessages(prev => [...prev, assistantMessage]);
 
@@ -122,17 +129,29 @@ const AIDataCopilot = () => {
         console.error('=== FRONTEND: AI Copilot Error ===');
         console.error('AI error:', data.error);
         
+        let errorMessage = data.error;
+        
+        // Provide user-friendly error messages
+        if (data.error.includes("quota") || data.error.includes("insufficient")) {
+          errorMessage = "⚠️ AI service quota exceeded. The OpenAI API key needs to be updated with a valid subscription. Please contact your administrator.";
+        } else if (data.error.includes("API key")) {
+          errorMessage = "🔑 AI service configuration issue. Please contact your administrator to configure the OpenAI API key.";
+        } else if (data.error.includes("forbidden")) {
+          errorMessage = "❌ The query contains operations that are not allowed for security reasons. Please try rephrasing your question.";
+        }
+        
         const assistantMessage: Message = {
           id: (Date.now() + 1).toString(),
           type: 'assistant',
-          content: `${data.error}`,
-          timestamp: new Date()
+          content: errorMessage,
+          timestamp: new Date(),
+          error: true
         };
         setMessages(prev => [...prev, assistantMessage]);
 
         toast({
           title: "Query Error",
-          description: data.error,
+          description: errorMessage,
           variant: "destructive"
         });
         return;
@@ -163,15 +182,23 @@ const AIDataCopilot = () => {
     } catch (err) {
       console.error('=== FRONTEND: Catch Block Error ===');
       console.error('Caught error:', err);
-      console.error('Error type:', typeof err);
-      console.error('Error details:', err);
       
-      const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
+      let errorMessage = "Sorry, I encountered an unexpected error. Please try again.";
+      
+      if (err instanceof Error) {
+        if (err.message.includes("fetch")) {
+          errorMessage = "🌐 Unable to connect to the AI service. Please check your internet connection and try again.";
+        } else {
+          errorMessage = `Unexpected error: ${err.message}`;
+        }
+      }
+      
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         type: 'assistant',
-        content: `Sorry, I encountered an unexpected error: ${errorMessage}. Please try again or contact support if the issue persists.`,
-        timestamp: new Date()
+        content: errorMessage,
+        timestamp: new Date(),
+        error: true
       };
       setMessages(prev => [...prev, assistantMessage]);
       
@@ -279,8 +306,16 @@ const AIDataCopilot = () => {
                     <div className={`max-w-[80%] rounded-lg p-3 ${
                       message.type === 'user' 
                         ? 'bg-blue-600 text-white ml-4' 
+                        : message.error
+                        ? 'bg-red-900/50 text-red-200 mr-4 border border-red-600/30'
                         : 'bg-gray-700 text-gray-100 mr-4'
                     }`}>
+                      {message.error && (
+                        <div className="flex items-center gap-2 mb-2">
+                          <AlertCircle className="h-4 w-4 text-red-400" />
+                          <span className="text-xs font-semibold text-red-400">Error</span>
+                        </div>
+                      )}
                       <p className="text-sm">{message.content}</p>
                       
                       {message.sql && (
@@ -318,6 +353,7 @@ const AIDataCopilot = () => {
               {/* Quick Prompts - Show only initially */}
               {messages.length === 1 && (
                 <div className="px-4 pb-2">
+                  <div className="text-xs text-gray-400 mb-2">Try these examples:</div>
                   <div className="flex flex-wrap gap-2">
                     {quickPrompts.map((promptText, index) => (
                       <Button
@@ -364,6 +400,9 @@ const AIDataCopilot = () => {
                       'Send'
                     )}
                   </Button>
+                </div>
+                <div className="text-xs text-gray-500 mt-1">
+                  Press Enter to send, Shift+Enter for new line
                 </div>
               </div>
             </CardContent>
