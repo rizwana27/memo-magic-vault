@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
@@ -105,31 +104,56 @@ async function waitForRunCompletion(threadId: string, runId: string): Promise<an
 
       if (!runResponse.ok) {
         const errorText = await runResponse.text();
-        console.error('Run status check failed:', runResponse.status, errorText);
-        throw new Error(`Run status check failed: ${runResponse.status}`);
+        console.error('=== RUN STATUS CHECK FAILED ===');
+        console.error('Status:', runResponse.status);
+        console.error('Status Text:', runResponse.statusText);
+        console.error('Error Response:', errorText);
+        throw new Error(`Run status check failed: ${runResponse.status} - ${errorText}`);
       }
 
       const run = await runResponse.json();
+      console.log('=== RUN STATUS UPDATE ===');
+      console.log('Run ID:', run.id);
       console.log('Run status:', run.status);
+      console.log('Run created_at:', run.created_at);
+      
+      if (run.last_error) {
+        console.log('Run last_error:', JSON.stringify(run.last_error, null, 2));
+      }
 
       if (run.status === 'completed') {
+        console.log('=== RUN COMPLETED SUCCESSFULLY ===');
         return run;
       } else if (run.status === 'failed' || run.status === 'expired' || run.status === 'cancelled') {
-        console.error('Run failed with status:', run.status);
-        console.error('Run error details:', run.last_error);
-        throw new Error(`Assistant run ${run.status}: ${run.last_error?.message || 'Unknown error'}`);
+        console.error('=== RUN FAILED ===');
+        console.error('Run status:', run.status);
+        console.error('Run error details:', JSON.stringify(run.last_error, null, 2));
+        
+        // Return specific error messages based on the failure
+        let errorMessage = `Assistant run ${run.status}`;
+        if (run.last_error) {
+          if (run.last_error.code === 'rate_limit_exceeded') {
+            errorMessage = 'OpenAI API quota exceeded. Please check your billing and usage limits.';
+          } else if (run.last_error.code === 'invalid_request_error') {
+            errorMessage = `Invalid request: ${run.last_error.message}`;
+          } else {
+            errorMessage = `${run.last_error.code}: ${run.last_error.message}`;
+          }
+        }
+        throw new Error(errorMessage);
       }
 
       // Wait before polling again
       await new Promise(resolve => setTimeout(resolve, pollInterval));
       elapsed += pollInterval;
     } catch (error) {
-      console.error('Error checking run status:', error);
+      console.error('=== ERROR CHECKING RUN STATUS ===');
+      console.error('Error details:', error);
       throw error;
     }
   }
 
-  throw new Error('Assistant run timed out');
+  throw new Error('Assistant run timed out after 30 seconds');
 }
 
 serve(async (req) => {
@@ -138,15 +162,18 @@ serve(async (req) => {
   }
 
   console.log('=== AI COPILOT REQUEST START ===');
+  console.log('Timestamp:', new Date().toISOString());
 
   try {
     let requestBody;
     try {
       requestBody = await req.json();
     } catch (parseError) {
-      console.error('Failed to parse request body:', parseError);
+      console.error('=== JSON PARSE ERROR ===');
+      console.error('Parse error:', parseError);
       return new Response(JSON.stringify({ 
         error: 'Invalid JSON in request body',
+        details: parseError.message,
         sql: null,
         data: [],
         rowCount: 0
@@ -158,10 +185,13 @@ serve(async (req) => {
 
     const { prompt } = requestBody;
     
+    console.log('=== REQUEST VALIDATION ===');
     console.log('Received prompt:', prompt);
+    console.log('Prompt type:', typeof prompt);
+    console.log('Prompt length:', prompt?.length);
 
     if (!prompt || typeof prompt !== 'string' || prompt.trim().length === 0) {
-      console.error('Invalid prompt received');
+      console.error('=== INVALID PROMPT ===');
       return new Response(JSON.stringify({ 
         error: 'Prompt is required and must be a non-empty string',
         sql: null,
@@ -173,10 +203,16 @@ serve(async (req) => {
       });
     }
 
+    console.log('=== ENVIRONMENT CHECK ===');
+    console.log('OpenAI API Key present:', !!openAIApiKey);
+    console.log('OpenAI API Key prefix:', openAIApiKey?.substring(0, 10) + '...');
+    console.log('Assistant ID present:', !!assistantId);
+    console.log('Assistant ID:', assistantId);
+
     if (!openAIApiKey) {
-      console.error('OpenAI API key is not configured');
+      console.error('=== MISSING OPENAI API KEY ===');
       return new Response(JSON.stringify({ 
-        error: 'AI service is not properly configured. Please contact support.',
+        error: 'OpenAI API key not configured. Please add OPENAI_API_KEY to your environment variables.',
         sql: null,
         data: [],
         rowCount: 0
@@ -187,9 +223,9 @@ serve(async (req) => {
     }
 
     if (!assistantId) {
-      console.error('Assistant ID is not configured');
+      console.error('=== MISSING ASSISTANT ID ===');
       return new Response(JSON.stringify({ 
-        error: 'Assistant is not properly configured. Please contact support.',
+        error: 'Assistant ID not configured. Please add OPENAI_ASSISTANT_ID to your environment variables.',
         sql: null,
         data: [],
         rowCount: 0
@@ -214,13 +250,35 @@ serve(async (req) => {
 
     if (!threadResponse.ok) {
       const errorText = await threadResponse.text();
-      console.error('Thread creation failed:', threadResponse.status, errorText);
-      throw new Error(`Thread creation failed: ${threadResponse.status} - ${errorText}`);
+      console.error('=== THREAD CREATION FAILED ===');
+      console.error('Status:', threadResponse.status);
+      console.error('Status Text:', threadResponse.statusText);
+      console.error('Error Response:', errorText);
+      
+      // Parse potential JSON error
+      let errorDetails = errorText;
+      try {
+        const errorJson = JSON.parse(errorText);
+        errorDetails = errorJson.error?.message || errorText;
+      } catch (e) {
+        // Keep original text if not JSON
+      }
+      
+      return new Response(JSON.stringify({ 
+        error: `Failed to create OpenAI thread: ${errorDetails}`,
+        sql: null,
+        data: [],
+        rowCount: 0
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     const thread = await threadResponse.json();
     const threadId = thread.id;
-    console.log('Thread created:', threadId);
+    console.log('=== THREAD CREATED ===');
+    console.log('Thread ID:', threadId);
 
     console.log('=== ADDING MESSAGE TO THREAD ===');
     
@@ -240,11 +298,31 @@ serve(async (req) => {
 
     if (!messageResponse.ok) {
       const errorText = await messageResponse.text();
-      console.error('Message creation failed:', messageResponse.status, errorText);
-      throw new Error(`Message creation failed: ${messageResponse.status} - ${errorText}`);
+      console.error('=== MESSAGE CREATION FAILED ===');
+      console.error('Status:', messageResponse.status);
+      console.error('Status Text:', messageResponse.statusText);
+      console.error('Error Response:', errorText);
+      
+      let errorDetails = errorText;
+      try {
+        const errorJson = JSON.parse(errorText);
+        errorDetails = errorJson.error?.message || errorText;
+      } catch (e) {
+        // Keep original text if not JSON
+      }
+      
+      return new Response(JSON.stringify({ 
+        error: `Failed to add message to thread: ${errorDetails}`,
+        sql: null,
+        data: [],
+        rowCount: 0
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
-    console.log('Message added to thread');
+    console.log('=== MESSAGE ADDED TO THREAD ===');
 
     console.log('=== RUNNING ASSISTANT ===');
     
@@ -263,12 +341,34 @@ serve(async (req) => {
 
     if (!runResponse.ok) {
       const errorText = await runResponse.text();
-      console.error('Run creation failed:', runResponse.status, errorText);
-      throw new Error(`Run creation failed: ${runResponse.status} - ${errorText}`);
+      console.error('=== RUN CREATION FAILED ===');
+      console.error('Status:', runResponse.status);
+      console.error('Status Text:', runResponse.statusText);
+      console.error('Error Response:', errorText);
+      
+      let errorDetails = errorText;
+      try {
+        const errorJson = JSON.parse(errorText);
+        errorDetails = errorJson.error?.message || errorText;
+      } catch (e) {
+        // Keep original text if not JSON
+      }
+      
+      return new Response(JSON.stringify({ 
+        error: `Failed to run assistant: ${errorDetails}`,
+        sql: null,
+        data: [],
+        rowCount: 0
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     const run = await runResponse.json();
-    console.log('Run started:', run.id);
+    console.log('=== RUN STARTED ===');
+    console.log('Run ID:', run.id);
+    console.log('Run status:', run.status);
 
     console.log('=== WAITING FOR COMPLETION ===');
     
@@ -288,15 +388,37 @@ serve(async (req) => {
 
     if (!messagesResponse.ok) {
       const errorText = await messagesResponse.text();
-      console.error('Messages retrieval failed:', messagesResponse.status, errorText);
-      throw new Error(`Messages retrieval failed: ${messagesResponse.status} - ${errorText}`);
+      console.error('=== MESSAGES RETRIEVAL FAILED ===');
+      console.error('Status:', messagesResponse.status);
+      console.error('Status Text:', messagesResponse.statusText);
+      console.error('Error Response:', errorText);
+      
+      return new Response(JSON.stringify({ 
+        error: `Failed to retrieve messages: ${errorText}`,
+        sql: null,
+        data: [],
+        rowCount: 0
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     const messages = await messagesResponse.json();
     const assistantMessages = messages.data.filter((msg: any) => msg.role === 'assistant');
     
     if (assistantMessages.length === 0) {
-      throw new Error('No assistant response found');
+      console.error('=== NO ASSISTANT RESPONSE FOUND ===');
+      console.log('All messages:', JSON.stringify(messages.data, null, 2));
+      return new Response(JSON.stringify({ 
+        error: 'No assistant response found in thread',
+        sql: null,
+        data: [],
+        rowCount: 0
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     const latestMessage = assistantMessages[0];
@@ -304,6 +426,7 @@ serve(async (req) => {
     
     console.log('=== ASSISTANT RESPONSE ===');
     console.log('Response content:', responseContent);
+    console.log('Response length:', responseContent.length);
 
     // Try to extract SQL from the response
     const sqlMatch = responseContent.match(/```sql\n([\s\S]*?)\n```/) || 
@@ -317,7 +440,7 @@ serve(async (req) => {
 
       // Validate the extracted SQL
       if (!validateSQL(extractedSQL)) {
-        console.error('Generated SQL failed validation');
+        console.error('=== SQL VALIDATION FAILED ===');
         return new Response(JSON.stringify({ 
           error: 'The generated query contains forbidden operations. Please try rephrasing your question.',
           sql: extractedSQL,
@@ -345,7 +468,8 @@ serve(async (req) => {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       } catch (sqlError) {
-        console.error('SQL execution error:', sqlError);
+        console.error('=== SQL EXECUTION ERROR ===');
+        console.error('Error details:', sqlError);
         return new Response(JSON.stringify({ 
           error: `Database query failed: ${sqlError.message}`,
           sql: extractedSQL,
@@ -378,10 +502,12 @@ serve(async (req) => {
     console.error('Error message:', error.message);
     console.error('Error stack:', error.stack);
     
+    // Return the actual error message instead of a generic one
     const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
     
     return new Response(JSON.stringify({ 
-      error: `Assistant error: ${errorMessage}. Please try again or contact support.`,
+      error: `OpenAI Assistant Error: ${errorMessage}`,
+      details: error instanceof Error ? error.stack : 'No additional details',
       sql: null,
       data: [],
       rowCount: 0

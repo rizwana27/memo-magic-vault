@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Database, Sparkles, MessageSquare, Bot, X, Minimize2, AlertCircle } from 'lucide-react';
+import { Loader2, Database, Sparkles, MessageSquare, Bot, X, Minimize2, AlertCircle, Info } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -24,6 +24,7 @@ interface Message {
   sql?: string;
   timestamp: Date;
   error?: boolean;
+  details?: string;
 }
 
 const AIDataCopilot = () => {
@@ -93,18 +94,20 @@ const AIDataCopilot = () => {
         console.error('Error details:', error);
         
         let errorMessage = "I encountered a technical error. Please try again.";
+        let errorDetails = '';
         
         // Provide more specific error messages
         if (error.message) {
           if (error.message.includes("Edge Function returned a non-2xx status code")) {
-            errorMessage = "The AI service is temporarily unavailable. Please try again in a moment.";
+            errorMessage = "The AI service returned an error. Check the logs for details.";
           } else if (error.message.includes("timeout")) {
             errorMessage = "The query took too long to process. Please try a simpler query.";
-          } else if (error.message.includes("quota") || error.message.includes("insufficient")) {
-            errorMessage = "⚠️ AI service quota exceeded. Please contact your administrator to update the OpenAI API subscription.";
+          } else if (error.message.includes("quota") || error.message.includes("rate_limit")) {
+            errorMessage = "⚠️ OpenAI API quota exceeded. Please check your billing and usage limits.";
           } else {
             errorMessage = `Service error: ${error.message}`;
           }
+          errorDetails = error.message;
         }
         
         const assistantMessage: Message = {
@@ -112,7 +115,8 @@ const AIDataCopilot = () => {
           type: 'assistant',
           content: errorMessage,
           timestamp: new Date(),
-          error: true
+          error: true,
+          details: errorDetails
         };
         setMessages(prev => [...prev, assistantMessage]);
 
@@ -128,16 +132,23 @@ const AIDataCopilot = () => {
       if (data?.error) {
         console.error('=== FRONTEND: AI Copilot Error ===');
         console.error('AI error:', data.error);
+        console.error('AI error details:', data.details);
         
         let errorMessage = data.error;
         
-        // Provide user-friendly error messages
-        if (data.error.includes("quota") || data.error.includes("insufficient")) {
-          errorMessage = "⚠️ AI service quota exceeded. The OpenAI API key needs to be updated with a valid subscription. Please contact your administrator.";
+        // Provide user-friendly error messages based on specific errors
+        if (data.error.includes("quota") || data.error.includes("rate_limit")) {
+          errorMessage = "⚠️ OpenAI API quota exceeded. Please check your billing and usage limits in your OpenAI dashboard.";
         } else if (data.error.includes("API key")) {
-          errorMessage = "🔑 AI service configuration issue. Please contact your administrator to configure the OpenAI API key.";
+          errorMessage = "🔑 OpenAI API key issue. Please verify your API key is valid and has sufficient credits.";
+        } else if (data.error.includes("Assistant ID")) {
+          errorMessage = "🤖 Assistant configuration issue. Please verify your Assistant ID is correct.";
         } else if (data.error.includes("forbidden")) {
           errorMessage = "❌ The query contains operations that are not allowed for security reasons. Please try rephrasing your question.";
+        } else if (data.error.includes("thread")) {
+          errorMessage = "🧵 Failed to create or manage conversation thread. This might be a temporary OpenAI issue.";
+        } else if (data.error.includes("run")) {
+          errorMessage = "⚙️ Assistant execution failed. Please try again or contact support.";
         }
         
         const assistantMessage: Message = {
@@ -145,7 +156,8 @@ const AIDataCopilot = () => {
           type: 'assistant',
           content: errorMessage,
           timestamp: new Date(),
-          error: true
+          error: true,
+          details: data.details || data.error
         };
         setMessages(prev => [...prev, assistantMessage]);
 
@@ -161,12 +173,22 @@ const AIDataCopilot = () => {
       console.log('=== FRONTEND: Success ===');
       console.log('SQL:', data.sql);
       console.log('Row count:', data.rowCount);
+      console.log('Message:', data.message);
+      
+      let content = "";
+      if (data.message) {
+        // Assistant returned a text message
+        content = data.message;
+      } else if (data.rowCount === 0) {
+        content = "No results found for your query.";
+      } else {
+        content = `Found ${data.rowCount} result${data.rowCount !== 1 ? 's' : ''}:`;
+      }
       
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         type: 'assistant',
-        content: data.rowCount === 0 ? "No results found for your query." :
-                 `Found ${data.rowCount} result${data.rowCount !== 1 ? 's' : ''}:`,
+        content: content,
         data: data.data || [],
         sql: data.sql,
         timestamp: new Date()
@@ -176,7 +198,7 @@ const AIDataCopilot = () => {
 
       toast({
         title: "Query Executed",
-        description: `Found ${data.rowCount} results`,
+        description: data.message ? "Response received" : `Found ${data.rowCount} results`,
       });
 
     } catch (err) {
@@ -184,6 +206,7 @@ const AIDataCopilot = () => {
       console.error('Caught error:', err);
       
       let errorMessage = "Sorry, I encountered an unexpected error. Please try again.";
+      let errorDetails = '';
       
       if (err instanceof Error) {
         if (err.message.includes("fetch")) {
@@ -191,6 +214,7 @@ const AIDataCopilot = () => {
         } else {
           errorMessage = `Unexpected error: ${err.message}`;
         }
+        errorDetails = err.message;
       }
       
       const assistantMessage: Message = {
@@ -198,7 +222,8 @@ const AIDataCopilot = () => {
         type: 'assistant',
         content: errorMessage,
         timestamp: new Date(),
-        error: true
+        error: true,
+        details: errorDetails
       };
       setMessages(prev => [...prev, assistantMessage]);
       
@@ -317,6 +342,18 @@ const AIDataCopilot = () => {
                         </div>
                       )}
                       <p className="text-sm">{message.content}</p>
+                      
+                      {message.details && (
+                        <details className="mt-2">
+                          <summary className="text-xs text-gray-400 cursor-pointer flex items-center gap-1">
+                            <Info className="h-3 w-3" />
+                            Technical Details
+                          </summary>
+                          <pre className="bg-gray-800 p-2 rounded text-xs text-gray-300 mt-1 overflow-auto whitespace-pre-wrap">
+                            {message.details}
+                          </pre>
+                        </details>
+                      )}
                       
                       {message.sql && (
                         <div className="mt-2">
