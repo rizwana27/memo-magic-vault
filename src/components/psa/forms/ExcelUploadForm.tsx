@@ -46,8 +46,14 @@ const ExcelUploadForm = ({ onSubmit, onCancel, onBack, type, onDownloadTemplate 
         setProgress(prev => Math.min(prev + 10, 90));
       }, 100);
       
-      const { parseExcelFile, validateProjectData, validateClientData, validateVendorData } = await import('@/utils/excelParser');
+      const { 
+        parseExcelFile, 
+        parseAndValidateProjectData, 
+        parseAndValidateClientData, 
+        parseAndValidateVendorData 
+      } = await import('@/utils/excelParser');
       
+      // First parse the raw Excel file
       const parseResult = await parseExcelFile(file);
       
       if (parseResult.errors.length > 0) {
@@ -58,40 +64,26 @@ const ExcelUploadForm = ({ onSubmit, onCancel, onBack, type, onDownloadTemplate 
         return;
       }
       
-      // Validate data based on type
-      const allErrors: string[] = [];
-      const validData: any[] = [];
-      
-      parseResult.data.forEach((row: any, index: number) => {
-        let rowErrors: string[] = [];
-        
-        switch (type) {
-          case 'project':
-            rowErrors = validateProjectData(row, index);
-            break;
-          case 'client':
-            rowErrors = validateClientData(row, index);
-            break;
-          case 'vendor':
-            rowErrors = validateVendorData(row, index);
-            break;
-        }
-        
-        if (rowErrors.length === 0) {
-          validData.push(row);
-        } else {
-          allErrors.push(...rowErrors);
-        }
-      });
+      // Then validate and transform data based on type
+      let validationResult;
+      switch (type) {
+        case 'project':
+          validationResult = parseAndValidateProjectData(parseResult.data);
+          break;
+        case 'client':
+          validationResult = parseAndValidateClientData(parseResult.data);
+          break;
+        case 'vendor':
+          validationResult = parseAndValidateVendorData(parseResult.data);
+          break;
+        default:
+          throw new Error(`Unsupported type: ${type}`);
+      }
       
       clearInterval(progressInterval);
       setProgress(100);
       
-      setResults({
-        data: validData,
-        errors: allErrors,
-        warnings: parseResult.warnings
-      });
+      setResults(validationResult);
       
     } catch (error) {
       console.error('Error parsing file:', error);
@@ -153,6 +145,52 @@ const ExcelUploadForm = ({ onSubmit, onCancel, onBack, type, onDownloadTemplate 
               Template
             </Button>
           </div>
+        </div>
+
+        {/* Column Format Guide */}
+        <div className="bg-gray-900/30 border border-gray-600/30 rounded-lg p-4">
+          <h3 className="text-gray-200 font-medium mb-3">Expected Columns</h3>
+          <div className="text-sm text-gray-300">
+            {type === 'project' && (
+              <div className="grid grid-cols-2 gap-2">
+                <div>• project_name (required)</div>
+                <div>• description</div>
+                <div>• client_name</div>
+                <div>• status</div>
+                <div>• start_date</div>
+                <div>• end_date</div>
+                <div>• budget</div>
+                <div>• project_manager</div>
+              </div>
+            )}
+            {type === 'client' && (
+              <div className="grid grid-cols-2 gap-2">
+                <div>• client_name (required)</div>
+                <div>• company_name (required)</div>
+                <div>• primary_contact_name (required)</div>
+                <div>• primary_contact_email (required)</div>
+                <div>• phone_number</div>
+                <div>• industry</div>
+                <div>• client_type</div>
+                <div>• revenue_tier</div>
+              </div>
+            )}
+            {type === 'vendor' && (
+              <div className="grid grid-cols-2 gap-2">
+                <div>• vendor_name (required)</div>
+                <div>• contact_person (required)</div>
+                <div>• contact_email (required)</div>
+                <div>• services_offered (required)</div>
+                <div>• phone_number</div>
+                <div>• status</div>
+                <div>• contract_start_date</div>
+                <div>• contract_end_date</div>
+              </div>
+            )}
+          </div>
+          <p className="text-xs text-gray-400 mt-2">
+            Note: Column names are case-insensitive and flexible (e.g., "Project Name" or "project_name" both work)
+          </p>
         </div>
 
         {/* File Upload */}

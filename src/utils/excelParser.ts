@@ -43,6 +43,81 @@ export interface VendorExcelRow {
   notes?: string;
 }
 
+// Column mapping configurations for case-insensitive matching
+const PROJECT_COLUMN_MAPPINGS = {
+  'project_name': ['project_name', 'project name', 'projectname', 'name', 'title'],
+  'description': ['description', 'desc', 'project description', 'details'],
+  'client_name': ['client_name', 'client name', 'clientname', 'client', 'customer', 'customer name'],
+  'status': ['status', 'project status', 'state'],
+  'start_date': ['start_date', 'start date', 'startdate', 'begin date', 'project start'],
+  'end_date': ['end_date', 'end date', 'enddate', 'finish date', 'project end'],
+  'budget': ['budget', 'project budget', 'cost', 'amount'],
+  'project_manager': ['project_manager', 'project manager', 'manager', 'pm', 'lead'],
+  'region': ['region', 'location', 'area', 'territory']
+};
+
+const CLIENT_COLUMN_MAPPINGS = {
+  'client_name': ['client_name', 'client name', 'clientname', 'name'],
+  'company_name': ['company_name', 'company name', 'companyname', 'company', 'organization'],
+  'primary_contact_name': ['primary_contact_name', 'primary contact name', 'contact name', 'contact', 'primary contact'],
+  'primary_contact_email': ['primary_contact_email', 'primary contact email', 'contact email', 'email', 'primary email'],
+  'phone_number': ['phone_number', 'phone number', 'phone', 'contact phone', 'telephone'],
+  'industry': ['industry', 'sector', 'business type'],
+  'client_type': ['client_type', 'client type', 'type', 'category'],
+  'revenue_tier': ['revenue_tier', 'revenue tier', 'tier', 'size'],
+  'notes': ['notes', 'comments', 'remarks', 'description']
+};
+
+const VENDOR_COLUMN_MAPPINGS = {
+  'vendor_name': ['vendor_name', 'vendor name', 'vendorname', 'name', 'supplier'],
+  'contact_person': ['contact_person', 'contact person', 'contact name', 'contact', 'representative'],
+  'contact_email': ['contact_email', 'contact email', 'email', 'vendor email'],
+  'phone_number': ['phone_number', 'phone number', 'phone', 'contact phone', 'telephone'],
+  'services_offered': ['services_offered', 'services offered', 'services', 'products', 'offerings'],
+  'status': ['status', 'vendor status', 'state'],
+  'contract_start_date': ['contract_start_date', 'contract start date', 'start date', 'contract start'],
+  'contract_end_date': ['contract_end_date', 'contract end date', 'end date', 'contract end'],
+  'notes': ['notes', 'comments', 'remarks', 'description']
+};
+
+const normalizeColumnName = (columnName: string): string => {
+  return columnName.toLowerCase().trim().replace(/[^a-z0-9]/g, '');
+};
+
+const findColumnMapping = (excelColumns: string[], mappings: any): { [key: string]: string } => {
+  const columnMap: { [key: string]: string } = {};
+  const normalizedExcelColumns = excelColumns.map(col => ({
+    original: col,
+    normalized: normalizeColumnName(col)
+  }));
+
+  for (const [standardField, possibleNames] of Object.entries(mappings)) {
+    const normalizedPossibleNames = possibleNames.map((name: string) => normalizeColumnName(name));
+    
+    const match = normalizedExcelColumns.find(excelCol => 
+      normalizedPossibleNames.includes(excelCol.normalized)
+    );
+    
+    if (match) {
+      columnMap[standardField] = match.original;
+    }
+  }
+
+  return columnMap;
+};
+
+const transformRowData = (row: any, columnMap: { [key: string]: string }): any => {
+  const transformedRow: any = {};
+  
+  for (const [standardField, excelColumn] of Object.entries(columnMap)) {
+    if (row[excelColumn] !== undefined && row[excelColumn] !== null && row[excelColumn] !== '') {
+      transformedRow[standardField] = row[excelColumn];
+    }
+  }
+  
+  return transformedRow;
+};
+
 export const parseExcelFile = async (file: File): Promise<ExcelParseResult> => {
   const errors: string[] = [];
   const warnings: string[] = [];
@@ -57,18 +132,133 @@ export const parseExcelFile = async (file: File): Promise<ExcelParseResult> => {
     }
     
     const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-    const data = XLSX.utils.sheet_to_json(firstSheet);
+    const rawData = XLSX.utils.sheet_to_json(firstSheet);
     
-    if (data.length === 0) {
+    if (rawData.length === 0) {
       errors.push('No data found in the Excel sheet');
       return { data: [], errors, warnings };
     }
     
-    return { data, errors, warnings };
+    return { data: rawData, errors, warnings };
   } catch (error) {
     errors.push(`Failed to parse Excel file: ${error instanceof Error ? error.message : 'Unknown error'}`);
     return { data: [], errors, warnings };
   }
+};
+
+export const parseAndValidateProjectData = (rawData: any[]): ExcelParseResult => {
+  const errors: string[] = [];
+  const warnings: string[] = [];
+  const validatedData: ProjectExcelRow[] = [];
+
+  if (rawData.length === 0) {
+    errors.push('No data found in Excel file');
+    return { data: [], errors, warnings };
+  }
+
+  // Get column names from first row
+  const excelColumns = Object.keys(rawData[0]);
+  const columnMap = findColumnMapping(excelColumns, PROJECT_COLUMN_MAPPINGS);
+
+  // Check for required columns
+  if (!columnMap['project_name']) {
+    errors.push('Required column "project_name" (or similar) not found. Expected columns: Project Name, project_name, etc.');
+  }
+
+  // Log column mapping for debugging
+  console.log('Excel columns found:', excelColumns);
+  console.log('Column mapping:', columnMap);
+
+  // If critical errors, return early
+  if (errors.length > 0) {
+    return { data: [], errors, warnings };
+  }
+
+  // Process each row
+  rawData.forEach((row, index) => {
+    const transformedRow = transformRowData(row, columnMap);
+    const rowErrors = validateProjectData(transformedRow, index);
+    
+    if (rowErrors.length === 0) {
+      validatedData.push(transformedRow);
+    } else {
+      errors.push(...rowErrors);
+    }
+  });
+
+  return { data: validatedData, errors, warnings };
+};
+
+export const parseAndValidateClientData = (rawData: any[]): ExcelParseResult => {
+  const errors: string[] = [];
+  const warnings: string[] = [];
+  const validatedData: ClientExcelRow[] = [];
+
+  if (rawData.length === 0) {
+    errors.push('No data found in Excel file');
+    return { data: [], errors, warnings };
+  }
+
+  const excelColumns = Object.keys(rawData[0]);
+  const columnMap = findColumnMapping(excelColumns, CLIENT_COLUMN_MAPPINGS);
+
+  // Check for required columns
+  const requiredColumns = ['client_name', 'company_name', 'primary_contact_name', 'primary_contact_email'];
+  const missingColumns = requiredColumns.filter(col => !columnMap[col]);
+  
+  if (missingColumns.length > 0) {
+    errors.push(`Missing required columns: ${missingColumns.join(', ')}. Please check the template.`);
+    return { data: [], errors, warnings };
+  }
+
+  rawData.forEach((row, index) => {
+    const transformedRow = transformRowData(row, columnMap);
+    const rowErrors = validateClientData(transformedRow, index);
+    
+    if (rowErrors.length === 0) {
+      validatedData.push(transformedRow);
+    } else {
+      errors.push(...rowErrors);
+    }
+  });
+
+  return { data: validatedData, errors, warnings };
+};
+
+export const parseAndValidateVendorData = (rawData: any[]): ExcelParseResult => {
+  const errors: string[] = [];
+  const warnings: string[] = [];
+  const validatedData: VendorExcelRow[] = [];
+
+  if (rawData.length === 0) {
+    errors.push('No data found in Excel file');
+    return { data: [], errors, warnings };
+  }
+
+  const excelColumns = Object.keys(rawData[0]);
+  const columnMap = findColumnMapping(excelColumns, VENDOR_COLUMN_MAPPINGS);
+
+  // Check for required columns
+  const requiredColumns = ['vendor_name', 'contact_person', 'contact_email', 'services_offered'];
+  const missingColumns = requiredColumns.filter(col => !columnMap[col]);
+  
+  if (missingColumns.length > 0) {
+    errors.push(`Missing required columns: ${missingColumns.join(', ')}. Please check the template.`);
+    return { data: [], errors, warnings };
+  }
+
+  rawData.forEach((row, index) => {
+    const transformedRow = transformRowData(row, columnMap);
+    const rowErrors = validateVendorData(transformedRow, index);
+    
+    if (rowErrors.length === 0) {
+      validatedData.push(transformedRow);
+    } else {
+      errors.push(...rowErrors);
+    }
+  });
+
+  return { data: validatedData, errors, warnings };
 };
 
 export const validateProjectData = (row: ProjectExcelRow, index: number): string[] => {
