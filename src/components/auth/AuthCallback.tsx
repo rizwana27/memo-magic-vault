@@ -13,7 +13,7 @@ const AuthCallback = () => {
       try {
         console.log('Handling auth callback...');
         
-        // Get the session from the URL hash
+        // Get the session from the URL hash - this will be browser-specific
         const { data, error } = await supabase.auth.getSession();
         
         if (error) {
@@ -28,11 +28,20 @@ const AuthCallback = () => {
         }
 
         if (data.session) {
-          console.log('Authentication successful:', data.session.user.email);
+          console.log('Authentication successful for user:', data.session.user.email);
+          console.log('Session ID:', data.session.access_token.substring(0, 20) + '...');
+          
           toast({
             title: "Welcome!",
             description: `Successfully signed in as ${data.session.user.email}`,
           });
+          
+          // Clear any temporary role storage
+          const savedRole = sessionStorage.getItem('selectedRole');
+          if (savedRole) {
+            sessionStorage.removeItem('selectedRole');
+          }
+          
           navigate('/');
         } else {
           console.log('No session found in callback');
@@ -52,6 +61,7 @@ const AuthCallback = () => {
       <div className="text-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
         <p className="text-white">Completing authentication...</p>
+        <p className="text-gray-400 text-sm mt-2">Setting up your session...</p>
       </div>
     </div>
   );

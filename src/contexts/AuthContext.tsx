@@ -31,31 +31,87 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let mounted = true;
+
+    // Clear any existing session data on mount to ensure fresh state
+    const initializeAuth = async () => {
+      try {
+        // Get current session without any caching
+        const { data: { session: currentSession }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Error getting session:', error);
+        }
+
+        if (mounted) {
+          console.log('Initial session check:', currentSession?.user?.email || 'No user');
+          setSession(currentSession);
+          setUser(currentSession?.user ?? null);
+          setLoading(false);
+        }
+      } catch (error) {
+        console.error('Error initializing auth:', error);
+        if (mounted) {
+          setSession(null);
+          setUser(null);
+          setLoading(false);
+        }
+      }
+    };
+
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        console.log('Auth state changed:', event, session);
-        setSession(session);
-        setUser(session?.user ?? null);
-        setLoading(false);
+      async (event, session) => {
+        if (!mounted) return;
+
+        console.log('Auth state changed:', event, session?.user?.email || 'No user');
         
-        // Log user details for debugging
-        if (session?.user) {
-          console.log('User authenticated:', session.user.email);
-          console.log('User metadata:', session.user.user_metadata);
+        // Handle different auth events
+        switch (event) {
+          case 'SIGNED_IN':
+            setSession(session);
+            setUser(session?.user ?? null);
+            setLoading(false);
+            console.log('User signed in:', session?.user?.email);
+            break;
+          
+          case 'SIGNED_OUT':
+            setSession(null);
+            setUser(null);
+            setLoading(false);
+            console.log('User signed out');
+            // Clear any cached data
+            localStorage.removeItem('selectedRole');
+            sessionStorage.removeItem('selectedRole');
+            break;
+          
+          case 'TOKEN_REFRESHED':
+            setSession(session);
+            setUser(session?.user ?? null);
+            console.log('Token refreshed for user:', session?.user?.email);
+            break;
+          
+          case 'USER_UPDATED':
+            setSession(session);
+            setUser(session?.user ?? null);
+            console.log('User updated:', session?.user?.email);
+            break;
+          
+          default:
+            setSession(session);
+            setUser(session?.user ?? null);
+            setLoading(false);
         }
       }
     );
 
-    // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log('Initial session check:', session);
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
+    // Initialize auth state
+    initializeAuth();
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signInWithEmail = async (email: string, password: string) => {
@@ -198,22 +254,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signOut = async () => {
     try {
-      console.log('Signing out...');
+      console.log('Signing out user:', user?.email);
       
-      // Clear any saved session storage data
+      // Clear any cached data first
       sessionStorage.removeItem('selectedRole');
       localStorage.removeItem('selectedRole');
       
-      // Sign out from Supabase
+      // Sign out from Supabase - this will trigger the auth state change
       const { error } = await supabase.auth.signOut();
       if (error) {
         console.error('Error signing out:', error);
-        throw error;
+        // Don't throw here, continue with cleanup
       }
-      
-      // Clear local state immediately
-      setSession(null);
-      setUser(null);
       
       console.log('Successfully signed out');
       
@@ -221,8 +273,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       window.location.href = '/';
       
     } catch (error) {
-      console.error('Error signing out:', error);
-      // Even if there's an error, try to clear local state and redirect
+      console.error('Error during sign out:', error);
+      // Even if there's an error, clear local state and redirect
       setSession(null);
       setUser(null);
       window.location.href = '/';

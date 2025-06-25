@@ -11,11 +11,13 @@ import UnauthorizedAccess from '@/components/auth/UnauthorizedAccess';
 const DashboardRouter: React.FC = () => {
   const { user, loading: authLoading } = useAuth();
 
-  // Fetch user profile with role
+  // Fetch user profile with role - scoped to the current user's session
   const { data: profile, isLoading: profileLoading, error } = useQuery({
     queryKey: ['user-profile', user?.id],
     queryFn: async () => {
       if (!user?.id) return null;
+      
+      console.log('Fetching profile for user:', user.email);
       
       const { data, error } = await supabase
         .from('profiles')
@@ -28,9 +30,12 @@ const DashboardRouter: React.FC = () => {
         throw error;
       }
       
+      console.log('Profile fetched for user:', user.email, 'Role:', data?.user_role || data?.role);
       return data;
     },
     enabled: !!user?.id,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    cacheTime: 10 * 60 * 1000, // 10 minutes
   });
 
   // Show loading state
@@ -40,6 +45,9 @@ const DashboardRouter: React.FC = () => {
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
           <p className="text-white">Loading your dashboard...</p>
+          <p className="text-gray-400 text-sm mt-2">
+            {user?.email ? `Welcome back, ${user.email}` : 'Authenticating...'}
+          </p>
         </div>
       </div>
     );
@@ -59,9 +67,9 @@ const DashboardRouter: React.FC = () => {
   // Get user role (prioritize user_role over role)
   const userRole = profile.user_role || profile.role || 'user';
   
-  console.log('DashboardRouter - User role:', userRole, 'Profile:', profile);
+  console.log('DashboardRouter - User:', user?.email, 'Role:', userRole);
 
-  // Route based on role - FIXED LOGIC
+  // Route based on role
   switch (userRole) {
     case 'admin':
       return <Index />; // Full PSA dashboard with all modules
