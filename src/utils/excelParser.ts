@@ -1,4 +1,3 @@
-
 import * as XLSX from 'xlsx';
 
 export interface ExcelParseResult {
@@ -44,7 +43,7 @@ export interface VendorExcelRow {
 }
 
 // Column mapping configurations for case-insensitive matching
-const PROJECT_COLUMN_MAPPINGS = {
+const PROJECT_COLUMN_MAPPINGS: { [key: string]: string[] } = {
   'project_name': ['project_name', 'project name', 'projectname', 'name', 'title'],
   'description': ['description', 'desc', 'project description', 'details'],
   'client_name': ['client_name', 'client name', 'clientname', 'client', 'customer', 'customer name'],
@@ -56,7 +55,7 @@ const PROJECT_COLUMN_MAPPINGS = {
   'region': ['region', 'location', 'area', 'territory']
 };
 
-const CLIENT_COLUMN_MAPPINGS = {
+const CLIENT_COLUMN_MAPPINGS: { [key: string]: string[] } = {
   'client_name': ['client_name', 'client name', 'clientname', 'name'],
   'company_name': ['company_name', 'company name', 'companyname', 'company', 'organization'],
   'primary_contact_name': ['primary_contact_name', 'primary contact name', 'contact name', 'contact', 'primary contact'],
@@ -68,7 +67,7 @@ const CLIENT_COLUMN_MAPPINGS = {
   'notes': ['notes', 'comments', 'remarks', 'description']
 };
 
-const VENDOR_COLUMN_MAPPINGS = {
+const VENDOR_COLUMN_MAPPINGS: { [key: string]: string[] } = {
   'vendor_name': ['vendor_name', 'vendor name', 'vendorname', 'name', 'supplier'],
   'contact_person': ['contact_person', 'contact person', 'contact name', 'contact', 'representative'],
   'contact_email': ['contact_email', 'contact email', 'email', 'vendor email'],
@@ -84,7 +83,7 @@ const normalizeColumnName = (columnName: string): string => {
   return columnName.toLowerCase().trim().replace(/[^a-z0-9]/g, '');
 };
 
-const findColumnMapping = (excelColumns: string[], mappings: any): { [key: string]: string } => {
+const findColumnMapping = (excelColumns: string[], mappings: { [key: string]: string[] }): { [key: string]: string } => {
   const columnMap: { [key: string]: string } = {};
   const normalizedExcelColumns = excelColumns.map(col => ({
     original: col,
