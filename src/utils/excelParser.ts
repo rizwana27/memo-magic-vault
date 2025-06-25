@@ -44,51 +44,62 @@ export interface VendorExcelRow {
 
 // Column mapping configurations for case-insensitive matching
 const PROJECT_COLUMN_MAPPINGS: { [key: string]: string[] } = {
-  'project_name': ['project_name', 'project name', 'projectname', 'name', 'title'],
-  'description': ['description', 'desc', 'project description', 'details'],
-  'client_name': ['client_name', 'client name', 'clientname', 'client', 'customer', 'customer name'],
-  'status': ['status', 'project status', 'state'],
-  'start_date': ['start_date', 'start date', 'startdate', 'begin date', 'project start'],
-  'end_date': ['end_date', 'end date', 'enddate', 'finish date', 'project end'],
-  'budget': ['budget', 'project budget', 'cost', 'amount'],
-  'project_manager': ['project_manager', 'project manager', 'manager', 'pm', 'lead'],
+  'project_name': ['project_name', 'project name', 'projectname', 'name', 'title', 'project'],
+  'description': ['description', 'desc', 'project description', 'details', 'summary'],
+  'client_name': ['client_name', 'client name', 'clientname', 'client', 'customer', 'customer name', 'customer_name'],
+  'status': ['status', 'project status', 'state', 'project_status'],
+  'start_date': ['start_date', 'start date', 'startdate', 'begin date', 'project start', 'start'],
+  'end_date': ['end_date', 'end date', 'enddate', 'finish date', 'project end', 'end'],
+  'budget': ['budget', 'project budget', 'cost', 'amount', 'price'],
+  'project_manager': ['project_manager', 'project manager', 'manager', 'pm', 'lead', 'project_lead'],
   'region': ['region', 'location', 'area', 'territory']
 };
 
 const CLIENT_COLUMN_MAPPINGS: { [key: string]: string[] } = {
-  'client_name': ['client_name', 'client name', 'clientname', 'name'],
-  'company_name': ['company_name', 'company name', 'companyname', 'company', 'organization'],
-  'primary_contact_name': ['primary_contact_name', 'primary contact name', 'contact name', 'contact', 'primary contact'],
-  'primary_contact_email': ['primary_contact_email', 'primary contact email', 'contact email', 'email', 'primary email'],
-  'phone_number': ['phone_number', 'phone number', 'phone', 'contact phone', 'telephone'],
-  'industry': ['industry', 'sector', 'business type'],
-  'client_type': ['client_type', 'client type', 'type', 'category'],
-  'revenue_tier': ['revenue_tier', 'revenue tier', 'tier', 'size'],
-  'notes': ['notes', 'comments', 'remarks', 'description']
+  'client_name': ['client_name', 'client name', 'clientname', 'name', 'client'],
+  'company_name': ['company_name', 'company name', 'companyname', 'company', 'organization', 'org'],
+  'primary_contact_name': ['primary_contact_name', 'primary contact name', 'contact name', 'contact', 'primary contact', 'primary_contact'],
+  'primary_contact_email': ['primary_contact_email', 'primary contact email', 'contact email', 'email', 'primary email', 'contact_email'],
+  'phone_number': ['phone_number', 'phone number', 'phone', 'contact phone', 'telephone', 'tel'],
+  'industry': ['industry', 'sector', 'business type', 'business_type'],
+  'client_type': ['client_type', 'client type', 'type', 'category', 'client_category'],
+  'revenue_tier': ['revenue_tier', 'revenue tier', 'tier', 'size', 'revenue_size'],
+  'notes': ['notes', 'comments', 'remarks', 'description', 'note']
 };
 
 const VENDOR_COLUMN_MAPPINGS: { [key: string]: string[] } = {
-  'vendor_name': ['vendor_name', 'vendor name', 'vendorname', 'name', 'supplier'],
-  'contact_person': ['contact_person', 'contact person', 'contact name', 'contact', 'representative'],
-  'contact_email': ['contact_email', 'contact email', 'email', 'vendor email'],
-  'phone_number': ['phone_number', 'phone number', 'phone', 'contact phone', 'telephone'],
-  'services_offered': ['services_offered', 'services offered', 'services', 'products', 'offerings'],
-  'status': ['status', 'vendor status', 'state'],
-  'contract_start_date': ['contract_start_date', 'contract start date', 'start date', 'contract start'],
-  'contract_end_date': ['contract_end_date', 'contract end date', 'end date', 'contract end'],
-  'notes': ['notes', 'comments', 'remarks', 'description']
+  'vendor_name': ['vendor_name', 'vendor name', 'vendorname', 'name', 'supplier', 'vendor'],
+  'contact_person': ['contact_person', 'contact person', 'contact name', 'contact', 'representative', 'rep'],
+  'contact_email': ['contact_email', 'contact email', 'email', 'vendor email', 'vendor_email'],
+  'phone_number': ['phone_number', 'phone number', 'phone', 'contact phone', 'telephone', 'tel'],
+  'services_offered': ['services_offered', 'services offered', 'services', 'products', 'offerings', 'service'],
+  'status': ['status', 'vendor status', 'state', 'vendor_status'],
+  'contract_start_date': ['contract_start_date', 'contract start date', 'start date', 'contract start', 'start'],
+  'contract_end_date': ['contract_end_date', 'contract end date', 'end date', 'contract end', 'end'],
+  'notes': ['notes', 'comments', 'remarks', 'description', 'note']
 };
 
 const normalizeColumnName = (columnName: string): string => {
+  if (!columnName || typeof columnName !== 'string') {
+    return '';
+  }
   return columnName.toLowerCase().trim().replace(/[^a-z0-9]/g, '');
 };
 
 const findColumnMapping = (excelColumns: string[], mappings: { [key: string]: string[] }): { [key: string]: string } => {
   const columnMap: { [key: string]: string } = {};
-  const normalizedExcelColumns = excelColumns.map(col => ({
+  
+  // Filter out empty or invalid column names
+  const validExcelColumns = excelColumns.filter(col => col && typeof col === 'string' && col.trim().length > 0);
+  
+  const normalizedExcelColumns = validExcelColumns.map(col => ({
     original: col,
     normalized: normalizeColumnName(col)
   }));
+
+  // Debug logging
+  console.log('Excel columns found:', validExcelColumns);
+  console.log('Normalized columns:', normalizedExcelColumns);
 
   for (const [standardField, possibleNames] of Object.entries(mappings)) {
     const normalizedPossibleNames = possibleNames.map((name: string) => normalizeColumnName(name));
@@ -99,9 +110,11 @@ const findColumnMapping = (excelColumns: string[], mappings: { [key: string]: st
     
     if (match) {
       columnMap[standardField] = match.original;
+      console.log(`Mapped '${match.original}' to '${standardField}'`);
     }
   }
 
+  console.log('Final column mapping:', columnMap);
   return columnMap;
 };
 
@@ -110,7 +123,11 @@ const transformRowData = (row: any, columnMap: { [key: string]: string }): any =
   
   for (const [standardField, excelColumn] of Object.entries(columnMap)) {
     if (row[excelColumn] !== undefined && row[excelColumn] !== null && row[excelColumn] !== '') {
-      transformedRow[standardField] = row[excelColumn];
+      // Convert values to string and trim whitespace
+      const value = String(row[excelColumn]).trim();
+      if (value.length > 0) {
+        transformedRow[standardField] = value;
+      }
     }
   }
   
@@ -122,6 +139,16 @@ export const parseExcelFile = async (file: File): Promise<ExcelParseResult> => {
   const warnings: string[] = [];
   
   try {
+    if (!file) {
+      errors.push('No file provided');
+      return { data: [], errors, warnings };
+    }
+
+    if (!file.name.toLowerCase().endsWith('.xlsx') && !file.name.toLowerCase().endsWith('.xls')) {
+      errors.push('Invalid file format. Please upload an Excel file (.xlsx or .xls)');
+      return { data: [], errors, warnings };
+    }
+
     const arrayBuffer = await file.arrayBuffer();
     const workbook = XLSX.read(arrayBuffer, { type: 'array' });
     
@@ -131,15 +158,17 @@ export const parseExcelFile = async (file: File): Promise<ExcelParseResult> => {
     }
     
     const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-    const rawData = XLSX.utils.sheet_to_json(firstSheet);
+    const rawData = XLSX.utils.sheet_to_json(firstSheet, { defval: '' });
     
     if (rawData.length === 0) {
-      errors.push('No data found in the Excel sheet');
+      errors.push('No data found in the Excel sheet. Please ensure the sheet contains data.');
       return { data: [], errors, warnings };
     }
     
+    console.log('Raw Excel data parsed:', rawData.length, 'rows');
     return { data: rawData, errors, warnings };
   } catch (error) {
+    console.error('Excel parsing error:', error);
     errors.push(`Failed to parse Excel file: ${error instanceof Error ? error.message : 'Unknown error'}`);
     return { data: [], errors, warnings };
   }
@@ -157,31 +186,32 @@ export const parseAndValidateProjectData = (rawData: any[]): ExcelParseResult =>
 
   // Get column names from first row
   const excelColumns = Object.keys(rawData[0]);
+  console.log('Project Excel columns:', excelColumns);
+  
   const columnMap = findColumnMapping(excelColumns, PROJECT_COLUMN_MAPPINGS);
 
   // Check for required columns
-  if (!columnMap['project_name']) {
-    errors.push('Required column "project_name" (or similar) not found. Expected columns: Project Name, project_name, etc.');
-  }
-
-  // Log column mapping for debugging
-  console.log('Excel columns found:', excelColumns);
-  console.log('Column mapping:', columnMap);
-
-  // If critical errors, return early
-  if (errors.length > 0) {
+  const requiredColumns = ['project_name'];
+  const missingRequired = requiredColumns.filter(col => !columnMap[col]);
+  
+  if (missingRequired.length > 0) {
+    errors.push(`Missing required column(s): ${missingRequired.join(', ')}. Expected columns include: project_name, description, client_name, status, start_date, end_date, budget, project_manager, region`);
     return { data: [], errors, warnings };
   }
 
   // Process each row
   rawData.forEach((row, index) => {
-    const transformedRow = transformRowData(row, columnMap);
-    const rowErrors = validateProjectData(transformedRow, index);
-    
-    if (rowErrors.length === 0) {
-      validatedData.push(transformedRow);
-    } else {
-      errors.push(...rowErrors);
+    try {
+      const transformedRow = transformRowData(row, columnMap);
+      const rowErrors = validateProjectData(transformedRow, index);
+      
+      if (rowErrors.length === 0) {
+        validatedData.push(transformedRow);
+      } else {
+        errors.push(...rowErrors);
+      }
+    } catch (error) {
+      errors.push(`Row ${index + 1}: Failed to process row - ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   });
 
@@ -199,25 +229,31 @@ export const parseAndValidateClientData = (rawData: any[]): ExcelParseResult => 
   }
 
   const excelColumns = Object.keys(rawData[0]);
+  console.log('Client Excel columns:', excelColumns);
+  
   const columnMap = findColumnMapping(excelColumns, CLIENT_COLUMN_MAPPINGS);
 
   // Check for required columns
   const requiredColumns = ['client_name', 'company_name', 'primary_contact_name', 'primary_contact_email'];
-  const missingColumns = requiredColumns.filter(col => !columnMap[col]);
+  const missingRequired = requiredColumns.filter(col => !columnMap[col]);
   
-  if (missingColumns.length > 0) {
-    errors.push(`Missing required columns: ${missingColumns.join(', ')}. Please check the template.`);
+  if (missingRequired.length > 0) {
+    errors.push(`Missing required column(s): ${missingRequired.join(', ')}. Expected columns include: client_name, company_name, primary_contact_name, primary_contact_email, phone_number, industry, client_type, revenue_tier, notes`);
     return { data: [], errors, warnings };
   }
 
   rawData.forEach((row, index) => {
-    const transformedRow = transformRowData(row, columnMap);
-    const rowErrors = validateClientData(transformedRow, index);
-    
-    if (rowErrors.length === 0) {
-      validatedData.push(transformedRow);
-    } else {
-      errors.push(...rowErrors);
+    try {
+      const transformedRow = transformRowData(row, columnMap);
+      const rowErrors = validateClientData(transformedRow, index);
+      
+      if (rowErrors.length === 0) {
+        validatedData.push(transformedRow);
+      } else {
+        errors.push(...rowErrors);
+      }
+    } catch (error) {
+      errors.push(`Row ${index + 1}: Failed to process row - ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   });
 
@@ -235,25 +271,31 @@ export const parseAndValidateVendorData = (rawData: any[]): ExcelParseResult => 
   }
 
   const excelColumns = Object.keys(rawData[0]);
+  console.log('Vendor Excel columns:', excelColumns);
+  
   const columnMap = findColumnMapping(excelColumns, VENDOR_COLUMN_MAPPINGS);
 
   // Check for required columns
   const requiredColumns = ['vendor_name', 'contact_person', 'contact_email', 'services_offered'];
-  const missingColumns = requiredColumns.filter(col => !columnMap[col]);
+  const missingRequired = requiredColumns.filter(col => !columnMap[col]);
   
-  if (missingColumns.length > 0) {
-    errors.push(`Missing required columns: ${missingColumns.join(', ')}. Please check the template.`);
+  if (missingRequired.length > 0) {
+    errors.push(`Missing required column(s): ${missingRequired.join(', ')}. Expected columns include: vendor_name, contact_person, contact_email, services_offered, phone_number, status, contract_start_date, contract_end_date, notes`);
     return { data: [], errors, warnings };
   }
 
   rawData.forEach((row, index) => {
-    const transformedRow = transformRowData(row, columnMap);
-    const rowErrors = validateVendorData(transformedRow, index);
-    
-    if (rowErrors.length === 0) {
-      validatedData.push(transformedRow);
-    } else {
-      errors.push(...rowErrors);
+    try {
+      const transformedRow = transformRowData(row, columnMap);
+      const rowErrors = validateVendorData(transformedRow, index);
+      
+      if (rowErrors.length === 0) {
+        validatedData.push(transformedRow);
+      } else {
+        errors.push(...rowErrors);
+      }
+    } catch (error) {
+      errors.push(`Row ${index + 1}: Failed to process row - ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   });
 
@@ -268,11 +310,26 @@ export const validateProjectData = (row: ProjectExcelRow, index: number): string
   }
   
   if (row.status && !['planning', 'active', 'on_hold', 'completed', 'cancelled'].includes(row.status.toLowerCase())) {
-    errors.push(`Row ${index + 1}: Invalid status. Must be one of: planning, active, on_hold, completed, cancelled`);
+    errors.push(`Row ${index + 1}: Invalid status '${row.status}'. Must be one of: planning, active, on_hold, completed, cancelled`);
   }
   
   if (row.budget && isNaN(Number(row.budget))) {
-    errors.push(`Row ${index + 1}: Budget must be a valid number`);
+    errors.push(`Row ${index + 1}: Budget '${row.budget}' must be a valid number`);
+  }
+  
+  // Date validation
+  if (row.start_date && row.start_date.trim() !== '') {
+    const startDate = new Date(row.start_date);
+    if (isNaN(startDate.getTime())) {
+      errors.push(`Row ${index + 1}: Invalid start date format '${row.start_date}'. Use YYYY-MM-DD format`);
+    }
+  }
+  
+  if (row.end_date && row.end_date.trim() !== '') {
+    const endDate = new Date(row.end_date);
+    if (isNaN(endDate.getTime())) {
+      errors.push(`Row ${index + 1}: Invalid end date format '${row.end_date}'. Use YYYY-MM-DD format`);
+    }
   }
   
   return errors;
@@ -297,12 +354,13 @@ export const validateClientData = (row: ClientExcelRow, index: number): string[]
     errors.push(`Row ${index + 1}: Primary contact email is required`);
   }
   
-  if (row.primary_contact_email && !/\S+@\S+\.\S+/.test(row.primary_contact_email)) {
-    errors.push(`Row ${index + 1}: Invalid email format`);
+  // Email validation
+  if (row.primary_contact_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(row.primary_contact_email)) {
+    errors.push(`Row ${index + 1}: Invalid email format '${row.primary_contact_email}'`);
   }
   
   if (row.client_type && !['prospect', 'active', 'inactive'].includes(row.client_type.toLowerCase())) {
-    errors.push(`Row ${index + 1}: Invalid client type. Must be one of: prospect, active, inactive`);
+    errors.push(`Row ${index + 1}: Invalid client type '${row.client_type}'. Must be one of: prospect, active, inactive`);
   }
   
   return errors;
@@ -323,8 +381,9 @@ export const validateVendorData = (row: VendorExcelRow, index: number): string[]
     errors.push(`Row ${index + 1}: Contact email is required`);
   }
   
-  if (row.contact_email && !/\S+@\S+\.\S+/.test(row.contact_email)) {
-    errors.push(`Row ${index + 1}: Invalid email format`);
+  // Email validation
+  if (row.contact_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(row.contact_email)) {
+    errors.push(`Row ${index + 1}: Invalid email format '${row.contact_email}'`);
   }
   
   if (!row.services_offered || row.services_offered.trim() === '') {
@@ -332,7 +391,22 @@ export const validateVendorData = (row: VendorExcelRow, index: number): string[]
   }
   
   if (row.status && !['active', 'inactive', 'pending'].includes(row.status.toLowerCase())) {
-    errors.push(`Row ${index + 1}: Invalid status. Must be one of: active, inactive, pending`);
+    errors.push(`Row ${index + 1}: Invalid status '${row.status}'. Must be one of: active, inactive, pending`);
+  }
+  
+  // Date validation
+  if (row.contract_start_date && row.contract_start_date.trim() !== '') {
+    const startDate = new Date(row.contract_start_date);
+    if (isNaN(startDate.getTime())) {
+      errors.push(`Row ${index + 1}: Invalid contract start date format '${row.contract_start_date}'. Use YYYY-MM-DD format`);
+    }
+  }
+  
+  if (row.contract_end_date && row.contract_end_date.trim() !== '') {
+    const endDate = new Date(row.contract_end_date);
+    if (isNaN(endDate.getTime())) {
+      errors.push(`Row ${index + 1}: Invalid contract end date format '${row.contract_end_date}'. Use YYYY-MM-DD format`);
+    }
   }
   
   return errors;
