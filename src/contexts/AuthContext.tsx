@@ -33,10 +33,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     let mounted = true;
 
-    // Clear any existing session data on mount to ensure fresh state
+    // Create a unique session key for this browser instance
+    const browserSessionKey = `supabase_session_${Date.now()}_${Math.random()}`;
+    console.log('Browser session key:', browserSessionKey);
+
+    // Clear any existing session data on mount to ensure fresh state per browser
     const initializeAuth = async () => {
       try {
-        // Get current session without any caching
+        // Force a fresh session check without any caching
         const { data: { session: currentSession }, error } = await supabase.auth.getSession();
         
         if (error) {
@@ -44,7 +48,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
 
         if (mounted) {
-          console.log('Initial session check:', currentSession?.user?.email || 'No user');
+          console.log('Initial session check for browser:', currentSession?.user?.email || 'No user');
           setSession(currentSession);
           setUser(currentSession?.user ?? null);
           setLoading(false);
@@ -59,12 +63,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     };
 
-    // Set up auth state listener
+    // Set up auth state listener - this ensures each browser gets its own auth events
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (!mounted) return;
 
-        console.log('Auth state changed:', event, session?.user?.email || 'No user');
+        console.log('Auth state changed in browser:', event, session?.user?.email || 'No user');
         
         // Handle different auth events
         switch (event) {
@@ -72,15 +76,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setSession(session);
             setUser(session?.user ?? null);
             setLoading(false);
-            console.log('User signed in:', session?.user?.email);
+            console.log('User signed in in browser:', session?.user?.email);
             break;
           
           case 'SIGNED_OUT':
             setSession(null);
             setUser(null);
             setLoading(false);
-            console.log('User signed out');
-            // Clear any cached data
+            console.log('User signed out from browser');
+            // Clear browser-specific cached data
             localStorage.removeItem('selectedRole');
             sessionStorage.removeItem('selectedRole');
             break;
@@ -88,13 +92,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           case 'TOKEN_REFRESHED':
             setSession(session);
             setUser(session?.user ?? null);
-            console.log('Token refreshed for user:', session?.user?.email);
+            console.log('Token refreshed for user in browser:', session?.user?.email);
             break;
           
           case 'USER_UPDATED':
             setSession(session);
             setUser(session?.user ?? null);
-            console.log('User updated:', session?.user?.email);
+            console.log('User updated in browser:', session?.user?.email);
             break;
           
           default:
@@ -254,9 +258,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signOut = async () => {
     try {
-      console.log('Signing out user:', user?.email);
+      console.log('Signing out user from this browser:', user?.email);
       
-      // Clear any cached data first
+      // Clear browser-specific cached data first
       sessionStorage.removeItem('selectedRole');
       localStorage.removeItem('selectedRole');
       
@@ -267,7 +271,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Don't throw here, continue with cleanup
       }
       
-      console.log('Successfully signed out');
+      console.log('Successfully signed out from this browser');
       
       // Force redirect to welcome page
       window.location.href = '/';

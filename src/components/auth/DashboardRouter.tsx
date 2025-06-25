@@ -35,7 +35,7 @@ const DashboardRouter: React.FC = () => {
     },
     enabled: !!user?.id,
     staleTime: 5 * 60 * 1000, // 5 minutes
-    cacheTime: 10 * 60 * 1000, // 10 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes (renamed from cacheTime)
   });
 
   // Show loading state

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -11,6 +12,7 @@ const EmployeeDashboard: React.FC = () => {
 
   const handleSignOut = async () => {
     try {
+      console.log('Employee signing out:', user?.email);
       toast({
         title: "Signing out...",
         description: "You've been signed out successfully 👋",
@@ -28,7 +30,7 @@ const EmployeeDashboard: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-gray-900 to-black">
-      {/* Header */}
+      {/* Header with Sign Out Button */}
       <div className="bg-black/30 backdrop-blur-sm border-b border-white/10 px-6 py-4">
         <div className="flex justify-between items-center">
           <div>
@@ -43,9 +45,9 @@ const EmployeeDashboard: React.FC = () => {
               onClick={handleSignOut}
               variant="outline"
               size="sm"
-              className="border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white"
+              className="border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white flex items-center gap-2"
             >
-              <LogOut className="w-4 h-4 mr-2" />
+              <LogOut className="w-4 h-4" />
               Sign Out
             </Button>
           </div>
