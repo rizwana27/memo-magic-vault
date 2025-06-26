@@ -30,7 +30,7 @@ const VendorDashboard: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-gray-900 to-black">
-      {/* Header with Sign Out Button */}
+      {/* Header with Sign Out Button - matching Admin dashboard */}
       <div className="bg-black/30 backdrop-blur-sm border-b border-white/10 px-6 py-4">
         <div className="flex justify-between items-center">
           <div>
