@@ -1,15 +1,25 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { LogOut } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import PSALayout from '@/components/psa/PSALayout';
 import AIDataCopilot from '@/components/psa/AIDataCopilot';
+import Dashboard from '@/components/psa/Dashboard';
+import Projects from '@/components/psa/Projects';
+import Clients from '@/components/psa/Clients';
+import Resources from '@/components/psa/Resources';
+import Timesheets from '@/components/psa/Timesheets';
+import Financial from '@/components/psa/Financial';
+import Vendors from '@/components/psa/Vendors';
+import Reports from '@/components/psa/Reports';
+import Settings from '@/components/psa/Settings';
 
 const Index = () => {
   const { user, signOut } = useAuth();
   const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState('dashboard');
 
   const handleSignOut = async () => {
     try {
@@ -29,38 +39,38 @@ const Index = () => {
     }
   };
 
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'dashboard':
+        return <Dashboard onTabChange={setActiveTab} />;
+      case 'projects':
+        return <Projects />;
+      case 'clients':
+        return <Clients />;
+      case 'resources':
+        return <Resources />;
+      case 'timesheets':
+        return <Timesheets />;
+      case 'financial':
+        return <Financial />;
+      case 'vendors':
+        return <Vendors />;
+      case 'reports':
+        return <Reports />;
+      case 'settings':
+        return <Settings />;
+      default:
+        return <Dashboard onTabChange={setActiveTab} />;
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-gray-900 to-black">
-      {/* Header with Sign Out Button */}
-      <div className="bg-black/30 backdrop-blur-sm border-b border-white/10 px-6 py-4">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-bold text-white">Admin Dashboard</h1>
-            <p className="text-gray-400">Welcome back, {user?.email}</p>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="text-right">
-              <p className="text-sm text-gray-400">Role: Admin</p>
-            </div>
-            <Button
-              onClick={handleSignOut}
-              variant="outline"
-              size="sm"
-              className="border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white flex items-center gap-2"
-            >
-              <LogOut className="w-4 h-4" />
-              Sign Out
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="relative">
-        <PSALayout />
-        {/* AI Data Copilot - This will render as a floating button in the bottom-right corner */}
-        <AIDataCopilot />
-      </div>
+      <PSALayout activeTab={activeTab} onTabChange={setActiveTab}>
+        {renderContent()}
+      </PSALayout>
+      {/* AI Data Copilot - This will render as a floating button in the bottom-right corner */}
+      <AIDataCopilot />
     </div>
   );
 };
