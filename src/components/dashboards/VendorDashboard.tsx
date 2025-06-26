@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { LogOut } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Vendors from '@/components/psa/Vendors';
+import AIDataCopilot from '@/components/psa/AIDataCopilot';
 
 const VendorDashboard: React.FC = () => {
   const { user, signOut } = useAuth();
@@ -58,6 +59,9 @@ const VendorDashboard: React.FC = () => {
       <div className="p-6">
         <Vendors />
       </div>
+
+      {/* AI Data Copilot - This will render as a floating button in the bottom-right corner */}
+      <AIDataCopilot />
     </div>
   );
 };
