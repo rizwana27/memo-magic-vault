@@ -35,17 +35,17 @@ const VendorDashboard: React.FC = () => {
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-2xl font-bold text-white">Vendor Portal</h1>
-            <p className="text-gray-400">Welcome back, {user?.email}</p>
+            <p className="text-gray-300">Welcome back, {user?.email}</p>
           </div>
           <div className="flex items-center gap-4">
             <div className="text-right">
-              <p className="text-sm text-gray-400">Role: Vendor</p>
+              <p className="text-sm text-gray-300">Role: Vendor</p>
             </div>
             <Button
               onClick={handleSignOut}
               variant="outline"
               size="sm"
-              className="border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white flex items-center gap-2"
+              className="border-red-500/50 bg-red-500/10 text-red-300 hover:bg-red-500/20 hover:text-red-200 hover:border-red-400/60 flex items-center gap-2 transition-colors"
             >
               <LogOut className="w-4 h-4" />
               Sign Out
