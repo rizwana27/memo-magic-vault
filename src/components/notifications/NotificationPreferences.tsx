@@ -275,7 +275,6 @@ const NotificationPreferences: React.FC = () => {
                       <Bell className="h-4 w-4 text-gray-500" />
                       <Label className="text-sm">In-App</Label>
                       <Switch
-                        size="sm"
                         checked={pref.channels.inApp}
                         onCheckedChange={(checked) => updateChannel(pref.id, 'inApp', checked)}
                       />
@@ -284,7 +283,6 @@ const NotificationPreferences: React.FC = () => {
                       <Mail className="h-4 w-4 text-gray-500" />
                       <Label className="text-sm">Email</Label>
                       <Switch
-                        size="sm"
                         checked={pref.channels.email}
                         onCheckedChange={(checked) => updateChannel(pref.id, 'email', checked)}
                       />
@@ -293,7 +291,6 @@ const NotificationPreferences: React.FC = () => {
                       <Smartphone className="h-4 w-4 text-gray-500" />
                       <Label className="text-sm">SMS</Label>
                       <Switch
-                        size="sm"
                         checked={pref.channels.sms}
                         onCheckedChange={(checked) => updateChannel(pref.id, 'sms', checked)}
                       />
@@ -302,7 +299,6 @@ const NotificationPreferences: React.FC = () => {
                       <MessageSquare className="h-4 w-4 text-gray-500" />
                       <Label className="text-sm">Slack</Label>
                       <Switch
-                        size="sm"
                         checked={pref.channels.slack}
                         onCheckedChange={(checked) => updateChannel(pref.id, 'slack', checked)}
                       />
