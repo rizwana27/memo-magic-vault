@@ -15,11 +15,18 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: true,
-    flowType: 'pkce'
+    flowType: 'pkce',
+    debug: false
   },
   global: {
     headers: {
       'X-Client-Info': 'supabase-js-web'
+    }
+  },
+  // Add realtime config to prevent connection issues during auth changes
+  realtime: {
+    params: {
+      eventsPerSecond: 10
     }
   }
 });
