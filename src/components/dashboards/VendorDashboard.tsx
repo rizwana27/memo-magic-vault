@@ -6,6 +6,7 @@ import { LogOut } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Vendors from '@/components/psa/Vendors';
 import AIDataCopilot from '@/components/psa/AIDataCopilot';
+import NotificationCenter from '@/components/notifications/NotificationCenter';
 
 const VendorDashboard: React.FC = () => {
   const { user, signOut } = useAuth();
@@ -60,7 +61,10 @@ const VendorDashboard: React.FC = () => {
         <Vendors />
       </div>
 
-      {/* AI Data Copilot - This will render as a floating button in the bottom-right corner */}
+      {/* Smart Notification Center - positioned bottom-left */}
+      <NotificationCenter />
+
+      {/* AI Data Copilot - positioned bottom-right */}
       <AIDataCopilot />
     </div>
   );

@@ -6,6 +6,7 @@ import { LogOut } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import PSALayout from '@/components/psa/PSALayout';
 import AIDataCopilot from '@/components/psa/AIDataCopilot';
+import NotificationCenter from '@/components/notifications/NotificationCenter';
 import Dashboard from '@/components/psa/Dashboard';
 import Projects from '@/components/psa/Projects';
 import Clients from '@/components/psa/Clients';
@@ -69,7 +70,11 @@ const Index = () => {
       <PSALayout activeTab={activeTab} onTabChange={setActiveTab}>
         {renderContent()}
       </PSALayout>
-      {/* AI Data Copilot - This will render as a floating button in the bottom-right corner */}
+      
+      {/* Smart Notification Center - positioned bottom-left */}
+      <NotificationCenter />
+      
+      {/* AI Data Copilot - positioned bottom-right */}
       <AIDataCopilot />
     </div>
   );

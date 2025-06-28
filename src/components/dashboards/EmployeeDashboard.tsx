@@ -6,6 +6,7 @@ import { LogOut } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Timesheets from '@/components/psa/Timesheets';
 import AIDataCopilot from '@/components/psa/AIDataCopilot';
+import NotificationCenter from '@/components/notifications/NotificationCenter';
 
 const EmployeeDashboard: React.FC = () => {
   const { user, signOut } = useAuth();
@@ -60,7 +61,10 @@ const EmployeeDashboard: React.FC = () => {
         <Timesheets />
       </div>
 
-      {/* AI Data Copilot - This will render as a floating button in the bottom-right corner */}
+      {/* Smart Notification Center - positioned bottom-left */}
+      <NotificationCenter />
+
+      {/* AI Data Copilot - positioned bottom-right */}
       <AIDataCopilot />
     </div>
   );
