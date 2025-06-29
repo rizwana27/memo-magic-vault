@@ -1,33 +1,64 @@
 
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { Button } from '@/components/ui/button';
+import { LogOut } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Timesheets from '@/components/psa/Timesheets';
-import AIDataCopilot from '@/components/psa/AIDataCopilot';
-import TopNavLayout from '@/components/psa/TopNavLayout';
 
 const EmployeeDashboard: React.FC = () => {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const { toast } = useToast();
 
-  const handleTabChange = (tab: string) => {
-    // Handle tab changes if needed
-    console.log('Tab changed to:', tab);
+  const handleSignOut = async () => {
+    try {
+      console.log('Employee signing out:', user?.email);
+      toast({
+        title: "Signing out...",
+        description: "You've been signed out successfully 👋",
+      });
+      await signOut();
+    } catch (error) {
+      console.error('Error signing out:', error);
+      toast({
+        title: "Sign out completed",
+        description: "You've been signed out 👋",
+        variant: "default",
+      });
+    }
   };
 
   return (
-    <TopNavLayout activeTab="timesheets" onTabChange={handleTabChange}>
-      <div className="space-y-6">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-white mb-2">Employee Portal</h1>
-          <p className="text-gray-300">Welcome back, {user?.email}</p>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-gray-900 to-black">
+      {/* Header with Sign Out Button - matching Admin dashboard */}
+      <div className="bg-black/30 backdrop-blur-sm border-b border-white/10 px-6 py-4">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-2xl font-bold text-white">Employee Portal</h1>
+            <p className="text-gray-300">Welcome back, {user?.email}</p>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="text-right">
+              <p className="text-sm text-gray-300">Role: Employee</p>
+            </div>
+            <Button
+              onClick={handleSignOut}
+              variant="outline"
+              size="sm"
+              className="border-red-500/50 bg-red-500/10 text-red-300 hover:bg-red-500/20 hover:text-red-200 hover:border-red-400/60 flex items-center gap-2 transition-colors"
+            >
+              <LogOut className="w-4 h-4" />
+              Sign Out
+            </Button>
+          </div>
         </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="p-6">
         <Timesheets />
       </div>
-      
-      {/* AI Data Copilot - positioned bottom-right */}
-      <AIDataCopilot />
-    </TopNavLayout>
+    </div>
   );
 };
 
