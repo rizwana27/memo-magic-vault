@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -13,16 +12,8 @@ export type Invoice = Tables<'invoices'>;
 export type Vendor = Tables<'vendors'>;
 export type PurchaseOrder = Tables<'purchase_orders'>;
 
-// Define insert types for bulk operations - only include fields that user provides
-type BulkTimesheetInsert = {
-  project_id: string;
-  task: string;
-  date: string;
-  start_time: string;
-  end_time: string;
-  billable: boolean;
-  notes?: string;
-};
+// Define insert types without auto-generated fields
+type TimesheetInsert = Omit<Tables<'timesheets'>, 'timesheet_id' | 'created_at' | 'updated_at' | 'hours'>;
 
 // Initial hooks for fetching data
 export const useProjects = () => {
@@ -531,8 +522,9 @@ export const useCreateTimesheet = () => {
         throw new Error('Selected project not found. Please refresh and try again.');
       }
 
-      // Prepare insert data - created_by will be automatically set by the database trigger
-      const insertData = {
+      // Prepare insert data - cast to any to bypass strict TypeScript checking
+      // The database will auto-generate timesheet_id and calculate hours
+      const insertData: TimesheetInsert = {
         project_id: timesheetData.project_id,
         task: timesheetData.task,
         date: timesheetData.date,
@@ -540,13 +532,12 @@ export const useCreateTimesheet = () => {
         end_time: timesheetData.end_time,
         billable: timesheetData.billable,
         notes: timesheetData.notes,
-        // Note: created_by is automatically handled by the database trigger
+        created_by: null, // Will be set by trigger
       };
       
-      // Cast to any to bypass strict TypeScript checking since our trigger handles auto-generation
       const { data, error } = await supabase
         .from('timesheets')
-        .insert([insertData] as any)
+        .insert([insertData as any])
         .select()
         .single();
 
@@ -801,18 +792,37 @@ export const useBulkCreateTimesheets = () => {
   const { toast } = useToast();
   
   return useMutation({
-    mutationFn: async (timesheetData: BulkTimesheetInsert[]) => {
+    mutationFn: async (timesheetData: Array<{
+      project_id: string;
+      task: string;
+      date: string;
+      start_time: string;
+      end_time: string;
+      billable: boolean;
+      notes?: string;
+    }>) => {
       // Check if user is authenticated
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         throw new Error('You must be logged in to create timesheet entries');
       }
 
-      // The database trigger will automatically set created_by and generate timesheet_id
-      // Cast to any to bypass strict TypeScript checking
+      // Prepare timesheet data - cast to any to bypass strict TypeScript checking
+      // The database will auto-generate timesheet_id and calculate hours
+      const timesheetsToInsert: TimesheetInsert[] = timesheetData.map(entry => ({
+        project_id: entry.project_id,
+        task: entry.task,
+        date: entry.date,
+        start_time: entry.start_time,
+        end_time: entry.end_time,
+        billable: entry.billable,
+        notes: entry.notes,
+        created_by: null, // Will be set by trigger
+      }));
+
       const { data, error } = await supabase
         .from('timesheets')
-        .insert(timesheetData as any)
+        .insert(timesheetsToInsert as any)
         .select();
       
       if (error) {

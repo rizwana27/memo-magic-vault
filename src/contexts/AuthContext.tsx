@@ -258,57 +258,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signOut = async () => {
     try {
-      console.log('Starting sign out process for user:', user?.email);
-      setLoading(true);
+      console.log('Signing out user from this browser:', user?.email);
       
       // Clear browser-specific cached data first
-      localStorage.removeItem('selectedRole');
       sessionStorage.removeItem('selectedRole');
-      
-      // Clear any other auth-related localStorage items
-      const keysToRemove = [];
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key && (key.includes('supabase') || key.includes('auth') || key.includes('session'))) {
-          keysToRemove.push(key);
-        }
-      }
-      keysToRemove.forEach(key => localStorage.removeItem(key));
-      
-      // Clear sessionStorage as well
-      const sessionKeysToRemove = [];
-      for (let i = 0; i < sessionStorage.length; i++) {
-        const key = sessionStorage.key(i);
-        if (key && (key.includes('supabase') || key.includes('auth') || key.includes('session'))) {
-          sessionKeysToRemove.push(key);
-        }
-      }
-      sessionKeysToRemove.forEach(key => sessionStorage.removeItem(key));
+      localStorage.removeItem('selectedRole');
       
       // Sign out from Supabase - this will trigger the auth state change
-      const { error } = await supabase.auth.signOut({ scope: 'global' });
+      const { error } = await supabase.auth.signOut();
       if (error) {
-        console.error('Error signing out from Supabase:', error);
-        // Continue with cleanup even if there's an error
+        console.error('Error signing out:', error);
+        // Don't throw here, continue with cleanup
       }
-      
-      // Force clear local state immediately
-      setSession(null);
-      setUser(null);
-      setLoading(false);
       
       console.log('Successfully signed out from this browser');
       
-      // Use window.location.replace instead of href to prevent back button issues
-      window.location.replace('/');
+      // Force redirect to welcome page
+      window.location.href = '/';
       
     } catch (error) {
       console.error('Error during sign out:', error);
       // Even if there's an error, clear local state and redirect
       setSession(null);
       setUser(null);
-      setLoading(false);
-      window.location.replace('/');
+      window.location.href = '/';
     }
   };
 

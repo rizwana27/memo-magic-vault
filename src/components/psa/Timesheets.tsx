@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,13 +8,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog } from '@/components/ui/dialog';
 import { Plus, Search, Filter, Clock, Calendar, CheckCircle } from 'lucide-react';
 import { useTimesheets, useCreateTimesheet } from '@/hooks/usePSAData';
-import { useAuth } from '@/contexts/AuthContext';
 import TimesheetEntryForm from './forms/TimesheetEntryForm';
 
 const Timesheets = () => {
   const { data: timesheets, isLoading, error } = useTimesheets();
   const createTimesheet = useCreateTimesheet();
-  const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [showNewEntryModal, setShowNewEntryModal] = useState(false);
 
@@ -35,8 +32,7 @@ const Timesheets = () => {
   ) || [];
 
   const handleNewTimeEntry = async (data: any) => {
-    console.log('Creating new time entry for user:', user?.email);
-    console.log('Entry data:', data);
+    console.log('Creating new time entry:', data);
     try {
       await createTimesheet.mutateAsync(data);
       setShowNewEntryModal(false);
@@ -46,7 +42,7 @@ const Timesheets = () => {
     }
   };
 
-  // Calculate totals from real data - only for current user's entries
+  // Calculate totals from real data
   const calculateTotals = () => {
     if (!timesheets || timesheets.length === 0) {
       return { dailyTotal: 0, weeklyTotal: 0, pendingCount: 0, approvedCount: 0 };
@@ -60,7 +56,6 @@ const Timesheets = () => {
     startOfWeek.setDate(today.getDate() - today.getDay() + 1);
     startOfWeek.setHours(0, 0, 0, 0);
 
-    // Only calculate for current user's timesheets (RLS will handle this filtering)
     const dailyTotal = timesheets
       .filter(ts => ts.date === todayStr)
       .reduce((sum, ts) => sum + (ts.hours || 0), 0);
@@ -96,7 +91,7 @@ const Timesheets = () => {
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-white">My Timesheets</h1>
+            <h1 className="text-3xl font-bold text-white">Timesheets</h1>
             <p className="text-gray-400">Track and manage your time entries</p>
           </div>
         </div>
@@ -109,27 +104,13 @@ const Timesheets = () => {
     );
   }
 
-  if (!user) {
-    return (
-      <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-white">My Timesheets</h1>
-            <p className="text-gray-400">Please log in to view your timesheets</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-white">My Timesheets</h1>
+          <h1 className="text-3xl font-bold text-white">Timesheets</h1>
           <p className="text-gray-400">Track and manage your time entries</p>
-          <p className="text-sm text-gray-500">Logged in as: {user.email}</p>
         </div>
         <Button 
           className="bg-blue-600 hover:bg-blue-700"
@@ -141,13 +122,13 @@ const Timesheets = () => {
         </Button>
       </div>
 
-      {/* Stats Cards - now showing user-specific data */}
+      {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
         <Card className="bg-white/10 backdrop-blur-md border-white/20">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-300 text-sm">My Hours Today</p>
+                <p className="text-gray-300 text-sm">Today</p>
                 <p className="text-2xl font-bold text-white">{dailyTotal.toFixed(1)}h</p>
               </div>
               <Clock className="w-8 h-8 text-blue-500" />
@@ -158,7 +139,7 @@ const Timesheets = () => {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-300 text-sm">My Hours This Week</p>
+                <p className="text-gray-300 text-sm">This Week</p>
                 <p className="text-2xl font-bold text-white">{weeklyTotal.toFixed(1)}h</p>
               </div>
               <Calendar className="w-8 h-8 text-purple-500" />
@@ -169,7 +150,7 @@ const Timesheets = () => {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-300 text-sm">My Pending</p>
+                <p className="text-gray-300 text-sm">Pending</p>
                 <p className="text-2xl font-bold text-yellow-500">{pendingCount}</p>
               </div>
               <Calendar className="w-8 h-8 text-yellow-500" />
@@ -180,7 +161,7 @@ const Timesheets = () => {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-300 text-sm">My Approved</p>
+                <p className="text-gray-300 text-sm">Approved</p>
                 <p className="text-2xl font-bold text-green-500">{approvedCount}</p>
               </div>
               <CheckCircle className="w-8 h-8 text-green-500" />
@@ -192,9 +173,9 @@ const Timesheets = () => {
       {/* Timesheet Tabs */}
       <Tabs defaultValue="daily" className="w-full">
         <TabsList className="grid w-full grid-cols-3 bg-white/10 backdrop-blur-md">
-          <TabsTrigger value="daily" className="text-gray-300 data-[state=active]:text-white">My Daily Entries</TabsTrigger>
-          <TabsTrigger value="weekly" className="text-gray-300 data-[state=active]:text-white">My Weekly View</TabsTrigger>
-          <TabsTrigger value="approval" className="text-gray-300 data-[state=active]:text-white">Approval Status</TabsTrigger>
+          <TabsTrigger value="daily" className="text-gray-300 data-[state=active]:text-white">Daily Entry</TabsTrigger>
+          <TabsTrigger value="weekly" className="text-gray-300 data-[state=active]:text-white">Weekly View</TabsTrigger>
+          <TabsTrigger value="approval" className="text-gray-300 data-[state=active]:text-white">Approval</TabsTrigger>
         </TabsList>
 
         <TabsContent value="daily" className="space-y-4">
@@ -203,7 +184,7 @@ const Timesheets = () => {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
               <Input
-                placeholder="Search my timesheets..."
+                placeholder="Search timesheets..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10 bg-white/10 border-white/20 text-white"
@@ -217,13 +198,13 @@ const Timesheets = () => {
 
           <Card className="bg-white/10 backdrop-blur-md border-white/20">
             <CardHeader>
-              <CardTitle className="text-white">My Recent Time Entries</CardTitle>
+              <CardTitle className="text-white">Recent Time Entries</CardTitle>
               <CardDescription className="text-gray-300">Your latest timesheet entries</CardDescription>
             </CardHeader>
             <CardContent>
               {isLoading ? (
                 <div className="text-center py-8">
-                  <p className="text-gray-400">Loading your timesheets...</p>
+                  <p className="text-gray-400">Loading timesheets...</p>
                 </div>
               ) : filteredTimesheets.length === 0 ? (
                 <div className="text-center py-8">

@@ -14,7 +14,6 @@ import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useProjects } from '@/hooks/usePSAData';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useAuth } from '@/contexts/AuthContext';
 
 interface TimesheetEntryFormProps {
   onSubmit: (data: any) => void;
@@ -23,7 +22,6 @@ interface TimesheetEntryFormProps {
 
 const TimesheetEntryForm = ({ onSubmit, onCancel }: TimesheetEntryFormProps) => {
   const { data: projects, isLoading: projectsLoading } = useProjects();
-  const { user } = useAuth();
   
   const [selectedProject, setSelectedProject] = useState('');
   const [selectedTask, setSelectedTask] = useState('');
@@ -65,11 +63,6 @@ const TimesheetEntryForm = ({ onSubmit, onCancel }: TimesheetEntryFormProps) => 
     setError('');
 
     try {
-      // Check if user is authenticated
-      if (!user) {
-        throw new Error('You must be logged in to create a timesheet entry');
-      }
-
       // Comprehensive validation
       if (!selectedProject) {
         throw new Error('Please select a project');
@@ -98,7 +91,7 @@ const TimesheetEntryForm = ({ onSubmit, onCancel }: TimesheetEntryFormProps) => 
       }
 
       // Map the form data to the correct database schema
-      // Note: created_by will be automatically set by the database trigger
+      // IMPORTANT: Do NOT include 'hours' in the payload as it's likely a computed column
       const timesheetData = {
         project_id: selectedProject,
         task: selectedTask,
@@ -109,8 +102,7 @@ const TimesheetEntryForm = ({ onSubmit, onCancel }: TimesheetEntryFormProps) => 
         notes: notes?.trim() || null,
       };
 
-      console.log('Creating timesheet for user:', user.email);
-      console.log('Timesheet data:', timesheetData);
+      console.log('Creating timesheet with data:', timesheetData);
       console.log('Calculated hours (for reference only):', totalHours);
       
       await onSubmit(timesheetData);
@@ -135,34 +127,10 @@ const TimesheetEntryForm = ({ onSubmit, onCancel }: TimesheetEntryFormProps) => 
     );
   }
 
-  if (!user) {
-    return (
-      <DialogContent className="bg-white/10 backdrop-blur-md border-white/20 text-white max-w-2xl">
-        <DialogHeader>
-          <DialogTitle className="text-white text-xl">Log Time Entry</DialogTitle>
-        </DialogHeader>
-        <div className="py-8 text-center text-gray-300">
-          <p>You must be logged in to create timesheet entries.</p>
-        </div>
-        <DialogFooter>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onCancel}
-            className="border-gray-600 text-gray-300 hover:bg-gray-700"
-          >
-            Close
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    );
-  }
-
   return (
     <DialogContent className="bg-white/10 backdrop-blur-md border-white/20 text-white max-w-2xl max-h-[90vh] overflow-y-auto">
       <DialogHeader>
         <DialogTitle className="text-white text-xl">Log Time Entry</DialogTitle>
-        <p className="text-gray-300 text-sm">Logging time for: {user.email}</p>
       </DialogHeader>
       
       <form onSubmit={handleSubmit} className="space-y-6">
