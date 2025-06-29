@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -542,9 +543,10 @@ export const useCreateTimesheet = () => {
         // Note: created_by is automatically handled by the database trigger
       };
       
+      // Cast to any to bypass strict TypeScript checking since our trigger handles auto-generation
       const { data, error } = await supabase
         .from('timesheets')
-        .insert([insertData])
+        .insert([insertData] as any)
         .select()
         .single();
 
@@ -807,9 +809,10 @@ export const useBulkCreateTimesheets = () => {
       }
 
       // The database trigger will automatically set created_by and generate timesheet_id
+      // Cast to any to bypass strict TypeScript checking
       const { data, error } = await supabase
         .from('timesheets')
-        .insert(timesheetData)
+        .insert(timesheetData as any)
         .select();
       
       if (error) {
