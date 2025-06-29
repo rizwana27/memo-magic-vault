@@ -5,7 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import Index from '@/pages/Index';
 import Vendors from '@/components/psa/Vendors';
-import Timesheets from '@/components/psa/Timesheets';
+import EmployeeDashboard from '@/components/dashboards/EmployeeDashboard';
 import UnauthorizedAccess from '@/components/auth/UnauthorizedAccess';
 
 const DashboardRouter: React.FC = () => {
@@ -35,7 +35,7 @@ const DashboardRouter: React.FC = () => {
     },
     enabled: !!user?.id,
     staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes (renamed from cacheTime)
+    gcTime: 10 * 60 * 1000, // 10 minutes
   });
 
   // Show loading state
@@ -79,7 +79,7 @@ const DashboardRouter: React.FC = () => {
     
     case 'employee':
     case 'user': // fallback for existing users
-      return <Timesheets />; // Timesheet entry page only
+      return <EmployeeDashboard />; // Employee dashboard with timesheets
     
     default:
       return <UnauthorizedAccess reason={`Unknown role: ${userRole}. Please contact support.`} />;
