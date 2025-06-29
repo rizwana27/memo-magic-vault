@@ -12,8 +12,16 @@ export type Invoice = Tables<'invoices'>;
 export type Vendor = Tables<'vendors'>;
 export type PurchaseOrder = Tables<'purchase_orders'>;
 
-// Define insert types without auto-generated fields
-type TimesheetInsert = Omit<Tables<'timesheets'>, 'timesheet_id' | 'created_at' | 'updated_at' | 'hours'>;
+// Define insert types for bulk operations - only include fields that user provides
+type BulkTimesheetInsert = {
+  project_id: string;
+  task: string;
+  date: string;
+  start_time: string;
+  end_time: string;
+  billable: boolean;
+  notes?: string;
+};
 
 // Initial hooks for fetching data
 export const useProjects = () => {
@@ -791,37 +799,17 @@ export const useBulkCreateTimesheets = () => {
   const { toast } = useToast();
   
   return useMutation({
-    mutationFn: async (timesheetData: Array<{
-      project_id: string;
-      task: string;
-      date: string;
-      start_time: string;
-      end_time: string;
-      billable: boolean;
-      notes?: string;
-    }>) => {
+    mutationFn: async (timesheetData: BulkTimesheetInsert[]) => {
       // Check if user is authenticated
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         throw new Error('You must be logged in to create timesheet entries');
       }
 
-      // Prepare timesheet data - cast to any to bypass strict TypeScript checking
-      // The database will auto-generate timesheet_id and calculate hours
-      const timesheetsToInsert: TimesheetInsert[] = timesheetData.map(entry => ({
-        project_id: entry.project_id,
-        task: entry.task,
-        date: entry.date,
-        start_time: entry.start_time,
-        end_time: entry.end_time,
-        billable: entry.billable,
-        notes: entry.notes,
-        created_by: null, // Will be set by trigger
-      }));
-
+      // The database trigger will automatically set created_by and generate timesheet_id
       const { data, error } = await supabase
         .from('timesheets')
-        .insert(timesheetsToInsert as any)
+        .insert(timesheetData)
         .select();
       
       if (error) {

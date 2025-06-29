@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,7 +8,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog } from '@/components/ui/dialog';
 import { Plus, Search, Filter, Clock, Calendar, CheckCircle } from 'lucide-react';
-import { useTimesheets, useCreateTimesheet, useAuth } from '@/hooks/usePSAData';
+import { useTimesheets, useCreateTimesheet } from '@/hooks/usePSAData';
+import { useAuth } from '@/contexts/AuthContext';
 import TimesheetEntryForm from './forms/TimesheetEntryForm';
 
 const Timesheets = () => {
