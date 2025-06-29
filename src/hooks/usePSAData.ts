@@ -522,9 +522,8 @@ export const useCreateTimesheet = () => {
         throw new Error('Selected project not found. Please refresh and try again.');
       }
 
-      // Prepare insert data - cast to any to bypass strict TypeScript checking
-      // The database will auto-generate timesheet_id and calculate hours
-      const insertData: TimesheetInsert = {
+      // Prepare insert data - created_by will be automatically set by the database trigger
+      const insertData = {
         project_id: timesheetData.project_id,
         task: timesheetData.task,
         date: timesheetData.date,
@@ -532,12 +531,12 @@ export const useCreateTimesheet = () => {
         end_time: timesheetData.end_time,
         billable: timesheetData.billable,
         notes: timesheetData.notes,
-        created_by: null, // Will be set by trigger
+        // Note: created_by is automatically handled by the database trigger
       };
       
       const { data, error } = await supabase
         .from('timesheets')
-        .insert([insertData as any])
+        .insert([insertData])
         .select()
         .single();
 
