@@ -5,7 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Mail, Loader2, Shield, Crown, Building, User } from 'lucide-react';
+import { ArrowLeft, Mail, Loader2, Shield, Crown, Building, User, AlertTriangle } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface LoginSignupProps {
   role: 'admin' | 'vendor' | 'employee';
@@ -43,6 +44,39 @@ const LoginSignup: React.FC<LoginSignupProps> = ({ role, onBack }) => {
 
   const config = roleConfig[role];
 
+  const validateUserRole = async (userId: string): Promise<boolean> => {
+    try {
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('user_role, role')
+        .eq('id', userId)
+        .single();
+
+      if (error) {
+        console.error('Error fetching user profile:', error);
+        return false;
+      }
+
+      const userRole = profile?.user_role || profile?.role || 'user';
+      console.log('User role from DB:', userRole, 'Expected role:', role);
+
+      // Check if user's role matches the selected portal
+      if (userRole === role) {
+        return true;
+      }
+
+      // Special case: 'user' role should be treated as 'employee'
+      if (role === 'employee' && userRole === 'user') {
+        return true;
+      }
+
+      return false;
+    } catch (error) {
+      console.error('Role validation error:', error);
+      return false;
+    }
+  };
+
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
@@ -60,21 +94,62 @@ const LoginSignup: React.FC<LoginSignupProps> = ({ role, onBack }) => {
       if (isSignUp) {
         // Include role in user metadata for signup
         result = await signUpWithEmail(email, password, role);
+        
+        if (result.error) {
+          toast({
+            title: "Sign Up Failed",
+            description: result.error.message,
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Check Your Email",
+            description: "We've sent you a verification link to complete your registration.",
+          });
+        }
       } else {
+        // Sign in and validate role
         result = await signInWithEmail(email, password);
-      }
-
-      if (result.error) {
-        toast({
-          title: isSignUp ? "Sign Up Failed" : "Sign In Failed",
-          description: result.error.message,
-          variant: "destructive",
-        });
-      } else if (isSignUp) {
-        toast({
-          title: "Check Your Email",
-          description: "We've sent you a verification link to complete your registration.",
-        });
+        
+        if (result.error) {
+          toast({
+            title: "Sign In Failed",
+            description: result.error.message,
+            variant: "destructive",
+          });
+        } else {
+          // Get the current user after successful login
+          const { data: { user } } = await supabase.auth.getUser();
+          
+          if (user) {
+            // Validate user's role matches the selected portal
+            const isAuthorized = await validateUserRole(user.id);
+            
+            if (!isAuthorized) {
+              // Sign out the user and show error
+              await supabase.auth.signOut();
+              
+              toast({
+                title: "Access Denied",
+                description: `You are not authorized to access the ${config.title}. Please select the correct role portal.`,
+                variant: "destructive",
+              });
+              
+              // Navigate back to role selection after a delay
+              setTimeout(() => {
+                onBack();
+              }, 2000);
+              
+              return;
+            }
+            
+            // Role matches, user will be redirected by auth state change
+            toast({
+              title: "Welcome!",
+              description: `Successfully signed in to ${config.title}`,
+            });
+          }
+        }
       }
     } catch (error: any) {
       toast({
@@ -135,6 +210,14 @@ const LoginSignup: React.FC<LoginSignupProps> = ({ role, onBack }) => {
             <p className="text-gray-400 text-sm">
               {isSignUp ? 'Sign up to get started' : 'Sign in to continue'}
             </p>
+          </div>
+
+          {/* Role Access Warning */}
+          <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-3 mb-6">
+            <div className="flex items-center space-x-2 text-yellow-300 text-sm">
+              <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+              <span>Only users with {role} role can access this portal</span>
+            </div>
           </div>
 
           <form onSubmit={handleEmailAuth} className="space-y-4">
