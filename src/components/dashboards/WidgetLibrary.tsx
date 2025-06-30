@@ -9,8 +9,17 @@ import { Badge } from '@/components/ui/badge';
 import { X, Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
+interface WidgetDefinition {
+  id: string;
+  name: string;
+  component_name: string;
+  description?: string;
+  category: string;
+  required_permissions?: string[];
+}
+
 interface WidgetLibraryProps {
-  availableWidgets: any[];
+  availableWidgets: WidgetDefinition[];
   dashboardId: string;
   persona: string;
   onClose: () => void;
@@ -26,7 +35,7 @@ const WidgetLibrary: React.FC<WidgetLibraryProps> = ({
   const queryClient = useQueryClient();
 
   const addWidgetMutation = useMutation({
-    mutationFn: async (widget: any) => {
+    mutationFn: async (widget: WidgetDefinition) => {
       // Get current dashboard layout
       const { data: dashboard } = await supabase
         .from('user_dashboards')
@@ -35,6 +44,9 @@ const WidgetLibrary: React.FC<WidgetLibraryProps> = ({
         .single();
 
       if (!dashboard) throw new Error('Dashboard not found');
+
+      // Parse current layout
+      const currentLayout = Array.isArray(dashboard.layout) ? dashboard.layout : [];
 
       // Add new widget to layout
       const newWidget = {
@@ -46,12 +58,12 @@ const WidgetLibrary: React.FC<WidgetLibraryProps> = ({
         h: 4,
       };
 
-      const updatedLayout = [...(dashboard.layout || []), newWidget];
+      const updatedLayout = [...currentLayout, newWidget];
 
       // Update dashboard
       const { error } = await supabase
         .from('user_dashboards')
-        .update({ layout: updatedLayout })
+        .update({ layout: updatedLayout as any }) // Cast to any for Json compatibility
         .eq('id', dashboardId);
 
       if (error) throw error;
@@ -91,7 +103,7 @@ const WidgetLibrary: React.FC<WidgetLibraryProps> = ({
     if (!acc[category]) acc[category] = [];
     acc[category].push(widget);
     return acc;
-  }, {} as Record<string, any[]>);
+  }, {} as Record<string, WidgetDefinition[]>);
 
   return (
     <Dialog open={true} onOpenChange={onClose}>

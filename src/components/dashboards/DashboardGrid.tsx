@@ -1,15 +1,23 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
+interface WidgetLayout {
+  id: string;
+  component: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
 interface DashboardGridProps {
-  layout: any[];
+  layout: WidgetLayout[];
   dashboardId: string;
   persona: string;
 }
 
 const DashboardGrid: React.FC<DashboardGridProps> = ({ layout, dashboardId, persona }) => {
-  const renderWidget = (widget: any) => {
+  const renderWidget = (widget: WidgetLayout) => {
     // For now, we'll render placeholder widgets
     // In a real implementation, these would be dynamic component imports
     const getWidgetContent = (component: string) => {

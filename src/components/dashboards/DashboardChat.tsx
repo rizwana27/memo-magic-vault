@@ -19,7 +19,7 @@ interface Message {
   id: string;
   role: 'user' | 'assistant';
   content: string;
-  timestamp: Date;
+  timestamp: string; // Changed from Date to string for JSON compatibility
 }
 
 const DashboardChat: React.FC<DashboardChatProps> = ({ persona, onClose }) => {
@@ -31,7 +31,7 @@ const DashboardChat: React.FC<DashboardChatProps> = ({ persona, onClose }) => {
       id: '1',
       role: 'assistant',
       content: `Hi! I'm your dashboard assistant. I can help you customize your ${persona} dashboard, suggest relevant widgets, and guide you through organizing your workspace. What would you like to know?`,
-      timestamp: new Date(),
+      timestamp: new Date().toISOString(),
     },
   ]);
 
@@ -68,7 +68,7 @@ const DashboardChat: React.FC<DashboardChatProps> = ({ persona, onClose }) => {
         .from('dashboard_conversations')
         .upsert({
           user_id: user.id,
-          conversation_data: conversationData,
+          conversation_data: conversationData as any, // Cast to any for Json compatibility
           context: { persona },
         });
       
@@ -83,7 +83,7 @@ const DashboardChat: React.FC<DashboardChatProps> = ({ persona, onClose }) => {
       id: Date.now().toString(),
       role: 'user',
       content: message.trim(),
-      timestamp: new Date(),
+      timestamp: new Date().toISOString(),
     };
 
     const updatedMessages = [...messages, userMessage];
@@ -96,7 +96,7 @@ const DashboardChat: React.FC<DashboardChatProps> = ({ persona, onClose }) => {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
         content: generateResponse(userMessage.content, persona),
-        timestamp: new Date(),
+        timestamp: new Date().toISOString(),
       };
 
       const finalMessages = [...updatedMessages, aiResponse];

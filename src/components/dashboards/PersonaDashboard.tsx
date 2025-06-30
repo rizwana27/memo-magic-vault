@@ -15,6 +15,15 @@ interface PersonaDashboardProps {
   persona: 'pmo' | 'executive' | 'org_leader' | 'resource';
 }
 
+interface WidgetLayout {
+  id: string;
+  component: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
 const PersonaDashboard: React.FC<PersonaDashboardProps> = ({ persona }) => {
   const { user, signOut } = useAuth();
   const { toast } = useToast();
@@ -60,7 +69,7 @@ const PersonaDashboard: React.FC<PersonaDashboardProps> = ({ persona }) => {
         throw error;
       }
       
-      return data;
+      return data || [];
     },
   });
 
@@ -76,7 +85,7 @@ const PersonaDashboard: React.FC<PersonaDashboardProps> = ({ persona }) => {
         .insert({
           user_id: user.id,
           dashboard_name: 'My Dashboard',
-          layout: defaultLayout,
+          layout: defaultLayout as any, // Cast to any for Json compatibility
           is_default: true,
         })
         .select()
@@ -150,6 +159,10 @@ const PersonaDashboard: React.FC<PersonaDashboardProps> = ({ persona }) => {
     );
   }
 
+  // Parse layout from Json to WidgetLayout[]
+  const parsedLayout: WidgetLayout[] = dashboardConfig?.layout ? 
+    (Array.isArray(dashboardConfig.layout) ? dashboardConfig.layout as WidgetLayout[] : []) : [];
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-gray-900 to-black">
       {/* Header */}
@@ -204,7 +217,7 @@ const PersonaDashboard: React.FC<PersonaDashboardProps> = ({ persona }) => {
         <div className="max-w-7xl mx-auto">
           {dashboardConfig ? (
             <DashboardGrid
-              layout={dashboardConfig.layout}
+              layout={parsedLayout}
               dashboardId={dashboardConfig.id}
               persona={persona}
             />
@@ -243,7 +256,7 @@ const PersonaDashboard: React.FC<PersonaDashboardProps> = ({ persona }) => {
 };
 
 // Helper function to get default layout for each persona
-const getDefaultLayoutForPersona = (persona: string) => {
+const getDefaultLayoutForPersona = (persona: string): WidgetLayout[] => {
   switch (persona) {
     case 'pmo':
       return [
