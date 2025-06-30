@@ -159,9 +159,17 @@ const PersonaDashboard: React.FC<PersonaDashboardProps> = ({ persona }) => {
     );
   }
 
-  // Parse layout from Json to WidgetLayout[]
+  // Parse layout from Json to WidgetLayout[] with proper type safety
   const parsedLayout: WidgetLayout[] = dashboardConfig?.layout ? 
-    (Array.isArray(dashboardConfig.layout) ? dashboardConfig.layout as WidgetLayout[] : []) : [];
+    (Array.isArray(dashboardConfig.layout) ? 
+      dashboardConfig.layout.map((item: any) => ({
+        id: item.id || '',
+        component: item.component || '',
+        x: item.x || 0,
+        y: item.y || 0,
+        w: item.w || 6,
+        h: item.h || 4,
+      } as WidgetLayout)) : []) : [];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-gray-900 to-black">
