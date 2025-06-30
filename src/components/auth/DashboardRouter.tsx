@@ -6,13 +6,12 @@ import { supabase } from '@/integrations/supabase/client';
 import Index from '@/pages/Index';
 import Vendors from '@/components/psa/Vendors';
 import EmployeeDashboard from '@/components/dashboards/EmployeeDashboard';
-import PersonaDashboard from '@/components/dashboards/PersonaDashboard';
 import UnauthorizedAccess from '@/components/auth/UnauthorizedAccess';
 
 const DashboardRouter: React.FC = () => {
   const { user, loading: authLoading } = useAuth();
 
-  // Fetch user profile with role and persona
+  // Fetch user profile with role - scoped to the current user's session
   const { data: profile, isLoading: profileLoading, error } = useQuery({
     queryKey: ['user-profile', user?.id],
     queryFn: async () => {
@@ -22,7 +21,7 @@ const DashboardRouter: React.FC = () => {
       
       const { data, error } = await supabase
         .from('profiles')
-        .select('user_role, role, persona, full_name, email, onboarding_completed')
+        .select('user_role, role, full_name, email')
         .eq('id', user.id)
         .single();
       
@@ -31,7 +30,7 @@ const DashboardRouter: React.FC = () => {
         throw error;
       }
       
-      console.log('Profile fetched for user:', user.email, 'Role:', data?.user_role || data?.role, 'Persona:', data?.persona);
+      console.log('Profile fetched for user:', user.email, 'Role:', data?.user_role || data?.role);
       return data;
     },
     enabled: !!user?.id,
@@ -65,18 +64,12 @@ const DashboardRouter: React.FC = () => {
     return <UnauthorizedAccess reason="Your account profile could not be found. Please contact support." />;
   }
 
-  // Get user role and persona
+  // Get user role (prioritize user_role over role)
   const userRole = profile.user_role || profile.role || 'user';
-  const userPersona = profile.persona || 'resource';
   
-  console.log('DashboardRouter - User:', user?.email, 'Role:', userRole, 'Persona:', userPersona);
+  console.log('DashboardRouter - User:', user?.email, 'Role:', userRole);
 
-  // Route based on persona first, then fallback to role
-  if (userPersona && ['pmo', 'executive', 'org_leader', 'resource'].includes(userPersona)) {
-    return <PersonaDashboard persona={userPersona as 'pmo' | 'executive' | 'org_leader' | 'resource'} />;
-  }
-
-  // Fallback to legacy role-based routing
+  // Route based on role
   switch (userRole) {
     case 'admin':
       return <Index />; // Full PSA dashboard with all modules
