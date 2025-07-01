@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import Index from '@/pages/Index';
-import Vendors from '@/components/psa/Vendors';
+import VendorDashboard from '@/components/dashboards/VendorDashboard';
 import EmployeeDashboard from '@/components/dashboards/EmployeeDashboard';
 import UnauthorizedAccess from '@/components/auth/UnauthorizedAccess';
 
@@ -75,7 +75,7 @@ const DashboardRouter: React.FC = () => {
       return <Index />; // Full PSA dashboard with all modules
     
     case 'vendor':
-      return <Vendors />; // Vendor management page only
+      return <VendorDashboard />; // Dedicated vendor dashboard
     
     case 'employee':
     case 'user': // fallback for existing users

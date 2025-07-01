@@ -99,6 +99,76 @@ export type Database = {
         }
         Relationships: []
       }
+      dashboard_conversations: {
+        Row: {
+          context: Json | null
+          conversation_data: Json
+          created_at: string | null
+          id: string
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          context?: Json | null
+          conversation_data?: Json
+          created_at?: string | null
+          id?: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          context?: Json | null
+          conversation_data?: Json
+          created_at?: string | null
+          id?: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dashboard_conversations_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      departments: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          head_user_id: string | null
+          id: string
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          head_user_id?: string | null
+          id?: string
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          head_user_id?: string | null
+          id?: string
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "departments_head_user_id_fkey"
+            columns: ["head_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invoices: {
         Row: {
           attachments: string[] | null
@@ -218,14 +288,19 @@ export type Database = {
           avatar_url: string | null
           company: string | null
           created_at: string | null
+          dashboard_config: Json | null
           department: string | null
+          department_id: string | null
           email: string | null
           full_name: string | null
           hourly_rate: number | null
           id: string
           is_active: boolean | null
+          onboarding_completed: boolean | null
+          persona: string | null
           phone: string | null
           role: string | null
+          team_id: string | null
           timezone: string | null
           updated_at: string | null
           user_role: string | null
@@ -234,14 +309,19 @@ export type Database = {
           avatar_url?: string | null
           company?: string | null
           created_at?: string | null
+          dashboard_config?: Json | null
           department?: string | null
+          department_id?: string | null
           email?: string | null
           full_name?: string | null
           hourly_rate?: number | null
           id: string
           is_active?: boolean | null
+          onboarding_completed?: boolean | null
+          persona?: string | null
           phone?: string | null
           role?: string | null
+          team_id?: string | null
           timezone?: string | null
           updated_at?: string | null
           user_role?: string | null
@@ -250,14 +330,19 @@ export type Database = {
           avatar_url?: string | null
           company?: string | null
           created_at?: string | null
+          dashboard_config?: Json | null
           department?: string | null
+          department_id?: string | null
           email?: string | null
           full_name?: string | null
           hourly_rate?: number | null
           id?: string
           is_active?: boolean | null
+          onboarding_completed?: boolean | null
+          persona?: string | null
           phone?: string | null
           role?: string | null
+          team_id?: string | null
           timezone?: string | null
           updated_at?: string | null
           user_role?: string | null
@@ -449,6 +534,51 @@ export type Database = {
         }
         Relationships: []
       }
+      teams: {
+        Row: {
+          created_at: string | null
+          department_id: string | null
+          description: string | null
+          id: string
+          lead_user_id: string | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          department_id?: string | null
+          description?: string | null
+          id?: string
+          lead_user_id?: string | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          department_id?: string | null
+          description?: string | null
+          id?: string
+          lead_user_id?: string | null
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "teams_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "teams_lead_user_id_fkey"
+            columns: ["lead_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       timesheets: {
         Row: {
           billable: boolean | null
@@ -499,6 +629,44 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "projects"
             referencedColumns: ["project_id"]
+          },
+        ]
+      }
+      user_dashboards: {
+        Row: {
+          created_at: string | null
+          dashboard_name: string
+          id: string
+          is_default: boolean | null
+          layout: Json
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          dashboard_name?: string
+          id?: string
+          is_default?: boolean | null
+          layout?: Json
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          dashboard_name?: string
+          id?: string
+          is_default?: boolean | null
+          layout?: Json
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_dashboards_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -589,6 +757,42 @@ export type Database = {
         }
         Relationships: []
       }
+      widget_definitions: {
+        Row: {
+          category: string
+          component_name: string
+          created_at: string | null
+          default_config: Json | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          required_permissions: string[] | null
+        }
+        Insert: {
+          category: string
+          component_name: string
+          created_at?: string | null
+          default_config?: Json | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          required_permissions?: string[] | null
+        }
+        Update: {
+          category?: string
+          component_name?: string
+          created_at?: string | null
+          default_config?: Json | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          required_permissions?: string[] | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -634,6 +838,10 @@ export type Database = {
       generate_vendor_id: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      get_user_permissions: {
+        Args: { user_persona: string }
+        Returns: string[]
       }
       get_user_role: {
         Args: Record<PropertyKey, never>
